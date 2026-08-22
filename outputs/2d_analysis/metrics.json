@@ -13,7 +13,7 @@
       "erase_mode": null,
       "verdict": "right",
       "note": "Trained red-direction aligns with frozen blue; stripe hold stays high.",
-      "elapsed_s": 0.02306962013244629,
+      "elapsed_s": 0.02336716651916504,
       "before": {
         "step": 0,
         "color_on_red": 1.0,
@@ -196,7 +196,7 @@
       "erase_mode": null,
       "verdict": "right",
       "note": "Live ESD (g=0) matches the empty prompt: red CFG goes to the origin, not onto blue. Stripe hold stays high.",
-      "elapsed_s": 0.022342681884765625,
+      "elapsed_s": 0.020808696746826172,
       "before": {
         "step": 0,
         "color_on_red": 1.0,
@@ -377,9 +377,9 @@
       "name": "erase_gem",
       "phrase": "red--",
       "erase_mode": "gem",
-      "verdict": "needs help",
-      "note": "GEM hinge attracts v(red) toward v(stripe), so the erase prompt becomes the keep concept. The hook is too thin (no trajectory window, no dual-stream Q/K) and the keep prompt is the wrong attractor for a 2-D erase.",
-      "elapsed_s": 0.0256502628326416,
+      "verdict": "right",
+      "note": "GEM hinge attracts toward the ESD safe field (uncond reverse-CFG), not toward stripe. Keep is a retain term. Erase-axis drops; stripe hold stays high.",
+      "elapsed_s": 0.0295107364654541,
       "before": {
         "step": 0,
         "color_on_red": 1.0,
@@ -393,14 +393,14 @@
       },
       "after": {
         "step": 40,
-        "color_on_red": -1.8600730895996094,
-        "pattern_on_stripe": 1.0672755241394043,
-        "color_on_stripe": -0.06727547943592072,
-        "pattern_on_red": 2.8600730895996094,
-        "write_cosine": 0.5451996326446533,
-        "stripe_hold": 0.9980192184448242,
-        "red_norm": 3.4117283821105957,
-        "stripe_norm": 1.0693937540054321
+        "color_on_red": -1.8295352458953857,
+        "pattern_on_stripe": 0.9999999403953552,
+        "color_on_stripe": -0.00010188668966293335,
+        "pattern_on_red": 0.0,
+        "write_cosine": 1.0,
+        "stripe_hold": 1.0,
+        "red_norm": 1.8295352458953857,
+        "stripe_norm": 0.9999999403953552
       },
       "history": [
         {
@@ -416,91 +416,91 @@
         },
         {
           "step": 5,
-          "color_on_red": 0.7434179782867432,
-          "pattern_on_stripe": 1.0208845138549805,
-          "color_on_stripe": -0.020884498953819275,
-          "pattern_on_red": 0.25658202171325684,
-          "write_cosine": -0.9452823996543884,
-          "stripe_hold": 0.9997907876968384,
-          "red_norm": 0.7864506840705872,
-          "stripe_norm": 1.0210981369018555
+          "color_on_red": 0.7455695271492004,
+          "pattern_on_stripe": 0.9999999403953552,
+          "color_on_stripe": 0.012379370629787445,
+          "pattern_on_red": 0.0,
+          "write_cosine": -1.0,
+          "stripe_hold": 0.9999234080314636,
+          "red_norm": 0.7455695271492004,
+          "stripe_norm": 1.0000765323638916
         },
         {
           "step": 10,
-          "color_on_red": 0.023210883140563965,
-          "pattern_on_stripe": 1.0397435426712036,
-          "color_on_stripe": -0.039743512868881226,
-          "pattern_on_red": 0.976789116859436,
-          "write_cosine": -0.023755723610520363,
-          "stripe_hold": 0.9992703199386597,
-          "red_norm": 0.977064847946167,
-          "stripe_norm": 1.0405027866363525
+          "color_on_red": 0.03337067365646362,
+          "pattern_on_stripe": 0.9999999403953552,
+          "color_on_stripe": -0.018408112227916718,
+          "pattern_on_red": 0.0,
+          "write_cosine": -1.0,
+          "stripe_hold": 0.9998305439949036,
+          "red_norm": 0.03337067365646362,
+          "stripe_norm": 1.0001693964004517
         },
         {
           "step": 15,
-          "color_on_red": -0.6207752227783203,
-          "pattern_on_stripe": 1.0508977174758911,
-          "color_on_stripe": -0.05089771747589111,
-          "pattern_on_red": 1.6207753419876099,
-          "write_cosine": 0.3576737642288208,
-          "stripe_hold": 0.9988292455673218,
-          "red_norm": 1.7355905771255493,
-          "stripe_norm": 1.0521295070648193
+          "color_on_red": -0.6036884784698486,
+          "pattern_on_stripe": 0.9999999403953552,
+          "color_on_stripe": 0.015681907534599304,
+          "pattern_on_red": 0.0,
+          "write_cosine": 1.0,
+          "stripe_hold": 0.9998770356178284,
+          "red_norm": 0.6036884784698486,
+          "stripe_norm": 1.0001229047775269
         },
         {
           "step": 20,
-          "color_on_red": -1.092238187789917,
-          "pattern_on_stripe": 1.0576887130737305,
-          "color_on_stripe": -0.05768871307373047,
-          "pattern_on_red": 2.092238426208496,
-          "write_cosine": 0.46277764439582825,
-          "stripe_hold": 0.9985159635543823,
-          "red_norm": 2.3601791858673096,
-          "stripe_norm": 1.0592607259750366
+          "color_on_red": -1.0700507164001465,
+          "pattern_on_stripe": 0.9999999403953552,
+          "color_on_stripe": -0.011944971978664398,
+          "pattern_on_red": 0.0,
+          "write_cosine": 1.0,
+          "stripe_hold": 0.9999286532402039,
+          "red_norm": 1.0700507164001465,
+          "stripe_norm": 1.0000712871551514
         },
         {
           "step": 25,
-          "color_on_red": -1.4161396026611328,
-          "pattern_on_stripe": 1.0619170665740967,
-          "color_on_stripe": -0.06191703677177429,
-          "pattern_on_red": 2.416139602661133,
-          "write_cosine": 0.5056615471839905,
-          "stripe_hold": 0.9983044266700745,
-          "red_norm": 2.800568103790283,
-          "stripe_norm": 1.063720703125
+          "color_on_red": -1.3904366493225098,
+          "pattern_on_stripe": 0.9999999403953552,
+          "color_on_stripe": 0.009849883615970612,
+          "pattern_on_red": 0.0,
+          "write_cosine": 1.0,
+          "stripe_hold": 0.9999515414237976,
+          "red_norm": 1.3904366493225098,
+          "stripe_norm": 1.0000483989715576
         },
         {
           "step": 30,
-          "color_on_red": -1.6311562061309814,
-          "pattern_on_stripe": 1.0645687580108643,
-          "color_on_stripe": -0.06456881761550903,
-          "pattern_on_red": 2.6311562061309814,
-          "write_cosine": 0.5269021987915039,
-          "stripe_hold": 0.9981656670570374,
-          "red_norm": 3.095747709274292,
-          "stripe_norm": 1.0665251016616821
+          "color_on_red": -1.6031146049499512,
+          "pattern_on_stripe": 0.9999999403953552,
+          "color_on_stripe": -0.009425088763237,
+          "pattern_on_red": 0.0,
+          "write_cosine": 1.0,
+          "stripe_hold": 0.9999555945396423,
+          "red_norm": 1.6031146049499512,
+          "stripe_norm": 1.000044345855713
         },
         {
           "step": 35,
-          "color_on_red": -1.770784854888916,
-          "pattern_on_stripe": 1.0662331581115723,
-          "color_on_stripe": -0.06623311340808868,
-          "pattern_on_red": 2.770784854888916,
-          "write_cosine": 0.5385105013847351,
-          "stripe_hold": 0.9980762004852295,
-          "red_norm": 3.288301467895508,
-          "stripe_norm": 1.0682883262634277
+          "color_on_red": -1.7412216663360596,
+          "pattern_on_stripe": 0.9999999403953552,
+          "color_on_stripe": 0.007344670593738556,
+          "pattern_on_red": 0.0,
+          "write_cosine": 1.0,
+          "stripe_hold": 0.9999729990959167,
+          "red_norm": 1.7412216663360596,
+          "stripe_norm": 1.0000269412994385
         },
         {
           "step": 40,
-          "color_on_red": -1.8600730895996094,
-          "pattern_on_stripe": 1.0672755241394043,
-          "color_on_stripe": -0.06727547943592072,
-          "pattern_on_red": 2.8600730895996094,
-          "write_cosine": 0.5451996326446533,
-          "stripe_hold": 0.9980192184448242,
-          "red_norm": 3.4117283821105957,
-          "stripe_norm": 1.0693937540054321
+          "color_on_red": -1.8295352458953857,
+          "pattern_on_stripe": 0.9999999403953552,
+          "color_on_stripe": -0.00010188668966293335,
+          "pattern_on_red": 0.0,
+          "write_cosine": 1.0,
+          "stripe_hold": 1.0,
+          "red_norm": 1.8295352458953857,
+          "stripe_norm": 0.9999999403953552
         }
       ],
       "points_before": {
@@ -531,24 +531,24 @@
       },
       "points_after": {
         "red": [
-          -1.8600730895996094,
-          2.8600730895996094
+          -1.8295352458953857,
+          0.0
         ],
         "blue": [
-          1.8600730895996094,
-          -2.8600730895996094
+          1.8295352458953857,
+          0.0
         ],
         "stripe": [
-          -0.06727547943592072,
-          1.0672755241394043
+          -0.00010188668966293335,
+          0.9999999403953552
         ],
         "dot": [
-          0.06727547943592072,
-          -1.0672755241394043
+          0.00010188668966293335,
+          -1.0
         ],
         "red stripe": [
-          -1.9273484945297241,
-          3.9273483753204346
+          -1.829637050628662,
+          0.9999999403953552
         ],
         "\u2205": [
           0.0,
@@ -562,7 +562,7 @@
       "erase_mode": "ea",
       "verdict": "right",
       "note": "EA = ESD + keep retain: red is erased and stripe stays put. Retain matches a `#` freeze on this velocity-only hook.",
-      "elapsed_s": 0.026785612106323242,
+      "elapsed_s": 0.024962425231933594,
       "before": {
         "step": 0,
         "color_on_red": 1.0,
@@ -745,7 +745,7 @@
       "erase_mode": null,
       "verdict": "right",
       "note": "Classic ++ stretches the color axis past the frozen red direction without dragging stripe.",
-      "elapsed_s": 0.02147531509399414,
+      "elapsed_s": 0.020155668258666992,
       "before": {
         "step": 0,
         "color_on_red": 1.0,
@@ -928,7 +928,7 @@
       "erase_mode": null,
       "verdict": "right",
       "note": "ESD plus `stripe#stripe` is the live-DSL way to pin the keep axis. Same geometry as the EA retain hook on this fixture.",
-      "elapsed_s": 0.027342796325683594,
+      "elapsed_s": 0.025651216506958008,
       "before": {
         "step": 0,
         "color_on_red": 1.0,

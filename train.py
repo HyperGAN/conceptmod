@@ -65,7 +65,11 @@ def main():
                    help="prompt for the before/after grid (repeatable)")
     p.add_argument("--verify-seeds", type=int, nargs="+", default=[42, 1234])
     p.add_argument("--exaggerate-guidance", type=float, default=None)
-    p.add_argument("--erase-guidance", type=float, default=None)
+    p.add_argument(
+        "--erase-guidance", type=float, default=None,
+        help="ESD g in v*=v0-g(vc-v0); default 0 (neutralize / match empty). "
+             "1 is the old overshoot (write-to-opposite on an antipodal field)",
+    )
     p.add_argument("--write-guidance", type=float, default=None)
     p.add_argument("--sample-steps", type=int, default=None)
     p.add_argument("--sample-guidance", type=float, default=None)

@@ -231,6 +231,11 @@ def _describe_rule(rule: Rule) -> str:
                 f"Erase {_q(rule.a)} with ESD overshoot (guidance={float(g):g}): "
                 f"push past empty toward the opposite."
             )
+        if g is not None and float(g) == 0.0:
+            return (
+                f"Neutralize {_q(rule.a)}: map those prompts to the empty "
+                f"prompt (ESD guidance 0 — erase without writing an antipode)."
+            )
         return (
             f"Neutralize {_q(rule.a)}: prompts that ask for it should come out "
             f"without it (match the empty prompt)."

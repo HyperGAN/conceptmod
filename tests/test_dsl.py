@@ -244,6 +244,12 @@ class TestDescribePhrase:
         assert "ESD" in note or "overshoot" in note.lower()
         assert "opposite" in note.lower()
 
+    def test_erase_guidance_zero_is_neutralize(self):
+        note = describe_phrase("red--:guidance=0")
+        assert "Neutralize" in note
+        assert "antipode" in note
+        assert "red" in note
+
     def test_write_uncond(self):
         note = describe_phrase("=snow")
         assert "empty prompt" in note

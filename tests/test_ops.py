@@ -90,9 +90,54 @@ def test_z_cache_shared_across_rules(ctx):
     assert backend.partial_calls == 2
 
 
-def test_erase_moves_away_from_concept(ctx, monkeypatch):
-    """After a gradient step on erase loss, the trained model's prediction
-    for the concept moves toward the negatively-guided target."""
+def test_default_erase_guidance_is_neutralize():
+    assert ops.OpDefaults.erase_guidance == 0.0
+
+
+def test_bare_erase_targets_empty(ctx, monkeypatch):
+    """Default ``c--`` target is v('') — neutralize, not ESD overshoot."""
+    backend, c = ctx
+    monkeypatch.setattr(ops, "ERASE_TEMPLATES", ["{}"])
+    assert c.cfg.erase_guidance == 0.0
+    z, t = c.z_for("cat")
+    v0 = backend.predict_v("", z, t, frozen=True)
+    vc = backend.predict_v("cat", z, t, frozen=True)
+    before = backend.predict_v("cat", z, t, frozen=False)
+    opt = torch.optim.SGD([backend.delta], lr=1.0)
+    d0 = ((before - v0) ** 2).mean().item()
+    overshoot = v0 - 1.0 * (vc - v0)
+    loss = loss_for("cat--", c)
+    loss.backward()
+    opt.step()
+    after = backend.predict_v("cat", z, t, frozen=False)
+    d1 = ((after - v0) ** 2).mean().item()
+    d_over = ((after - overshoot) ** 2).mean().item()
+    assert d1 < d0
+    assert d1 < d_over
+
+
+def test_erase_guidance_option_is_esd_overshoot(ctx, monkeypatch):
+    """``c--:guidance=1`` overshoots even when the cfg default is 0."""
+    backend, c = ctx
+    monkeypatch.setattr(ops, "ERASE_TEMPLATES", ["{}"])
+    assert c.cfg.erase_guidance == 0.0
+    opt = torch.optim.SGD([backend.delta], lr=1.0)
+    z, t = c.z_for("cat")
+    before = backend.predict_v("cat", z, t, frozen=False)
+    v0 = backend.predict_v("", z, t, frozen=True)
+    vc = backend.predict_v("cat", z, t, frozen=True)
+    target = v0 - 1.0 * (vc - v0)
+    d0 = ((before - target) ** 2).mean().item()
+    loss = loss_for("cat--:guidance=1", c)
+    loss.backward()
+    opt.step()
+    after = backend.predict_v("cat", z, t, frozen=False)
+    d1 = ((after - target) ** 2).mean().item()
+    assert d1 < d0
+
+
+def test_erase_guidance_1_is_esd_overshoot(ctx, monkeypatch):
+    """CLI ``--erase-guidance 1`` still uses the negatively-guided target."""
     backend, c = ctx
     monkeypatch.setattr(ops, "ERASE_TEMPLATES", ["{}"])
     c.cfg.erase_guidance = 1.0

@@ -15,7 +15,7 @@ No GPU, no Hub, no 20B train. Plots live in
 | Method | Phrase | Verdict | What happened |
 |---|---|---|---|
 | write `=` | `red=blue` | **right** | Red CFG flips onto frozen blue. Stripe hold stays ~1. |
-| erase ESD | `red--` (live `rule_loss`) | **right** | Same target as write at guidance 1 (`−CFG(red) = CFG(blue)`). Stripe holds. |
+| erase ESD | `red--` (live `rule_loss`) | **right** | Default g=0 matches empty: red CFG goes to the origin, **not** onto blue. Stripe holds. `red--:guidance=1` is the old write-to-opposite. |
 | erase GEM | `red--` + keep=`stripe` | **needs help** | Hinge attracts `v(red)` toward `v(stripe)`. Red picks up a large pattern component (`leak ≈ +2.86`). The keep *prompt* barely moves; the erase prompt *becomes* the keep concept. |
 | erase EA | `red--` + keep=`stripe` | **right** | ESD plus a retain MSE on stripe. Red erases; stripe hold is 1.000 (a hair cleaner than ESD). |
 | exaggerate `++` | `red++` | **right** | Classic (no random-probe) `++` stretches color from +1 to ~+3. Stripe holds. |
@@ -91,10 +91,11 @@ Two caveats the pictures make obvious:
    class path). This is a fixture / function-class fact, not a bug in
    `ops.rule_loss`.
 
-2. **ESD g=1 is write-to-opposite.** The ESD target
-   `v* = v('') − (v(red) − v(''))` is exactly `CFG(blue)` when blue is
-   `−red`. The two methods produce the same numbers here. That is correct
-   ESD geometry, not a wiring mistake.
+2. **Bare `--` is neutralize; g=1 is write-to-opposite.** The ESD
+   target is `v* = v('') − g (v(red) − v(''))`. Default `g=0` is
+   `v('')` (origin on this field). `g=1` is exactly `CFG(blue)` when
+   blue is `−red` — that overshoot is now `red--:guidance=1` (or
+   `--erase-guidance 1`), not the bare phrase.
 
 ## GEM vs ESD vs EA
 

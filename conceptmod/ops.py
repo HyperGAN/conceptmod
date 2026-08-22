@@ -55,7 +55,9 @@ ERASE_TEMPLATES = [
 @dataclass
 class OpDefaults:
     exaggerate_guidance: float = 3.0   # g in v* = v0 + g (vc - v0)
-    erase_guidance: float = 2.0        # g in v* = v0 - g (vc - v0)
+    erase_guidance: float = 0.0        # g in v* = v0 - g (vc - v0)
+    #                                    0: neutralize (match empty);
+    #                                    1: classic ESD overshoot / antipode
     write_guidance: float = 2.0        # g=1: a behaves exactly like b;
     #                                    >1 overshoots for a stronger write
     sample_guidance: float = 4.5       # CFG while sampling z_ctx
@@ -131,11 +133,13 @@ def rule_loss(rule: dsl.Rule, ctx: StepContext) -> torch.Tensor:
         return F.mse_loss(vt, target)
 
     if rule.op == dsl.ERASE:
-        # true ESD: sample in the concept's own context, push its velocity
-        # to the negatively-guided target. The context is drawn from varied
-        # templates so the erase covers scene modes, not just the bare
-        # phrase (a bare-phrase erase left "a monochrome photograph of a
-        # city street" untouched while flipping its synonyms).
+        # ESD target v* = v('') - g (v(c) - v('')). Default g=0 is
+        # neutralize: trained v(c) matches the empty prompt. g=1 is the
+        # classic negatively-guided overshoot (on an antipodal field that
+        # is write-to-opposite). Templates vary the concept so the erase
+        # covers scene modes, not just the bare phrase (a bare-phrase
+        # erase left "a monochrome photograph of a city street"
+        # untouched while flipping its synonyms).
         import random as _random
 
         g = rule.options.get("guidance", cfg.erase_guidance)

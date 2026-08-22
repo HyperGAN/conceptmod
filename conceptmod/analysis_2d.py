@@ -205,15 +205,20 @@ class MethodResult:
 
 
 def _cfg(guidance: float = DEFAULT_GUIDANCE, mode: str = "esd",
-         keep: str = KEEP, exaggerate: float | None = None) -> ops.OpDefaults:
+         keep: str = KEEP, exaggerate: float | None = None,
+         erase_guidance: float | None = None) -> ops.OpDefaults:
+    # Write still uses DEFAULT_GUIDANCE=1 (exact remap). Erase inherits
+    # OpDefaults.erase_guidance (0: neutralize) unless the caller or the
+    # phrase sets :guidance=… — do not silently keep the old g=1 ESD.
     cfg = ops.OpDefaults(
-        erase_guidance=guidance,
         write_guidance=guidance,
         exaggerate_guidance=exaggerate if exaggerate is not None else EXAGGERATE_GUIDANCE,
         sample_steps=4,
         sample_guidance=1.0,
         orthogonal_scale=1.0,
     )
+    if erase_guidance is not None:
+        cfg.erase_guidance = erase_guidance
     cfg.erase_mode = mode
     cfg.erase_keep = keep
     cfg.gem_eta = 1.0
@@ -271,6 +276,7 @@ def train_one(
     seed: int = DEFAULT_SEED,
     guidance: float = DEFAULT_GUIDANCE,
     keep: str = KEEP,
+    erase_guidance: float | None = None,
 ) -> tuple[TwoAxisBackend, list[ProbeSnapshot], float]:
     """SGD/Adam on the live ``rule_loss`` / ``erase_loss`` path."""
     restore = _pin_bare_templates()
@@ -280,7 +286,8 @@ def train_one(
         rules = dsl.parse_phrase(phrase)
         mode = erase_mode or "esd"
         exaggerate = EXAGGERATE_GUIDANCE if any(r.op == dsl.EXAGGERATE for r in rules) else None
-        cfg = _cfg(guidance=guidance, mode=mode, keep=keep, exaggerate=exaggerate)
+        cfg = _cfg(guidance=guidance, mode=mode, keep=keep, exaggerate=exaggerate,
+                   erase_guidance=erase_guidance)
         opt = torch.optim.Adam(backend.trainable_parameters(), lr=lr)
         history = [snapshot(backend, z, t, 0)]
         t0 = time.time()
@@ -332,11 +339,17 @@ def _verdict_for(name: str, before: ProbeSnapshot, after: ProbeSnapshot) -> tupl
 
     if name in ("erase_esd", "erase_ea", "erase_esd_freeze"):
         erased = after.color_on_red < 0.2 and color_move < -0.5
+        wrote_antipode = after.color_on_red < -0.5 or after.write_cosine > 0.7
         if name == "erase_esd":
+            if wrote_antipode:
+                return "needs help", (
+                    "Bare -- wrote the antipode (old ESD g=1 overshoot). "
+                    "Default g=0 should neutralize to the empty / origin field."
+                )
             if erased and keep_ok and not leak_on_red:
                 return "right", (
-                    "Live ESD flips the red CFG toward the negatively-guided "
-                    "target; stripe hold stays high on this LoRA."
+                    "Live ESD (g=0) matches the empty prompt: red CFG goes "
+                    "to the origin, not onto blue. Stripe hold stays high."
                 )
             if erased and (not keep_ok or leak_on_red):
                 return "needs help", (

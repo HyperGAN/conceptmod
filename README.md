@@ -266,7 +266,7 @@ Rules are separated by `|`. Each rule is scaled by an optional `:alpha`.
 | Syntax | Name | Effect |
 |---|---|---|
 | `c++` | exaggerate | more of concept `c` in **every** generation. Optional `:guidance=g` (default 3): how far past the model's own concept direction to push |
-| `c--` | erase | remove concept `c` (true ESD erasure, sampled in the concept's own context) |
+| `c--` | erase | neutralize concept `c` so those prompts match the empty / unconditional field. Optional `:guidance=g` (default 0). `c--:guidance=1` is the old ESD overshoot (write-to-opposite when the field is antipodal) |
 | `a=b` | write | **one loss**: remap prompt `a` so it behaves like concept `b`. Does not boost `b` globally. `=b` (or `b=`) writes `b` into the empty / unconditional prompt. Under CFG > 1 a baked-in unconditional acts like a negative prompt; sample at low guidance (or turbo / CFG-free) to see it as default content |
 | `a#b` | freeze | pin prompt `a` to the frozen model's behavior for `b`. Bare `#` pins the unconditional. Add `#`-rules to protect things you don't want to move |
 | `a%b` | orthogonal | decorrelate `b`'s concept direction from `a`'s. Negative alpha (`a%b:-1.0`) *aligns* them instead — blending |

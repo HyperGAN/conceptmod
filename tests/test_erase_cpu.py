@@ -78,7 +78,7 @@ def bare_templates(monkeypatch):
 
 
 def _cfg(mode="esd"):
-    cfg = ops.OpDefaults(erase_guidance=1.0, sample_steps=4)
+    cfg = ops.OpDefaults(sample_steps=4)
     cfg.erase_mode = mode
     cfg.erase_keep = KEEP
     cfg.gem_eta = 1.0

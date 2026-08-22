@@ -228,8 +228,21 @@ class TestDescribePhrase:
 
     def test_erase(self):
         note = describe_phrase("monochrome--")
-        assert "Erase" in note
+        assert "Neutralize" in note
+        assert "without" in note.lower()
         assert "monochrome" in note
+        assert "opposite" not in note.lower()
+
+    def test_erase_red_bare_is_neutralize(self):
+        note = describe_phrase("red--")
+        assert "Neutralize" in note
+        assert "without" in note.lower()
+        assert "opposite" not in note.lower()
+
+    def test_erase_guidance_1_is_overshoot(self):
+        note = describe_phrase("red--:guidance=1")
+        assert "ESD" in note or "overshoot" in note.lower()
+        assert "opposite" in note.lower()
 
     def test_erase_guidance_zero_is_neutralize(self):
         note = describe_phrase("red--:guidance=0")
@@ -285,7 +298,7 @@ class TestDescribePhrase:
         note = describe_phrase("vibrant colors++|monochrome--", stage="encoder")
         assert "Encoder-only" in note
         assert "Exaggerate" in note
-        assert "Erase" in note
+        assert "Neutralize" in note
 
     def test_composite(self):
         note = describe_phrase("#:0.4|human=robot:0.8|robot%human:-0.1")

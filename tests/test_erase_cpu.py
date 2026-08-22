@@ -78,7 +78,7 @@ def bare_templates(monkeypatch):
 
 
 def _cfg(mode="esd"):
-    cfg = ops.OpDefaults(erase_guidance=1.0, sample_steps=4)
+    cfg = ops.OpDefaults(sample_steps=4)
     cfg.erase_mode = mode
     cfg.erase_keep = KEEP
     cfg.gem_eta = 1.0
@@ -168,9 +168,10 @@ def test_ea_retain_is_esd_plus_keep_anchor(bare_templates):
 
 
 def test_gem_contrastive_reduces_erase_probe(bare_templates):
-    """GEM hinge attracts toward the keep/uncond field, repels erase.
+    """GEM hinge attracts toward the ESD safe field, repels erase.
 
-    Not a full GEM port (no trajectory window). Default η = 1.
+    ``erase_keep`` is a retain, not the attractor (paper ĉ is a harmless
+    rewording of c). Not a full GEM port (no trajectory window). η = 1.
     """
     backend = TwoConceptVelocity()
     z, t = _probe_z(backend)

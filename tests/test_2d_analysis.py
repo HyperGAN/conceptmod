@@ -90,21 +90,32 @@ def test_linear_lora_write_also_flips_the_antipode():
     assert abs(by) < 0.25
 
 
-def test_esd_erases_red_without_killing_stripe():
+def test_bare_erase_neutralizes_to_origin_not_antipode():
+    """Bare ``red--`` matches empty. Fail if this writes the antipode again."""
+    from conceptmod import ops
+
+    assert ops.OpDefaults.erase_guidance == 0.0
     result = run_method("erase_esd", f"{COLOR}--")
     assert result.verdict == "right"
-    assert result.after.color_on_red < 0.2
+    assert abs(result.after.color_on_red) < 0.25
+    assert result.after.color_on_red > -0.5
+    assert result.after.write_cosine < 0.35
     assert result.before.color_on_red - result.after.color_on_red > 0.5
     assert result.after.stripe_hold > 0.85
     assert abs(result.after.pattern_on_red) < 0.25
+    rx, ry = result.points_after[COLOR]
+    assert abs(rx) < 0.25
+    assert abs(ry) < 0.25
 
 
-def test_g1_esd_matches_write_target_on_antipodes():
-    """ESD g=1 target is −CFG(red) = CFG(blue): same as ``red=blue`` here."""
+def test_guidance_1_esd_matches_write_target_on_antipodes():
+    """Explicit ``red--:guidance=1`` is −CFG(red) = CFG(blue): same as write."""
     write = run_method("write", f"{COLOR}={COLOR_OPP}")
-    esd = run_method("erase_esd", f"{COLOR}--")
+    esd = run_method("erase_esd", f"{COLOR}--:guidance=1")
     assert write.after.color_on_red == pytest.approx(esd.after.color_on_red, abs=1e-4)
     assert write.after.write_cosine == pytest.approx(esd.after.write_cosine, abs=1e-4)
+    assert esd.after.color_on_red < -0.5
+    assert esd.after.write_cosine > 0.7
 
 
 def test_exaggerate_grows_color_not_pattern():
@@ -133,11 +144,14 @@ def test_esd_plus_freeze_matches_ea_keep():
     assert abs(freeze.after.pattern_on_red) < 0.25
 
 
-def test_gem_attracts_erase_toward_keep():
-    """The GEM hook is the wrong attractor on this field (needs help)."""
+def test_gem_erases_red_without_becoming_stripe():
+    """GEM must drop the erase axis and not convert red into stripe."""
     result = run_method("erase_gem", f"{COLOR}--", erase_mode="gem")
-    assert result.verdict == "needs help"
-    assert result.after.pattern_on_red > 0.4
+    assert result.verdict == "right"
+    assert result.after.color_on_red < 0.2
+    assert result.before.color_on_red - result.after.color_on_red > 0.5
+    assert result.after.stripe_hold > 0.85
+    assert abs(result.after.pattern_on_red) < 0.25
 
 
 def test_suite_verdicts_and_budget():
@@ -148,5 +162,5 @@ def test_suite_verdicts_and_budget():
     assert by_name["erase_ea"].verdict == "right"
     assert by_name["exaggerate"].verdict == "right"
     assert by_name["erase_esd_freeze"].verdict == "right"
-    assert by_name["erase_gem"].verdict == "needs help"
+    assert by_name["erase_gem"].verdict == "right"
     assert sum(r.elapsed_s for r in results) < 30.0

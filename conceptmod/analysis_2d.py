@@ -205,15 +205,20 @@ class MethodResult:
 
 
 def _cfg(guidance: float = DEFAULT_GUIDANCE, mode: str = "esd",
-         keep: str = KEEP, exaggerate: float | None = None) -> ops.OpDefaults:
+         keep: str = KEEP, exaggerate: float | None = None,
+         erase_guidance: float | None = None) -> ops.OpDefaults:
+    # Write still uses DEFAULT_GUIDANCE=1 (exact remap). Erase inherits
+    # OpDefaults.erase_guidance (0: neutralize) unless the caller or the
+    # phrase sets :guidance=… — do not silently keep the old g=1 ESD.
     cfg = ops.OpDefaults(
-        erase_guidance=guidance,
         write_guidance=guidance,
         exaggerate_guidance=exaggerate if exaggerate is not None else EXAGGERATE_GUIDANCE,
         sample_steps=4,
         sample_guidance=1.0,
         orthogonal_scale=1.0,
     )
+    if erase_guidance is not None:
+        cfg.erase_guidance = erase_guidance
     cfg.erase_mode = mode
     cfg.erase_keep = keep
     cfg.gem_eta = 1.0
@@ -271,6 +276,7 @@ def train_one(
     seed: int = DEFAULT_SEED,
     guidance: float = DEFAULT_GUIDANCE,
     keep: str = KEEP,
+    erase_guidance: float | None = None,
 ) -> tuple[TwoAxisBackend, list[ProbeSnapshot], float]:
     """SGD/Adam on the live ``rule_loss`` / ``erase_loss`` path."""
     restore = _pin_bare_templates()
@@ -280,7 +286,8 @@ def train_one(
         rules = dsl.parse_phrase(phrase)
         mode = erase_mode or "esd"
         exaggerate = EXAGGERATE_GUIDANCE if any(r.op == dsl.EXAGGERATE for r in rules) else None
-        cfg = _cfg(guidance=guidance, mode=mode, keep=keep, exaggerate=exaggerate)
+        cfg = _cfg(guidance=guidance, mode=mode, keep=keep, exaggerate=exaggerate,
+                   erase_guidance=erase_guidance)
         opt = torch.optim.Adam(backend.trainable_parameters(), lr=lr)
         history = [snapshot(backend, z, t, 0)]
         t0 = time.time()
@@ -332,11 +339,17 @@ def _verdict_for(name: str, before: ProbeSnapshot, after: ProbeSnapshot) -> tupl
 
     if name in ("erase_esd", "erase_ea", "erase_esd_freeze"):
         erased = after.color_on_red < 0.2 and color_move < -0.5
+        wrote_antipode = after.color_on_red < -0.5 or after.write_cosine > 0.7
         if name == "erase_esd":
+            if wrote_antipode:
+                return "needs help", (
+                    "Bare -- wrote the antipode (old ESD g=1 overshoot). "
+                    "Default g=0 should neutralize to the empty / origin field."
+                )
             if erased and keep_ok and not leak_on_red:
                 return "right", (
-                    "Live ESD flips the red CFG toward the negatively-guided "
-                    "target; stripe hold stays high on this LoRA."
+                    "Live ESD (g=0) matches the empty prompt: red CFG goes "
+                    "to the origin, not onto blue. Stripe hold stays high."
                 )
             if erased and (not keep_ok or leak_on_red):
                 return "needs help", (
@@ -371,19 +384,20 @@ def _verdict_for(name: str, before: ProbeSnapshot, after: ProbeSnapshot) -> tupl
         return "needs help", "Protected erase failed to move red."
 
     if name == "erase_gem":
-        # GEM attract-to-keep is a different target than ESD's flip.
         pulled_to_keep = after.pattern_on_red > 0.4 and after.color_on_red < 0.6
         if pulled_to_keep:
             return "needs help", (
-                "GEM hinge attracts v(red) toward v(stripe), so the erase "
-                "prompt becomes the keep concept. The hook is too thin "
-                "(no trajectory window, no dual-stream Q/K) and the keep "
-                "prompt is the wrong attractor for a 2-D erase."
+                "GEM still converts red into stripe — the safe attractor "
+                "is wrong (keep must not be ĉ)."
             )
-        if after.color_on_red < 0.2 and keep_ok:
+        if after.color_on_red < 0.2 and keep_ok and not leak_on_red:
             return "right", (
-                "GEM reduced the red probe without stealing the stripe axis."
+                "GEM hinge attracts toward the ESD safe field (uncond "
+                "reverse-CFG), not toward stripe. Keep is a retain term. "
+                "Erase-axis drops; stripe hold stays high."
             )
+        if after.color_on_red < 0.2:
+            return "needs help", "GEM erased red but leaked onto the keep axis."
         return "needs help", (
             "GEM did not produce a clean erase; the contrastive hinge is "
             "under-specified for this field."
@@ -501,7 +515,7 @@ def plot_quiver(results: list[MethodResult], path: Path) -> None:
         ax.set_ylabel("pattern  (stripe → +)")
         badge = "right" if result.verdict == "right" else "needs help"
         ax.set_title(f"{METHOD_TITLES[result.name]}\n{badge}", fontsize=10)
-        lim = 3.6
+        lim = 4.2
         ax.set_xlim(-lim, lim)
         ax.set_ylim(-lim, lim)
         ax.grid(True, alpha=0.25)

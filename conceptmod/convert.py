@@ -54,6 +54,7 @@ METADATA = {"format": "pt"}
 # when strength 1.0 is already a unit step (alpha == rank, or per-module
 # alphas baked in). ``recommended_range`` is a ComfyUI LoRA-strength window.
 HOST = {
+    "yue2": "lm",
     "anima": "dit",
     "krea": "dit",
     "music3": "dit",
@@ -61,13 +62,14 @@ HOST = {
     "qwen": "dit",
 }
 RECOMMENDED_RANGE = {
+    "yue2": [0.0, 1.0],
     "anima": [0.6, 1.2],
     "krea": [0.8, 1.2],
     "music3": [0.5, 1.5],
     "music3_lm": [0.5, 1.5],
     "qwen": [0.8, 1.2],
 }
-FUSED_QKV = {"music3"}
+FUSED_QKV = {"music3", "yue2"}
 
 # ---------------------------------------------------------------- key mapping
 
@@ -139,6 +141,7 @@ MODEL_CLASSES = {
 # ComfyUI MiniMax Music 3 module names, not a loading file.
 UNVERIFIED = {"music3", "music3_lm"}
 UNSUPPORTED = {
+    "yue2_particle": "YuE2 particle branches are nonlinear; distill to ordinary LoRA before conversion",
     "zimage": "ComfyUI key naming for Z-Image is unknown; refusing to guess",
     "sana": "ComfyUI key naming for Sana is unverified; refusing to guess",
 }
@@ -261,6 +264,9 @@ MAPPERS = {
     "qwen": map_qwen,
 }
 
+from conceptmod.convert_yue2 import map_yue2  # noqa: E402
+MAPPERS["yue2"] = map_yue2
+
 from conceptmod.convert_klein import register as _register_klein  # noqa: E402
 _register_klein(MAPPERS, MODEL_CLASSES, UNVERIFIED, HOST, RECOMMENDED_RANGE, FUSED_QKV)
 
@@ -349,6 +355,10 @@ def detect_backend(cfg, keys):
     if cls in MODEL_CLASSES:
         return MODEL_CLASSES[cls], f"adapter_config base_model_class={cls}"
     stems = {split_lora_key(k)[0] for k in keys if split_lora_key(k)}
+    from conceptmod.convert_yue2 import detect as detect_yue2
+    yue2_hit = detect_yue2(keys, stems)
+    if yue2_hit is not None:
+        return yue2_hit
     if any(s.startswith(MUSIC3_TF_PREFIX) or s.startswith("transformer_blocks-")
            for s in stems):
         return "music3", "key heuristic (LoRANetwork music3 transformer)"
@@ -478,7 +488,7 @@ def convert(path: str, backend: str, cfg: dict):
     rank = cfg.get("r")
     alpha = cfg.get("lora_alpha")
     emit_alpha = rank is not None and alpha is not None and alpha != rank
-    key_prefix = "text_encoders" if backend == "music3_lm" else "diffusion_model"
+    key_prefix = "text_encoders" if backend in ("music3_lm", "yue2") else "diffusion_model"
 
     out, dropped, unmapped, alpha_paths = {}, [], [], set()
     file_alphas = {}
@@ -513,6 +523,9 @@ def convert(path: str, backend: str, cfg: dict):
             dest_alphas[dest] = file_alphas[module]
     if backend == "music3":
         unmapped.extend(_fuse_music3_qkv(out, dest_alphas))
+    if backend == "yue2":
+        from conceptmod.convert_yue2 import fuse_qkv as fuse_yue2
+        unmapped.extend(fuse_yue2(out, dest_alphas, _block_diag_up, TARGET_DTYPE))
     if backend == "klein":
         from conceptmod.convert_klein import fuse_qkv as _fuse_klein
         unmapped.extend(_fuse_klein(

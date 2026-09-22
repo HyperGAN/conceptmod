@@ -367,14 +367,14 @@ Poles may move the concept. Identity is the content retain axis (`hold_dir`); it
 
 Same locked_shared shape on every row: RpGAN logistic, `b_cap` coeff=1 κ=1 l2, FM off, n=12, `particle_l2=0.02`. The cover pin is the posture. 8-step floor budget (identity, not a train). A PASS is a CPU toy. It is not a Music or Anima GPU transfer. Wave-1 cover / leftover stays the demo-1.5 geometry gate; this row only checks the fork.
 
-| arm | claim | cover | label | drift reported | gate |
-|---|---|---:|---|---|---|
-| demo_1_5 | demo_1_5 | 1.5 | demo | — | **PASS** |
-| music_1_0 | music_1_0 | 1.0 | music | `cover_weight`, `cover_posture` | **PASS** |
-| mislabeled_swap | demo_1_5 | 1.0 | demo | none | FAIL unreported swap |
-| stranger | demo_1_5 | 1.5 | demo | — | FAIL `stranger_pairing` |
-| fm_on | demo_1_5 | 1.5 | demo | — | FAIL `fm_on` |
-| thinned_kappa | demo_1_5 | 1.5 | demo | — | FAIL `thinned_bcap` |
+| arm | claim | cover | label | drift reported | g err | alias gap | gate |
+|---|---|---:|---|---|---:|---:|---|
+| demo_1_5 | demo_1_5 | 1.5 | demo | — | 0 | 0.233 | **PASS** |
+| music_1_0 | music_1_0 | 1.0 | music | `cover_weight`, `cover_posture` | 0 | 0.233 | **PASS** |
+| mislabeled_swap | demo_1_5 | 1.0 | demo | none | **0.233** | 0.233 | FAIL unreported swap |
+| stranger | demo_1_5 | 1.5 | demo | — | 1.19e-6 | 0.233 | FAIL `stranger_pairing` |
+| fm_on | demo_1_5 | 1.5 | demo | — | 7.28e-4 | 0.233 | FAIL `fm_on` |
+| thinned_kappa | demo_1_5 | 1.5 | demo | — | 0 | 0.233 | FAIL `thinned_bcap` |
 
 Music 1.0 still FAILs the locked-shared floor, which claims the demo posture only. The Music label does not waive stranger pairing, FM-on, or a thinned kappa cap.
 

@@ -2,14 +2,20 @@
 
 Heading and linear speed pass for the ablated residual. The radius gate does not.
 Locked_shared (RpGAN logistic, real b_cap, FM off, demo cover 1.5) passes.
+
+Re-homed from ParticleGAN #27. That pull was merged by mistake and is being
+reverted. This module is the copy that remains. The penalty still comes from
+``particlegan.grad_regularizers.GradRegularizer``.
 """
 
+import inspect
 import math
 
 import pytest
 import torch
 
 from particlegan.grad_regularizers import GradRegularizer
+import conceptmod.toys.orbit_hold as orbit_hold
 from conceptmod.toys.orbit_hold import (
     DIRECTION_COS_MIN,
     RADIUS_REL_MAX,
@@ -22,6 +28,15 @@ from conceptmod.toys.orbit_hold import (
     locked_recipe,
     run_family,
 )
+
+
+def test_family_does_not_import_particlegan_orbit_hold():
+    """A ParticleGAN revert of #27 must not delete this gate."""
+    source = inspect.getsource(orbit_hold)
+    assert "particlegan.orbit_hold" not in source
+    assert "from particlegan.grad_regularizers import GradRegularizer" in source
+    assert orbit_hold.locked_recipe is not None
+    assert orbit_hold.GradRegularizer is GradRegularizer
 
 
 def test_locked_shared_passes_radius_hold():

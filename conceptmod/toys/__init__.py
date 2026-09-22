@@ -1,7 +1,9 @@
 """CPU formulation toys for the locked_shared / Arm B shape.
 
 These gates were opened on 255BITS/ParticleGAN by mistake (pulls #26–#34).
-#26 and #27 were merged there; the content is re-homed here. Adversarial
+#26 (shared-trajectory) and #27 (orbit radius hold) were merged there and are
+being reverted. Both families stay in this package; a ParticleGAN revert does
+not remove them. Adversarial
 primitives come from the ``particlegan`` package (``GANLoss``,
 ``GradientPenalty`` / ``GradRegularizer``, ``ParticlePrior``,
 ``ParticleRegularizer``, ``get_recipe``). This package does not vendor

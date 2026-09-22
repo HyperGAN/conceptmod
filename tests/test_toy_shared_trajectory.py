@@ -1,8 +1,15 @@
-"""Shared-trajectory pairs pass; stranger pairs fail or are refused."""
+"""Shared-trajectory pairs pass; stranger pairs fail or are refused.
+
+Re-homed from ParticleGAN #26. That pull was merged by mistake and is being
+reverted. This module is the copy that remains.
+"""
+
+import inspect
 
 import pytest
 import torch
 
+import conceptmod.toys.shared_trajectory as shared_trajectory
 from conceptmod.toys.shared_trajectory import (
     LOCKED,
     PASS_IDENTITY_MSE,
@@ -12,6 +19,14 @@ from conceptmod.toys.shared_trajectory import (
     train_locked,
     trajectories,
 )
+
+
+def test_family_does_not_import_particlegan_trajectory():
+    """A ParticleGAN revert of #26 must not delete this gate."""
+    source = inspect.getsource(shared_trajectory)
+    assert "particlegan.shared_trajectory" not in source
+    assert "lib.shared_trajectory" not in source
+    assert shared_trajectory.train_locked is not None
 
 
 def test_shared_identity_is_the_only_fixed_point_pairing():

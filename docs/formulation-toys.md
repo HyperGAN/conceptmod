@@ -2,13 +2,12 @@
 
 Home for the Wave-1 particle-sliders-style toy gates. They were opened on
 [255BITS/ParticleGAN](https://github.com/255BITS/ParticleGAN) by mistake.
-**#26 and #27 were merged there**; the content is re-homed in this repo.
-#28–#34 were closed unmerged and are ported from those PR heads.
+**#26 (shared-trajectory) and #27 (orbit radius hold) were merged there and are being reverted.** This tree keeps both families. Dropping them because they once landed on ParticleGAN would lose the gates. #28–#34 were closed unmerged and are ported from those PR heads. All nine live here.
 
 | family | module | ParticleGAN source |
 |---|---|---|
-| shared slow→fast vs stranger | `conceptmod/toys/shared_trajectory.py` | [#26](https://github.com/255BITS/ParticleGAN/pull/26) (merged by mistake) |
-| orbit radius hold | `conceptmod/toys/orbit_hold.py` | [#27](https://github.com/255BITS/ParticleGAN/pull/27) (merged by mistake) |
+| shared slow→fast vs stranger | `conceptmod/toys/shared_trajectory.py` | [#26](https://github.com/255BITS/ParticleGAN/pull/26) (merged by mistake, being reverted; kept here) |
+| orbit radius hold | `conceptmod/toys/orbit_hold.py` | [#27](https://github.com/255BITS/ParticleGAN/pull/27) (merged by mistake, being reverted; kept here) |
 | locked_shared RpGAN + `b_cap` floor | `conceptmod/toys/locked_shared_floor.py` | [#28](https://github.com/255BITS/ParticleGAN/pull/28) |
 | unipolar residual | `conceptmod/toys/unipolar.py` | [#29](https://github.com/255BITS/ParticleGAN/pull/29) |
 | AE-GAN + locked hold | `conceptmod/toys/ae_gan_hold.py` | [#30](https://github.com/255BITS/ParticleGAN/pull/30) |

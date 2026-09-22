@@ -12,7 +12,7 @@ Toy code is not forked back into ParticleGAN.
 The nine Wave-1 families were first opened on
 [255BITS/ParticleGAN](https://github.com/255BITS/ParticleGAN) by mistake.
 **#26 (shared-trajectory) and #27 (orbit radius hold) were merged there and are being reverted.** This tree keeps both families. #28–#34 were closed unmerged and are ported from those PR heads.
-Late-collapse selection is a later local gate (Lunar #23). Keep-critic is a new family in this tree. Image UNI lm_target is a later conceptmod family. The residual student is a later family in this tree and composes with shared_trajectory. Field lift is a later CPU gate in this tree. None of these was a ParticleGAN pull, and none is a fork of those toys.
+Late-collapse selection is a later local gate (Lunar #23). Keep-critic is a new family in this tree. Image UNI lm_target, the residual student (composes with shared_trajectory), field lift, and unused-token UNI hold are later conceptmod families. None of these was a ParticleGAN pull, and none is a fork of those toys.
 
 | family | module | ParticleGAN source |
 |---|---|---|
@@ -30,6 +30,7 @@ Late-collapse selection is a later local gate (Lunar #23). Keep-critic is a new 
 | keep-critic locked_shared | `conceptmod/toys/keep_critic.py` | new. Music Arm B handoff keeps `--adv_arch mlp`; this row freezes the host critic and refuses that swap |
 | image UNI lm_target | `conceptmod/toys/lm_target.py` | conceptmod (Anima image UNI; not a ParticleGAN pull) |
 | 2D→3D field lift | `conceptmod/toys/field_lift.py` | particle-sliders `tests/test_field3d.py` (reviewed; not a ParticleGAN pull) |
+| unused-token / UNI hold | `conceptmod/toys/unused_token_hold.py` | conceptmod (image-slider posture; not a ParticleGAN pull) |
 
 Allowed `particlegan` imports are the primitives: `GANLoss`, `GradientPenalty`
 / `GradRegularizer`, `ParticlePrior`, `ParticleRegularizer`, and
@@ -89,6 +90,7 @@ Named omissions (reported, not silent aliases):
 - **Music `--parts 0`** on the posture toy is the empty-cloud spelling: cover **1.0**, VICReg off. It is a second PASS, not a substitute for the n=12 demo lock.
 - **Late-collapse** does not train. The curve is eight synthetic checkpoints. Train loss falls through the collapse; the val gate is the only export rule. The locked_shared stamp is read and not retuned.
 - **Image UNI lm_target** trains target MSE only. Adversarial loss does not apply (Anima image UNI is trajectory MSE). locked_shared is the only legal adv posture and is refused if drifted, not trained. Step budget is 80, lr 0.5.
+- **Unused-token hold** trains an embed-slot student (image-slider UNI). Hold weight is **1.0** (the image-slider default). Demo cover 1.5 and n=12 / `particle_l2=0.02` are recorded and are not a second loss. No particle cloud. Not an Anima or Supra GPU result.
 
 ## Scoreboard
 
@@ -284,6 +286,21 @@ One scored step. The paste's cover gap is g err 0.439. At locked κ=1 the
 thinned center still matches the step penalty; the κ=0.2 probe is what
 fails it. Stranger pairing, FM-on, and the stub keep the lifted geometry.
 
+### Unused-token / UNI hold (hold ≥ 0.85 and concept move ≥ 0.85)
+
+Image-slider posture: an unused embed slot stays on `encode(neu)` while the concept slot moves. The student writes one shared residual into every slot. Concept RpGAN sees only the concept slot, so without a hold loss half of that step lands on the unused pin.
+
+| arm | unused hold | concept move | gate |
+|---|---:|---:|---|
+| locked_shared | 0.991 | 0.968 | **PASS** |
+| no_hold | 0.479 | 0.959 | FAIL `no_hold`, `unused_trashed` |
+| stranger_pairing | 0.024 | 0.969 | FAIL `stranger_pairing`, `unused_trashed` |
+| stranger_vanilla | 0.998 | 0.944 | FAIL `stranger_pairing` |
+| fm_on | 0.996 | 0.981 | FAIL `fm_on` |
+| thin_bcap | 0.992 | 0.977 | FAIL `thinned_bcap` |
+
+200 steps, seed 0. `stranger_pairing` aligns the unused slot with the concept embed (the wrong neu partner) and trashes the pin; concept move stays. `stranger_vanilla`, FM-on, and the center-0 `b_cap` stub can still hold the pin. They fail because the adv card drifted. Faithful `b_cap` probe is 4; the stub is 9. Hold weight 1.0 is the image-slider pin, not Field3D cover. A PASS here is not an Anima, Supra, or Music GPU transfer.
+
 ## Run
 
 ```bash
@@ -302,7 +319,8 @@ pytest tests/test_toy_shared_trajectory.py \
        tests/test_toy_late_collapse.py \
        tests/test_toy_keep_critic.py \
        tests/test_toy_lm_target.py \
-       tests/test_toy_field_lift.py -q
+       tests/test_toy_field_lift.py \
+       tests/test_toy_unused_token_hold.py -q
 ```
 
 One family at a time, with a tailable log:
@@ -322,6 +340,7 @@ python -m conceptmod.toys.late_collapse
 python -m conceptmod.toys.keep_critic
 python -m conceptmod.toys.lm_target
 python -m conceptmod.toys.field_lift
+python -m conceptmod.toys.unused_token_hold
 ```
 
 `shared_trajectory` and `residual_student` are libraries (`train_locked` /

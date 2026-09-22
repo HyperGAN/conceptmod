@@ -38,9 +38,10 @@ The DSL game-geometry bridge (``dsl_game_geometry``) PASSes only when a
 locked_shared ``loss_game`` step and geometric ``right`` from the 2-D
 phrase scoreboard are both true. A game PASS alone is not that gate.
 The cross-toy suite leaderboard (``suite_leaderboard``) scores candidate
-adv configs across these families and names which config(s) PASS every
-applicable stamp toy. It is not the single-toy honesty gate
-(``leaderboard_honesty``).
+adv configs across stamp and DSL families and names which config(s) PASS
+every applicable stamp toy. Cover-posture fork stays its own toy; the
+suite does not score a config under the other claim. It is not the
+single-toy honesty gate (``leaderboard_honesty``).
 
 The slow→fast residual student composes with shared_trajectory and lives in
 this tree.

@@ -2,7 +2,7 @@
 
 CPU toy. No Music or Anima GPU claim. Tail the same lines with::
 
-    python -m particlegan.leaderboard_honesty
+    python -m conceptmod.toys.leaderboard_honesty
 """
 
 from __future__ import annotations

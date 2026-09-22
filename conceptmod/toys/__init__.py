@@ -1,13 +1,15 @@
 """CPU formulation toys for the locked_shared / Arm B shape.
 
-These gates were opened on 255BITS/ParticleGAN by mistake (pulls #26–#34).
-#26 (shared-trajectory) and #27 (orbit radius hold) were merged there and are
-being reverted. Both families stay in this package; a ParticleGAN revert does
-not remove them. Adversarial
-primitives come from the ``particlegan`` package (``GANLoss``,
-``GradientPenalty`` / ``GradRegularizer``, ``ParticlePrior``,
-``ParticleRegularizer``, ``get_recipe``). This package does not vendor
-``GradRegularizer``.
+HyperGAN/conceptmod is the home for these gates. ParticleGAN is core
+primitives only. This package depends on the published ``particlegan``
+distribution for ``GANLoss`` (RpGAN) and ``GradRegularizer`` /
+``GradientPenalty``, plus ``ParticlePrior``, ``ParticleRegularizer``, and
+``get_recipe``. It does not import toy modules from that package and does
+not vendor ``GradRegularizer``.
+
+The gates were opened on 255BITS/ParticleGAN by mistake (pulls #26–#34).
+#26 (shared-trajectory) and #27 (orbit radius hold) were merged there and
+are being reverted. Both families stay here.
 
 A PASS is a CPU toy result. It is not a Music or Anima GPU transfer.
 

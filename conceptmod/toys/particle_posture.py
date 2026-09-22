@@ -28,7 +28,7 @@ Budget, not formulation: ambient dim 2, batch 32, 600 Adam steps, one seed.
 ``lr=5e-3`` moves a unit pole by about one step of that size, so a few
 hundred steps are the travel budget; the particle cloud lags the residual
 and arrives later. Shorter runs stop mid-travel.
-``python -u experiments/particle_posture_toy.py`` prints a line per log step.
+``python -m conceptmod.toys.particle_posture`` prints a line per log step.
 """
 from __future__ import annotations
 

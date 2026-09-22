@@ -1,8 +1,14 @@
 # Formulation toys (CPU scoreboard)
 
-Home for the Wave-1 particle-sliders-style toy gates. They were opened on
+**HyperGAN/conceptmod is the home for these gates.** ParticleGAN is
+core primitives only. Toys depend on the published `particlegan` package
+(`particlegan>=0.5.0` on PyPI) for `GANLoss` / RpGAN and `GradRegularizer`
+(`GradientPenalty`). They do not import toy modules from that package, and
+toy code is not forked back into ParticleGAN.
+
+The nine families were first opened on
 [255BITS/ParticleGAN](https://github.com/255BITS/ParticleGAN) by mistake.
-**#26 (shared-trajectory) and #27 (orbit radius hold) were merged there and are being reverted.** This tree keeps both families. Dropping them because they once landed on ParticleGAN would lose the gates. #28–#34 were closed unmerged and are ported from those PR heads. All nine live here.
+**#26 (shared-trajectory) and #27 (orbit radius hold) were merged there and are being reverted.** This tree keeps both families. #28–#34 were closed unmerged and are ported from those PR heads.
 
 | family | module | ParticleGAN source |
 |---|---|---|
@@ -16,11 +22,14 @@ Home for the Wave-1 particle-sliders-style toy gates. They were opened on
 | tiny particle posture | `conceptmod/toys/particle_posture.py` | [#33](https://github.com/255BITS/ParticleGAN/pull/33) |
 | mode-hold ring | `conceptmod/toys/mode_hold.py` | [#34](https://github.com/255BITS/ParticleGAN/pull/34) |
 
-Adversarial primitives come from the `particlegan` package
-(`GANLoss`, `GradientPenalty` which is `GradRegularizer`, `ParticlePrior`,
-`ParticleRegularizer`, `get_recipe("ae_gan")`). This tree does not copy
-`GradRegularizer`. The ring critic is `conceptmod.toys.mlp` because
-ParticleGAN does not export the 100-Gaussians MLP on the installable package.
+Allowed `particlegan` imports are the primitives: `GANLoss`, `GradientPenalty`
+/ `GradRegularizer`, `ParticlePrior`, `ParticleRegularizer`, and
+`get_recipe` (the AE-GAN study preset). This tree does not copy
+`GradRegularizer`. It also does not call `particlegan.orbit_hold`,
+`particlegan.leaderboard_honesty`, or any other toy that briefly lived in
+that repo. The ring critic is `conceptmod.toys.mlp` because the published
+package does not export the 100-Gaussians MLP; that class is host critic
+shape, not a second penalty.
 
 Culture reviewed: HyperGAN/particle-sliders
 `analysis/slider2d/locked_baseline_defaults.py` (locked_shared / #94) and

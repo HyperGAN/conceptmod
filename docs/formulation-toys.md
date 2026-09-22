@@ -12,7 +12,7 @@ Toy code is not forked back into ParticleGAN.
 The nine Wave-1 families were first opened on
 [255BITS/ParticleGAN](https://github.com/255BITS/ParticleGAN) by mistake.
 **#26 (shared-trajectory) and #27 (orbit radius hold) were merged there and are being reverted.** This tree keeps both families. #28–#34 were closed unmerged and are ported from those PR heads.
-Late-collapse selection is a later local gate (Lunar #23). Keep-critic is a new family in this tree. Image UNI lm_target, the residual student (composes with shared_trajectory), field lift, and unused-token UNI hold are later conceptmod families. None of these was a ParticleGAN pull, and none is a fork of those toys. Backend-agnostic erase/keep is later and lives only in this repo.
+Late-collapse selection is a later local gate (Lunar #23). Keep-critic is a new family in this tree. Image UNI lm_target, the residual student (composes with shared_trajectory), field lift, unused-token UNI hold, and path-suffix LoRA honesty are later conceptmod families. None of these was a ParticleGAN pull, and none is a fork of those toys. Backend-agnostic erase/keep is later and lives only in this repo.
 
 | family | module | ParticleGAN source |
 |---|---|---|
@@ -32,6 +32,7 @@ Late-collapse selection is a later local gate (Lunar #23). Keep-critic is a new 
 | image UNI lm_target | `conceptmod/toys/lm_target.py` | conceptmod (Anima image UNI; not a ParticleGAN pull) |
 | 2D→3D field lift | `conceptmod/toys/field_lift.py` | particle-sliders `tests/test_field3d.py` (reviewed; not a ParticleGAN pull) |
 | unused-token / UNI hold | `conceptmod/toys/unused_token_hold.py` | conceptmod (image-slider posture; not a ParticleGAN pull) |
+| path-suffix LoRA | `conceptmod/toys/path_suffix_lora.py` | native CPU gate (Anima attach / PEFT suffix match) |
 
 Allowed `particlegan` imports are the primitives: `GANLoss`, `GradientPenalty`
 / `GradRegularizer`, `ParticlePrior`, `ParticleRegularizer`, and
@@ -319,6 +320,29 @@ Image-slider posture: an unused embed slot stays on `encode(neu)` while the conc
 
 200 steps, seed 0. `stranger_pairing` aligns the unused slot with the concept embed (the wrong neu partner) and trashes the pin; concept move stays. `stranger_vanilla`, FM-on, and the center-0 `b_cap` stub can still hold the pin. They fail because the adv card drifted. Faithful `b_cap` probe is 4; the stub is 9. Hold weight 1.0 is the image-slider pin, not Field3D cover. A PASS here is not an Anima, Supra, or Music GPU transfer.
 
+### Path-suffix LoRA (coverage = 1 and bare |grad| < 1)
+
+One backward on a block whose Linear leaves are `self_attn.proj`,
+`cross_attn.proj`, and a bare `proj`. PEFT list targets match the exact key
+or a `.<suffix>` ending, so `["proj"]` trains the head as well as both
+attention projs. The locked child regex is `(?:self_attn|cross_attn)\..+`.
+The literal `self_attn.*` fullmatches the parent module and is refused.
+`q_proj` matches nothing on this block (Anima's encoder leaf name is not a
+bare `proj`). Mean |lora_B grad| is the coverage signal. A colliding head
+zeroes coverage even when the attention leaves also move.
+
+| arm | targets | coverage | self \|g\| | cross \|g\| | bare \|g\| | gate |
+|---|---|---:|---:|---:|---:|---|
+| locked_suffix | `self_attn.proj`, `cross_attn.proj` | 1 | 2.25 | 2.25 | 0 | **PASS** |
+| locked_regex | child regex above | 1 | 2.25 | 2.25 | 0 | **PASS** |
+| bare_proj | `["proj"]` | 0 | 2.25 | 2.25 | **4.50** | FAIL `bare_proj` |
+| head_only | `"proj"` fullmatch | 0 | 0 | 0 | **4.50** | FAIL `bare_proj` `coverage` |
+| partial_suffix | `self_attn.proj` only | 0.50 | 2.25 | 0 | 0 | FAIL `coverage` |
+| overbroad_star | `self_attn.*` | — | — | — | — | refuse `empty_trainable` |
+| empty_q_proj | `q_proj` | — | — | — | — | refuse `empty_trainable` |
+
+No Hub weights. A PASS here is not an Anima GPU transfer.
+
 ## Run
 
 ```bash
@@ -339,7 +363,8 @@ pytest tests/test_toy_shared_trajectory.py \
        tests/test_toy_keep_critic.py \
        tests/test_toy_lm_target.py \
        tests/test_toy_field_lift.py \
-       tests/test_toy_unused_token_hold.py -q
+       tests/test_toy_unused_token_hold.py \
+       tests/test_toy_path_suffix_lora.py -q
 ```
 
 One family at a time, with a tailable log:
@@ -361,6 +386,7 @@ python -m conceptmod.toys.keep_critic
 python -m conceptmod.toys.lm_target
 python -m conceptmod.toys.field_lift
 python -m conceptmod.toys.unused_token_hold
+python -m conceptmod.toys.path_suffix_lora
 ```
 
 `shared_trajectory` and `residual_student` are libraries (`train_locked` /

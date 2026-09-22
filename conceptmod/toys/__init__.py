@@ -23,7 +23,8 @@ frozen, and the Music ``mlp`` head refused. Image UNI ``lm_target``
 (trajectory vs direct vs cfg_delta), unused-token UNI hold (an embed
 slot pinned while the concept slot moves), and field lift (the 2D sheet
 recipe on a tilted Field3D plane) are later conceptmod families. They
-are not those ParticleGAN pulls.
+are not those ParticleGAN pulls. Path-suffix LoRA honesty
+(``path_suffix_lora``) is a later CPU gate in this package.
 
 The slow→fast residual student composes with shared_trajectory and lives in
 this tree.
@@ -48,6 +49,7 @@ from . import (
     mode_hold,
     orbit_hold,
     particle_posture,
+    path_suffix_lora,
     residual_student,
     shared_trajectory,
     unipolar,
@@ -185,6 +187,7 @@ __all__ = [
     "mode_hold",
     "orbit_hold",
     "particle_posture",
+    "path_suffix_lora",
     "reject_unlocked",
     "residual_student",
     "run_cover_board",

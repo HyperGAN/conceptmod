@@ -14,7 +14,8 @@ This package is the formulation source of truth. Live conceptmod
 
 The gates were opened on 255BITS/ParticleGAN by mistake (pulls #26–#34).
 #26 (shared-trajectory) and #27 (orbit radius hold) were merged there and
-are being reverted. Both families stay here.
+are being reverted. Both families stay here. Late-collapse selection is a
+later local gate (Lunar #23); it was not one of those pulls.
 
 A PASS is a CPU toy result. It is not a Music or Anima GPU transfer.
 
@@ -27,6 +28,7 @@ from . import (
     ae_gan_hold,
     cover_leftover,
     leaderboard_honesty,
+    late_collapse,
     locked_shared_floor,
     mode_hold,
     orbit_hold,
@@ -54,6 +56,10 @@ from .cover_leftover import (
     run_board as run_cover_board,
     score_geometry,
     teacher_poles,
+)
+from .late_collapse import (
+    claim_selection_pass,
+    run_selection_board,
 )
 from .leaderboard_honesty import (
     LOCKED_SHARED,
@@ -138,10 +144,12 @@ __all__ = [
     "ae_gan_hold",
     "blend_guard",
     "claim_pass",
+    "claim_selection_pass",
     "cover_leftover",
     "faithful_guard_e",
     "faithful_sub_e",
     "hold_dir",
+    "late_collapse",
     "leaderboard_honesty",
     "leftover_bipolar",
     "locked_adv_defaults",
@@ -154,6 +162,7 @@ __all__ = [
     "reject_unlocked",
     "run_cover_board",
     "run_honesty_board",
+    "run_selection_board",
     "run_locked_floor",
     "run_orbit_family",
     "run_posture_family",

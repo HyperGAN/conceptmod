@@ -9,9 +9,9 @@ conceptmod. The only local geometry is the leftover / cover / teacher field
 in `conceptmod/toys/cover_leftover.py` (and the per-toy fixtures around it).
 Toy code is not forked back into ParticleGAN.
 
-The nine families were first opened on
+Nine families were first opened on
 [255BITS/ParticleGAN](https://github.com/255BITS/ParticleGAN) by mistake.
-**#26 (shared-trajectory) and #27 (orbit radius hold) were merged there and are being reverted.** This tree keeps both families. #28–#34 were closed unmerged and are ported from those PR heads.
+**#26 (shared-trajectory) and #27 (orbit radius hold) were merged there and are being reverted.** This tree keeps both families. #28–#34 were closed unmerged and are ported from those PR heads. Late-collapse selection is a later local gate (Lunar #23) and is the last row. It was not a ParticleGAN pull.
 
 | family | module | ParticleGAN source |
 |---|---|---|
@@ -24,6 +24,7 @@ The nine families were first opened on
 | leaderboard honesty | `conceptmod/toys/leaderboard_honesty.py` | [#32](https://github.com/255BITS/ParticleGAN/pull/32) |
 | tiny particle posture | `conceptmod/toys/particle_posture.py` | [#33](https://github.com/255BITS/ParticleGAN/pull/33) |
 | mode-hold ring | `conceptmod/toys/mode_hold.py` | [#34](https://github.com/255BITS/ParticleGAN/pull/34) |
+| late-collapse selection | `conceptmod/toys/late_collapse.py` | local (Lunar #23); not a ParticleGAN pull |
 
 Allowed `particlegan` imports are the primitives: `GANLoss`, `GradientPenalty`
 / `GradRegularizer`, `ParticlePrior`, `ParticleRegularizer`, and
@@ -76,6 +77,7 @@ Named omissions (reported, not silent aliases):
 - **Orbit** does not apply VICReg. Those particles are the orbit state, not a latent prior. The critic is a frozen linear probe.
 - **Mode-hold** records cover 1.5 and does not add a supervised cover loss. Learning rate is this toy's budget (2e-3), not the slider 5e-3.
 - **Music `--parts 0`** on the posture toy is the empty-cloud spelling: cover **1.0**, VICReg off. It is a second PASS, not a substitute for the n=12 demo lock.
+- **Late-collapse** does not train. The curve is eight synthetic checkpoints. Train loss falls through the collapse; the val gate is the only export rule. The locked_shared stamp is read and not retuned.
 
 ## Scoreboard
 
@@ -184,6 +186,18 @@ An empty negative list raises `HonestyError`. Cover alone would crown the thinne
 
 1200 steps, EMA, 4096 samples. Stranger pairing, FM-on, and a κ-hardcoded stub are refused unless the drift is named. The stub is not trained.
 
+### Late-collapse selection (export the earlier good checkpoint)
+
+Eight checkpoints. No Adam budget. Train loss falls on every step, so the best train loss is the last step. Val error is best at step 3 (`0.06`), still inside the gate at step 4 (`0.11`), then collapsed. The val gate refuses `val_error > 0.25` and any collapsed flag, then keeps the minimum val error (earlier step on a tie).
+
+| arm | rule | step | train_loss | val_error | collapsed | gate |
+|---|---|---:|---:|---:|---|---|
+| locked_val_gate | val gate | 3 | 0.32 | 0.06 | no | **PASS** |
+| last_step | final index | 7 | 0.01 | 1.40 | yes | FAIL |
+| best_train_loss | argmin train, no val | 7 | 0.01 | 1.40 | yes | FAIL |
+
+PASS requires the locked rule to export step 3 and every declared bad arm to export a collapsed checkpoint. An empty negative list raises `HonestyError`. A won flag that disagrees with the export is a dishonest board and raises `HonestyError`. `claim_pass` stays the two-pole gate.
+
 ## Run
 
 ```bash
@@ -197,7 +211,8 @@ pytest tests/test_toy_shared_trajectory.py \
        tests/test_toy_cover_leftover.py \
        tests/test_toy_leaderboard_honesty.py \
        tests/test_toy_particle_posture.py \
-       tests/test_toy_mode_hold.py -q
+       tests/test_toy_mode_hold.py \
+       tests/test_toy_late_collapse.py -q
 ```
 
 One family at a time, with a tailable log:
@@ -212,6 +227,7 @@ python -m conceptmod.toys.cover_leftover
 python -m conceptmod.toys.leaderboard_honesty
 python -m conceptmod.toys.particle_posture
 python -m conceptmod.toys.mode_hold
+python -m conceptmod.toys.late_collapse
 ```
 
 `shared_trajectory` is a library (`train_locked` / `train_drift`); the others

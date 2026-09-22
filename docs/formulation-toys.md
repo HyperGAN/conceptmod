@@ -12,7 +12,7 @@ Toy code is not forked back into ParticleGAN.
 The nine Wave-1 families were first opened on
 [255BITS/ParticleGAN](https://github.com/255BITS/ParticleGAN) by mistake.
 **#26 (shared-trajectory) and #27 (orbit radius hold) were merged there and are being reverted.** This tree keeps both families. #28–#34 were closed unmerged and are ported from those PR heads.
-Late-collapse selection is a later local gate (Lunar #23). Keep-critic is a new family in this tree. Neither was a ParticleGAN pull, and neither is a fork of those toys.
+Late-collapse selection is a later local gate (Lunar #23). Keep-critic is a new family in this tree. Image UNI lm_target is a later conceptmod family. None of these was a ParticleGAN pull, and none is a fork of those toys.
 
 | family | module | ParticleGAN source |
 |---|---|---|
@@ -27,6 +27,7 @@ Late-collapse selection is a later local gate (Lunar #23). Keep-critic is a new 
 | mode-hold ring | `conceptmod/toys/mode_hold.py` | [#34](https://github.com/255BITS/ParticleGAN/pull/34) |
 | late-collapse selection | `conceptmod/toys/late_collapse.py` | local (Lunar #23); not a ParticleGAN pull |
 | keep-critic locked_shared | `conceptmod/toys/keep_critic.py` | new. Music Arm B handoff keeps `--adv_arch mlp`; this row freezes the host critic and refuses that swap |
+| image UNI lm_target | `conceptmod/toys/lm_target.py` | conceptmod (Anima image UNI; not a ParticleGAN pull) |
 
 Allowed `particlegan` imports are the primitives: `GANLoss`, `GradientPenalty`
 / `GradRegularizer`, `ParticlePrior`, `ParticleRegularizer`, and
@@ -82,6 +83,7 @@ Named omissions (reported, not silent aliases):
 - **Mode-hold** records cover 1.5 and does not add a supervised cover loss. Learning rate is this toy's budget (2e-3), not the slider 5e-3.
 - **Music `--parts 0`** on the posture toy is the empty-cloud spelling: cover **1.0**, VICReg off. It is a second PASS, not a substitute for the n=12 demo lock.
 - **Late-collapse** does not train. The curve is eight synthetic checkpoints. Train loss falls through the collapse; the val gate is the only export rule. The locked_shared stamp is read and not retuned.
+- **Image UNI lm_target** trains target MSE only. Adversarial loss does not apply (Anima image UNI is trajectory MSE). locked_shared is the only legal adv posture and is refused if drifted, not trained. Step budget is 80, lr 0.5.
 
 ## Scoreboard
 
@@ -222,6 +224,27 @@ this stamp. A PASS does not transfer to a Music or Anima GPU run.
 
 8 steps (budget). The κ=0.2 probe is what catches a cap that hardcodes center 1.
 
+### Image UNI lm_target (expr_gain ≥ 0.85, struct_hold ≥ 0.95)
+
+Locked target: **trajectory**. Particle-sliders Anima image UNI
+(`--lm_target trajectory` in `anima_slider.py`). Live smile does not
+lock `direct` or `cfg_delta`: a 1-step velocity gap cannot carry
+expression (`cos(v(plus), v(neu)) ≈ 0.99993`, `MSE ≈ 0.00037` on the v4
+diagnostic). This CPU field shuts that high-σ gate, so the 1-step
+gradient is zero. Expression is a late-σ write (`σ ≤ 0.5`) and shows up
+on the K=4 FlowMatch Euler trajectory (`traj_expr_gap = -1`).
+
+| arm | expr_gain | struct_hold | one_step_mse | traj_expr_gap | gate |
+|---|---:|---:|---:|---:|---|
+| trajectory | 1.000 | 1.000 | 0 | -1 | **PASS** |
+| direct | 0 | 1.000 | 0 | -1 | FAIL `expr_gain` |
+| cfg_delta | 0 | 1.000 | 0 | -1 | FAIL `expr_gain` |
+
+80 steps, lr 0.5 (budget). Same field and the same three gates on every
+arm. Structure hold stays 1 on the failing arms; the concept axis is
+the split. Adversarial loss does not apply. Stranger pairing, FM-on,
+and a thinned `b_cap` are refused. Not an Anima GPU transfer.
+
 ## Run
 
 ```bash
@@ -237,7 +260,8 @@ pytest tests/test_toy_shared_trajectory.py \
        tests/test_toy_particle_posture.py \
        tests/test_toy_mode_hold.py \
        tests/test_toy_late_collapse.py \
-       tests/test_toy_keep_critic.py -q
+       tests/test_toy_keep_critic.py \
+       tests/test_toy_lm_target.py -q
 ```
 
 One family at a time, with a tailable log:
@@ -254,6 +278,7 @@ python -m conceptmod.toys.particle_posture
 python -m conceptmod.toys.mode_hold
 python -m conceptmod.toys.late_collapse
 python -m conceptmod.toys.keep_critic
+python -m conceptmod.toys.lm_target
 ```
 
 `shared_trajectory` is a library (`train_locked` / `train_drift`); the others

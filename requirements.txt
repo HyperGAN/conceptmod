@@ -1,0 +1,13 @@
+# PyPI. conceptmod calls this package for RpGAN (GANLoss), GradRegularizer
+# / b_cap (GradientPenalty), and ParticlePrior. Do not vendor those modules.
+particlegan>=0.5.0
+torch>=2.8
+torchvision
+diffusers @ git+https://github.com/huggingface/diffusers.git
+transformers>=4.57
+peft>=0.17
+accelerate
+safetensors
+datasets
+sentencepiece
+pillow

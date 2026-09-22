@@ -34,6 +34,9 @@ documented triple, and geometric ``right`` for bare ``red~blue`` fails.
 Phrase-DSL jobs (``dsl_phrase_jobs``) are a later family on the
 ``docs/dsl.md`` scoreboard. Geometric ``right`` stays that verdict.
 Formulation PASS is honesty that the phrase is the documented job.
+The DSL game-geometry bridge (``dsl_game_geometry``) PASSes only when a
+locked_shared ``loss_game`` step and geometric ``right`` from the 2-D
+phrase scoreboard are both true. A game PASS alone is not that gate.
 
 The slow→fast residual student composes with shared_trajectory and lives in
 this tree.
@@ -49,6 +52,7 @@ from . import (
     ae_gan_hold,
     cover_leftover,
     cover_posture_fork,
+    dsl_game_geometry,
     dsl_macro_expand,
     dsl_phrase_jobs,
     erase_keep_backend,
@@ -165,6 +169,7 @@ run_posture_family = particle_posture.run_family
 run_unused_token_family = unused_token_hold.run_family
 run_erase_keep_board = erase_keep_backend.run_board
 run_cover_posture_board = cover_posture_fork.run_board
+run_dsl_game_board = dsl_game_geometry.run_board
 run_dsl_phrase_board = dsl_phrase_jobs.run_board
 
 __all__ = [
@@ -192,6 +197,7 @@ __all__ = [
     "claim_selection_pass",
     "cover_leftover",
     "cover_posture_fork",
+    "dsl_game_geometry",
     "dsl_macro_expand",
     "dsl_phrase_jobs",
     "erase_keep_backend",
@@ -217,6 +223,7 @@ __all__ = [
     "residual_student",
     "run_cover_board",
     "run_cover_posture_board",
+    "run_dsl_game_board",
     "run_dsl_phrase_board",
     "run_erase_keep_board",
     "run_field_board",

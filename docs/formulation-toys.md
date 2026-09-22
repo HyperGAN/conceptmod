@@ -12,7 +12,7 @@ Toy code is not forked back into ParticleGAN.
 The nine Wave-1 families were first opened on
 [255BITS/ParticleGAN](https://github.com/255BITS/ParticleGAN) by mistake.
 **#26 (shared-trajectory) and #27 (orbit radius hold) were merged there and are being reverted.** This tree keeps both families. #28–#34 were closed unmerged and are ported from those PR heads.
-Late-collapse selection is a later local gate (Lunar #23). Keep-critic is a new family in this tree. Image UNI lm_target, the residual student (composes with shared_trajectory), field lift, unused-token UNI hold, path-suffix LoRA honesty, and mid-scale identity hold (scale grid, not the lm_target teacher split) are later conceptmod families. The cover-posture fork is a later conceptmod gate on that set. Replace-macro expand honesty is a Wave-2 CPU gate in this tree: `a~b` must expand to the documented triple, and a geometric `right` for bare `red~blue` fails. Phrase-DSL job honesty is a later gate on the `docs/dsl.md` scoreboard. None of these was a ParticleGAN pull, and none is a fork of those toys. Backend-agnostic erase/keep is later and lives only in this repo.
+Late-collapse selection is a later local gate (Lunar #23). Keep-critic is a new family in this tree. Image UNI lm_target, the residual student (composes with shared_trajectory), field lift, unused-token UNI hold, path-suffix LoRA honesty, and mid-scale identity hold (scale grid, not the lm_target teacher split) are later conceptmod families. The cover-posture fork is a later conceptmod gate on that set. Replace-macro expand honesty is a Wave-2 CPU gate in this tree: `a~b` must expand to the documented triple, and a geometric `right` for bare `red~blue` fails. Phrase-DSL job honesty is a later gate on the `docs/dsl.md` scoreboard. The DSL game-geometry bridge is a later gate in this tree: locked_shared `loss_game` wiring and geometric `right` from the phrase scoreboard, both required. None of these was a ParticleGAN pull, and none is a fork of those toys. Backend-agnostic erase/keep is later and lives only in this repo.
 
 | family | module | ParticleGAN source |
 |---|---|---|
@@ -37,6 +37,7 @@ Late-collapse selection is a later local gate (Lunar #23). Keep-critic is a new 
 | cover posture fork | `conceptmod/toys/cover_posture_fork.py` | this tree (composes the locked floor with the two cover pins; not a ParticleGAN port) |
 | replace-macro expand honesty | `conceptmod/toys/dsl_macro_expand.py` | this tree (phrase DSL `~`; not a ParticleGAN port) |
 | phrase DSL jobs | `conceptmod/toys/dsl_phrase_jobs.py` | this tree (`docs/dsl.md` scoreboard; not a ParticleGAN port) |
+| DSL game geometry | `conceptmod/toys/dsl_game_geometry.py` | this tree (locked `loss_game` step and geometric `right`; not a ParticleGAN port) |
 
 Allowed `particlegan` imports are the primitives: `GANLoss`, `GradientPenalty`
 / `GradRegularizer`, `ParticlePrior`, `ParticleRegularizer`, and
@@ -68,6 +69,7 @@ keep a second copy of the adv recipe.
 |---|---|
 | `conceptmod.analysis_2d` / `conceptmod.analysis_dsl` | `locked_adv_defaults()` — the `locked_shared_floor.LOCKED` stamp (RpGAN logistic, `b_cap` coeff=1 κ=1, FM off, demo cover 1.5, n=12). Keep/leak flags use `U_KEPT_MIN` and `SAME_DIR_MAX`. |
 | `conceptmod.game.loss_game` | The same `locked_adv_defaults()` stamp. FM-on and thinned κ go through `reject_unlocked` when the game claims locked. Stranger pairing (flipped batch, `GANLoss` mode stays `rp`) is refused on that claim. The game does not sample `n_particles` or apply cover. |
+| `conceptmod.toys.dsl_game_geometry` | Bridge gate. A row PASSes when that locked game step is clean and `analysis_2d.run_method` / `analysis_dsl.run_job` scores geometric `right` on the same phrase. A game PASS alone is not the gate. |
 | `conceptmod.ops_erase.erase_keep_geometry` | `hold_dir`, `faithful_guard_e`, and `leftover_bipolar` from the cover / leftover toy. |
 | `conceptmod.toys.erase_keep_backend` | That same helper, with axes read back from `CpuBackend` / `dummy` `predict_v` (and a supra-shaped latent stub). |
 | formulation `PASS` | `claim_pass`. An empty negative list raises `HonestyError`. Geometric verdicts stay `right` / `needs help` / `recipe` and are not a PASS. |
@@ -104,6 +106,7 @@ Named omissions (reported, not silent aliases):
 - **Unused-token hold** trains an embed-slot student (image-slider UNI). Hold weight is **1.0** (the image-slider default). Demo cover 1.5 and n=12 / `particle_l2=0.02` are recorded and are not a second loss. No particle cloud. Not an Anima or Supra GPU result.
 - **Mid-scale identity** has no particle cloud (residual student, same omission as unipolar). Eval grid is `-1, 0, 0.5, 1`. Step budget is 800. Cover stays demo 1.5. It is not the lm_target teacher split.
 - **Cover posture fork** keeps the locked_shared shape (n=12 included) and splits only the cover pin. Demo **1.5** and Music **1.0** each PASS when the claim, the label, and (for Music) the drift report agree. A swapped pin with no report FAILs. The locked-shared floor still claims demo only, so Music 1.0 fails that stamp.
+- **DSL game geometry** does not train a new adv recipe. Geometry uses the 2-D fixture budget (40 steps, lr 8e-2, seed 0). The game row is one locked_shared step. A game PASS with no geometric `right` fails. `red~blue` stays `recipe`.
 
 ## Scoreboard
 
@@ -425,6 +428,30 @@ Geometric `right` from `docs/dsl.md` is the job verdict, scored by `analysis_dsl
 
 `red++` is the bipolar slider: stripe holds and blue scales to −3.167 with red. Mix and isolate are the write recipes (`red=red stripe`, `red stripe=stripe`). A first-class `+`, `!!`, or `/` is an honesty FAIL; the parser still rejects those glyphs. `%` as isolate can satisfy the isolate landing check (mix x +0.192) while inflating the perpendicular (mix y +6.262). That row stays FAIL. Bare `red--` is neutralize (stripe hold 0.999). The same phrase claimed as keep+erase FAILs `retain`. `^` and `;` are refused on this fixture.
 
+### DSL game geometry (locked step and geometric right)
+
+A row PASSes only when both are true: `loss_game` steps under locked_shared with the locked stamp, and the 2-D fixture train scores geometric `right` for that phrase. Scoring is `analysis_2d.run_method` / `analysis_dsl.run_job` (the same verdicts as `tests/test_2d_analysis.py` and `tests/test_dsl_jobs.py`). This module does not copy those thresholds.
+
+The geometry budget is the 2-D fixture: 40 Adam steps, lr 8e-2, seed 0. That budget is not a new adv recipe. The game row is one CPU step on `locked_adv_defaults()`. A game PASS alone is not geometric `right`. A bridge PASS is a CPU toy. It is not a Music or Anima GPU transfer.
+
+| arm | phrase | game | geometry | gate |
+|---|---|---|---|---|
+| write | `red=blue` | PASS locked | right (`write`) | **PASS** |
+| erase_bare | `red--` | PASS locked | right (`erase_esd`) | **PASS** |
+| erase_freeze | `red--\|stripe#stripe` | PASS locked | right (`erase_esd_freeze`) | **PASS** |
+| exaggerate | `red++` | PASS locked | right (`exaggerate`) | **PASS** |
+| wiring_only | `red=blue` | PASS locked | skipped | FAIL `wiring_only` |
+| faked_geometry | `red=blue` | PASS locked | faked `right` | FAIL `faked_geometry` |
+| geometry_only_stranger | `red=blue` | FAIL stranger, claim drift | right | FAIL `geometry_only` `unlocked_claim` |
+| geometry_only_fm | `red=blue` | FAIL FM-on, claim drift | right | FAIL `geometry_only` `unlocked_claim` |
+| locked_stranger_refuse | `red=blue` | locked claim refused | right | FAIL `locked_claim_refused` |
+| locked_fm_refuse | `red=blue` | locked claim refused | right | FAIL `locked_claim_refused` |
+| dead_pixel | `^` | refused | dead | FAIL `dead_phrase` `claimed_pass` |
+| dead_reward | `;` | refused | dead | FAIL `dead_phrase` `claimed_pass` |
+| replace_macro | `red~blue` | PASS locked | recipe | FAIL `recipe_not_independently_right` |
+
+`red~blue` is the replace macro. `docs/dsl.md` marks it recipe, not independently right. A locked game can still step it. That game PASS does not become a geometry PASS. The expand-honesty toy above is the gate for the triple itself. Phrase-job honesty is the gate that the phrase is the documented job.
+
 ## Run
 
 ```bash
@@ -450,7 +477,8 @@ pytest tests/test_toy_shared_trajectory.py \
        tests/test_toy_mid_scale_identity.py \
        tests/test_toy_cover_posture_fork.py \
        tests/test_toy_dsl_macro_expand.py \
-       tests/test_toy_dsl_phrase_jobs.py -q
+       tests/test_toy_dsl_phrase_jobs.py \
+       tests/test_toy_dsl_game_geometry.py -q
 ```
 
 One family at a time, with a tailable log:
@@ -477,6 +505,7 @@ python -m conceptmod.toys.mid_scale_identity
 python -m conceptmod.toys.cover_posture_fork
 python -m conceptmod.toys.dsl_macro_expand
 python -m conceptmod.toys.dsl_phrase_jobs
+python -m conceptmod.toys.dsl_game_geometry
 ```
 
 `shared_trajectory` and `residual_student` are libraries (`train_locked` /

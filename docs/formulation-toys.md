@@ -12,7 +12,7 @@ Toy code is not forked back into ParticleGAN.
 The nine Wave-1 families were first opened on
 [255BITS/ParticleGAN](https://github.com/255BITS/ParticleGAN) by mistake.
 **#26 (shared-trajectory) and #27 (orbit radius hold) were merged there and are being reverted.** This tree keeps both families. #28–#34 were closed unmerged and are ported from those PR heads.
-Late-collapse selection is a later local gate (Lunar #23). Keep-critic is a new family in this tree. Image UNI lm_target, the residual student (composes with shared_trajectory), field lift, unused-token UNI hold, path-suffix LoRA honesty, and mid-scale identity hold (scale grid, not the lm_target teacher split) are later conceptmod families. The cover-posture fork is a later conceptmod gate on that set. None of these was a ParticleGAN pull, and none is a fork of those toys. Backend-agnostic erase/keep is later and lives only in this repo.
+Late-collapse selection is a later local gate (Lunar #23). Keep-critic is a new family in this tree. Image UNI lm_target, the residual student (composes with shared_trajectory), field lift, unused-token UNI hold, path-suffix LoRA honesty, and mid-scale identity hold (scale grid, not the lm_target teacher split) are later conceptmod families. The cover-posture fork is a later conceptmod gate on that set. None of these was a ParticleGAN pull, and none is a fork of those toys. Backend-agnostic erase/keep is later and lives only in this repo. Replace-macro expand honesty is a Wave-2 CPU gate in this tree: `a~b` must expand to the documented triple, and a geometric `right` for bare `red~blue` fails.
 
 | family | module | ParticleGAN source |
 |---|---|---|
@@ -35,6 +35,7 @@ Late-collapse selection is a later local gate (Lunar #23). Keep-critic is a new 
 | path-suffix LoRA | `conceptmod/toys/path_suffix_lora.py` | native CPU gate (Anima attach / PEFT suffix match) |
 | mid-scale identity hold | `conceptmod/toys/mid_scale_identity.py` | conceptmod (Anima smile mid-scale; eval grid always includes −1) |
 | cover posture fork | `conceptmod/toys/cover_posture_fork.py` | this tree (composes the locked floor with the two cover pins; not a ParticleGAN port) |
+| replace-macro expand honesty | `conceptmod/toys/dsl_macro_expand.py` | this tree (phrase DSL `~`; not a ParticleGAN port) |
 
 Allowed `particlegan` imports are the primitives: `GANLoss`, `GradientPenalty`
 / `GradRegularizer`, `ParticlePrior`, `ParticleRegularizer`, and
@@ -69,6 +70,7 @@ keep a second copy of the adv recipe.
 | `conceptmod.ops_erase.erase_keep_geometry` | `hold_dir`, `faithful_guard_e`, and `leftover_bipolar` from the cover / leftover toy. |
 | `conceptmod.toys.erase_keep_backend` | That same helper, with axes read back from `CpuBackend` / `dummy` `predict_v` (and a supra-shaped latent stub). |
 | formulation `PASS` | `claim_pass`. An empty negative list raises `HonestyError`. Geometric verdicts stay `right` / `needs help` / `recipe` and are not a PASS. |
+| replace-macro expand | `dsl_macro_expand.claim_expand_pass`. `red~blue` PASS is the documented triple (exaggerate / write / orthogonal at 0.2 / 0.4 / −0.1). Geometric `right` on that phrase is a FAIL (`recipe`). An empty negative list raises `HonestyError`. |
 
 The 2-D Adam budget (40 steps, lr 8e-2) is fixture budget. It is not a new
 adv recipe, and it does not replace locked_shared as the winning default.
@@ -378,6 +380,24 @@ Same locked_shared shape on every row: RpGAN logistic, `b_cap` coeff=1 κ=1 l2, 
 
 The 0.233 alias gap is the generator-term split between cover 1.5 and cover 1.0 on this seed (the same split the locked-shared floor reports for `music_cover_1`). Music 1.0 still FAILs that floor, which claims the demo posture only. The Music label does not waive stranger pairing, FM-on, or a thinned kappa cap.
 
+### Replace-macro expand honesty (`a~b` is a macro)
+
+`red~blue` is not a fourth loss. Default `λ = 0.1` is the written triple from [dsl.md](dsl.md): `blue++:0.2 | red=blue:0.4 | blue%red:-0.1` (exaggerate blue, write red←blue, orthogonal blue%red with negative alpha). PASS is that expand. On this fixture the macro is **recipe**: `blue++` and `red=blue` oppose, so claiming geometric `right` FAILs even when the three rules match. The optional `loss_game("red~blue")` row is locked_shared wiring (the three expanded rules stepped). It does not claim geometric `right`. No Adam budget on the expand arms. A PASS is a CPU toy. It is not a Music or Anima GPU transfer.
+
+| arm | expand | geometric claim | gate |
+|---|---|---|---|
+| locked_expand | exaggerate blue `0.2`, write red←blue `0.4`, orthogonal blue%red `−0.1` | recipe | **PASS** |
+| wrong_order | write, then exaggerate, then orthogonal | recipe | FAIL `op_order` |
+| swapped_roles | exaggerate red, write blue←red, orthogonal red%blue | recipe | FAIL `swapped_roles` |
+| wrong_alphas | documented roles, alphas `1` | recipe | FAIL `alphas` |
+| dropped_percent | no `%` term | recipe | FAIL `dropped_percent` |
+| single_write | bare `red=blue` | recipe | FAIL `single_write` |
+| geometric_right | documented triple | **right** | FAIL `geometric_right` |
+| fourth_loss | a live `replace` op | recipe | FAIL `fourth_loss` |
+| game_wiring | same triple, one locked_shared step | recipe | **PASS** (wiring only) |
+
+PASS requires the parser to match the triple and every declared bad arm to fail. An empty negative list raises `HonestyError`. `claim_pass` stays the two-pole gate.
+
 ## Run
 
 ```bash
@@ -401,7 +421,8 @@ pytest tests/test_toy_shared_trajectory.py \
        tests/test_toy_unused_token_hold.py \
        tests/test_toy_path_suffix_lora.py \
        tests/test_toy_mid_scale_identity.py \
-       tests/test_toy_cover_posture_fork.py -q
+       tests/test_toy_cover_posture_fork.py \
+       tests/test_toy_dsl_macro_expand.py -q
 ```
 
 One family at a time, with a tailable log:
@@ -426,6 +447,7 @@ python -m conceptmod.toys.unused_token_hold
 python -m conceptmod.toys.path_suffix_lora
 python -m conceptmod.toys.mid_scale_identity
 python -m conceptmod.toys.cover_posture_fork
+python -m conceptmod.toys.dsl_macro_expand
 ```
 
 `shared_trajectory` and `residual_student` are libraries (`train_locked` /

@@ -48,6 +48,7 @@ keep a second copy of the adv recipe.
 | live path | what it calls |
 |---|---|
 | `conceptmod.analysis_2d` / `conceptmod.analysis_dsl` | `locked_adv_defaults()` — the `locked_shared_floor.LOCKED` stamp (RpGAN logistic, `b_cap` coeff=1 κ=1, FM off, demo cover 1.5, n=12). Keep/leak flags use `U_KEPT_MIN` and `SAME_DIR_MAX`. |
+| `conceptmod.game.loss_game` | The same `locked_adv_defaults()` stamp. FM-on and thinned κ go through `reject_unlocked` when the game claims locked. Stranger pairing (flipped batch, `GANLoss` mode stays `rp`) is refused on that claim. The game does not sample `n_particles` or apply cover. |
 | `conceptmod.ops_erase.erase_keep_geometry` | `hold_dir`, `faithful_guard_e`, and `leftover_bipolar` from the cover / leftover toy. |
 | formulation `PASS` | `claim_pass`. An empty negative list raises `HonestyError`. Geometric verdicts stay `right` / `needs help` / `recipe` and are not a PASS. |
 

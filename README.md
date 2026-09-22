@@ -22,6 +22,39 @@ The `cpu` backend is a tiny in-repo DiT for the pytest cycle (`tests/test_cpu_sa
 
 SDXL is conceptmod 1.x (UNet + CLIP), not this stack. Krea Turbo is the 8-step distilled sibling. Official advice is still train LoRAs on Raw and run them on Turbo; a local ComfyUI / Kitchen NVFP4 file (``--model-id models/kreaturboft_nvfp4.safetensors``) dequants to bf16 so the same LoRA trainer can run on Turbo itself.
 
+## Write a phrase
+
+A phrase parses into velocity rules. Those rules are the loss. On the
+CPU fixture you can also compile the same phrase into a two-player GAN
+game under the locked_shared stamp. Catalog, worked phrases, and the
+game notes are in [docs/dsl/README.md](docs/dsl/README.md). The velocity
+scoreboard stays [docs/dsl.md](docs/dsl.md).
+
+```python
+from conceptmod.dsl import describe_phrase, parse_phrase
+from conceptmod.game import loss_game
+
+phrase = "red=blue"                  # remap: red should behave like blue
+rules = parse_phrase(phrase)         # one write rule, alpha 1
+print(describe_phrase(phrase))
+
+match = loss_game(phrase)            # student vs critic, adv="locked_shared"
+print(match)
+row = match.score()                  # one CPU step on the 2-D fixture
+assert row["verdict"] == "PASS"      # RpGAN logistic + b_cap, FM off, κ=1
+```
+
+`PASS` means that step used `GANLoss` and `GradRegularizer` from the
+`locked_adv_defaults()` stamp. It is a CPU toy. It is not a 2-D
+geometric verdict, and it is not a Music or Anima GPU transfer.
+Stranger pairing, FM-on, and a thinned kappa are refused when the game
+claims locked.
+
+```bash
+pytest tests/test_dsl.py tests/test_dsl_examples.py tests/test_game.py -q
+python scripts/analyze_2d.py --jobs --out outputs/2d_analysis
+```
+
 The phrase to start with is the original-repo example — freeze the empty
 prompt, write robot into human, lightly align so the swap holds:
 
@@ -262,6 +295,10 @@ python train.py --backend krea --stage model --lora 16 \
 ## The DSL
 
 Rules are separated by `|`. Each rule is scaled by an optional `:alpha`.
+Per-operator pages (syntax, velocity target, defaults, 2-D verdict,
+failure modes) are in [docs/dsl/operators/](docs/dsl/operators/index.md).
+How to add a glyph without forking `locked_adv_defaults` is
+[docs/dsl/ADDING_OPERATORS.md](docs/dsl/ADDING_OPERATORS.md).
 
 | Syntax | Name | Effect |
 |---|---|---|

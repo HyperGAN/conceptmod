@@ -28,7 +28,9 @@ are not those ParticleGAN pulls. Path-suffix LoRA honesty
 identity hold is a later family on the scale grid ``-1, 0, 0.5, 1``; it
 is not the lm_target teacher split. Cover-posture fork is a later family
 on that stamp: demo cover 1.5 and Music cover 1.0 are named postures,
-and a silent swap fails.
+and a silent swap fails. Replace-macro expand honesty
+(``dsl_macro_expand``) is a Wave-2 CPU gate: ``a~b`` must expand to the
+documented triple, and geometric ``right`` for bare ``red~blue`` fails.
 
 The slow→fast residual student composes with shared_trajectory and lives in
 this tree.
@@ -49,6 +51,7 @@ from . import (
     keep_critic,
     leaderboard_honesty,
     late_collapse,
+    dsl_macro_expand,
     lm_target,
     locked_shared_floor,
     mid_scale_identity,
@@ -85,6 +88,10 @@ from .cover_leftover import (
 from .late_collapse import (
     claim_selection_pass,
     run_selection_board,
+)
+from .dsl_macro_expand import (
+    claim_expand_pass,
+    run_board as run_macro_expand_board,
 )
 from .leaderboard_honesty import (
     LOCKED_SHARED,
@@ -175,10 +182,12 @@ __all__ = [
     "U_KEPT_MIN",
     "ae_gan_hold",
     "blend_guard",
+    "claim_expand_pass",
     "claim_pass",
     "claim_selection_pass",
     "cover_leftover",
     "cover_posture_fork",
+    "dsl_macro_expand",
     "erase_keep_backend",
     "faithful_guard_e",
     "faithful_sub_e",
@@ -207,6 +216,7 @@ __all__ = [
     "run_honesty_board",
     "run_keep_critic_board",
     "run_locked_floor",
+    "run_macro_expand_board",
     "run_mid_scale_board",
     "run_selection_board",
     "run_orbit_family",

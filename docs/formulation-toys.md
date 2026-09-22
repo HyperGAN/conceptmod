@@ -12,11 +12,12 @@ Toy code is not forked back into ParticleGAN.
 The nine Wave-1 families were first opened on
 [255BITS/ParticleGAN](https://github.com/255BITS/ParticleGAN) by mistake.
 **#26 (shared-trajectory) and #27 (orbit radius hold) were merged there and are being reverted.** This tree keeps both families. #28–#34 were closed unmerged and are ported from those PR heads.
-Late-collapse selection is a later local gate (Lunar #23). Keep-critic is a new family in this tree. Image UNI lm_target is a later conceptmod family. None of these was a ParticleGAN pull, and none is a fork of those toys.
+Late-collapse selection is a later local gate (Lunar #23). Keep-critic is a new family in this tree. Image UNI lm_target is a later conceptmod family. The residual student is a later family in this tree and composes with shared_trajectory. None of these was a ParticleGAN pull, and none is a fork of those toys.
 
 | family | module | ParticleGAN source |
 |---|---|---|
 | shared slow→fast vs stranger | `conceptmod/toys/shared_trajectory.py` | [#26](https://github.com/255BITS/ParticleGAN/pull/26) (merged by mistake, being reverted; kept here) |
+| slow→fast residual student | `conceptmod/toys/residual_student.py` | this tree; composes with shared_trajectory |
 | orbit radius hold | `conceptmod/toys/orbit_hold.py` | [#27](https://github.com/255BITS/ParticleGAN/pull/27) (merged by mistake, being reverted; kept here) |
 | locked_shared RpGAN + `b_cap` floor | `conceptmod/toys/locked_shared_floor.py` | [#28](https://github.com/255BITS/ParticleGAN/pull/28) |
 | unipolar residual | `conceptmod/toys/unipolar.py` | [#29](https://github.com/255BITS/ParticleGAN/pull/29) |
@@ -100,6 +101,18 @@ digit, that digit). Lower error is better unless a column says otherwise.
 | stranger | opposite seed | 0.567 | FAIL |
 
 400 steps. Locked entry point refuses stranger pairing.
+
+### Residual student (identity MSE ≤ 0.02 and success rate = 1)
+
+Same arcs and locked_shared pins as the shared-trajectory toy. The head is a residual on the slow arc, `fast = slow + head(slow, z)`. Supervised residual loss runs only on same-seed both-land rows: slow touchdown impact ≤ 0.10, and the paired fast arc ends within 0.25 of this seed's pad (the same-seed fast endpoint). Pad gaps start near 0.383, so a touchdown on another seed's pad falls outside this landing. A pass also requires `wrong_pad_rate = 0`.
+
+| arm | pairing | both-land | identity MSE | success | wrong-pad | gate |
+|---|---|---:|---:|---:|---:|---|
+| locked_shared | shared | 12 | 0.00197 | 1.00 | 0 | **PASS** |
+| nearest_stranger | nearest other slow arc | 0 | 0.143 | 0.083 | 0.917 | FAIL |
+| stranger | opposite seed | 0 | 0.511 | 0 | 1 | FAIL |
+
+400 steps, seed 0. Locked entry point refuses stranger pairing. Copying the paired fast arc lands on the wrong pad (success 0, wrong-pad 1) for both drift indexes; that floor is the Lunar crash catch. One nearest-stranger seed can graze its own pad after training and the arm still fails. A pass here is a CPU toy score.
 
 ### Orbit radius hold
 
@@ -251,6 +264,7 @@ and a thinned `b_cap` are refused. Not an Anima GPU transfer.
 pytest tests/test_live_toys.py tests/test_2d_analysis.py tests/test_erase_cpu.py tests/test_dsl_jobs.py -q
 
 pytest tests/test_toy_shared_trajectory.py \
+       tests/test_toy_residual_student.py \
        tests/test_toy_orbit_hold.py \
        tests/test_toy_locked_shared_floor.py \
        tests/test_toy_unipolar.py \
@@ -268,6 +282,7 @@ One family at a time, with a tailable log:
 
 ```bash
 python -m conceptmod.toys.shared_trajectory   # via the module's train(); see tests
+python -m conceptmod.toys.residual_student --family
 python -m conceptmod.toys.orbit_hold
 python -m conceptmod.toys.locked_shared_floor
 python -m conceptmod.toys.unipolar
@@ -281,5 +296,6 @@ python -m conceptmod.toys.keep_critic
 python -m conceptmod.toys.lm_target
 ```
 
-`shared_trajectory` is a library (`train_locked` / `train_drift`); the others
-print a one-line board when run as `__main__`.
+`shared_trajectory` and `residual_student` are libraries (`train_locked` /
+`train_drift`). `python -m conceptmod.toys.residual_student --family` prints
+the residual board. The others print a one-line board when run as `__main__`.

@@ -21,6 +21,9 @@ frozen, and the Music ``mlp`` head refused. Image UNI ``lm_target``
 (trajectory vs direct vs cfg_delta) is a later conceptmod family; it is
 not one of those ParticleGAN pulls.
 
+The slow→fast residual student composes with shared_trajectory and lives in
+this tree.
+
 A PASS is a CPU toy result. It is not a Music or Anima GPU transfer.
 
 Scoreboard: ``docs/formulation-toys.md``.
@@ -39,6 +42,7 @@ from . import (
     mode_hold,
     orbit_hold,
     particle_posture,
+    residual_student,
     shared_trajectory,
     unipolar,
 )
@@ -124,6 +128,7 @@ def locked_adv_defaults() -> dict:
 
 train_locked = shared_trajectory.train_locked
 train_drift = shared_trajectory.train_drift
+run_residual_family = residual_student.run_family
 run_orbit_family = orbit_hold.run_family
 run_unipolar_arm = unipolar.run_arm
 train_ae_gan = ae_gan_hold.train
@@ -169,6 +174,7 @@ __all__ = [
     "orbit_hold",
     "particle_posture",
     "reject_unlocked",
+    "residual_student",
     "run_cover_board",
     "run_honesty_board",
     "run_keep_critic_board",
@@ -176,6 +182,7 @@ __all__ = [
     "run_selection_board",
     "run_orbit_family",
     "run_posture_family",
+    "run_residual_family",
     "run_unipolar_arm",
     "score_geometry",
     "shared_trajectory",

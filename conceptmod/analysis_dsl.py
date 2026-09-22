@@ -8,6 +8,10 @@ need a new operator?
 Every job here goes through live :func:`conceptmod.ops.rule_loss`. No
 ``ops_erase`` import — GEM/EA stay on the other suite. Pixel ``^`` is
 not expressible (the fixture has no renderer). ``;`` stays unimplemented.
+
+Keep/leak flags and the adv stamp come from the 2-D suite, which reads
+them from ``conceptmod.toys`` (locked_shared defaults, cover leftover
+thresholds). This module does not restate that recipe.
 """
 
 from __future__ import annotations
@@ -23,6 +27,7 @@ from conceptmod.analysis_2d import (
     DEFAULT_STEPS,
     KEEP,
     MethodResult,
+    keep_leak_flags,
     plot_quiver,
     plot_table,
     run_method,
@@ -68,9 +73,9 @@ JOB_COLORS = {
 }
 
 
-def _job_verdict(name: str, before, after, points_after: dict) -> tuple[str, str]:
-    keep_ok = after.stripe_hold > 0.85 and abs(after.color_on_stripe) < 0.25
-    leak_on_red = abs(after.pattern_on_red) > 0.25
+def _job_verdict(name: str, before, after, points_after: dict,
+                 geometry: dict | None = None) -> tuple[str, str]:
+    keep_ok, leak_on_red = keep_leak_flags(after, geometry)
     unchanged = (
         abs(after.color_on_red - before.color_on_red) < 0.05
         and abs(after.pattern_on_stripe - before.pattern_on_stripe) < 0.05
@@ -149,7 +154,9 @@ def run_job(name: str, phrase: str, **kwargs) -> MethodResult:
     # Isolate needs the mixed-prompt landing; run_method's generic
     # _verdict_for does not know these names, so we overwrite.
     result = run_method(name, phrase, **kwargs)
-    verdict, note = _job_verdict(name, result.before, result.after, result.points_after)
+    verdict, note = _job_verdict(
+        name, result.before, result.after, result.points_after, result.geometry,
+    )
     result.verdict = verdict
     result.note = note
     return result

@@ -31,6 +31,12 @@ Modes
     "do not harm ``D_ir``" term. Not a full EA port: no attention-map
     regularizer, no bi-level LoRA, no LLM-sampled ``D_ir`` / RSC features.
 
+Erase/keep geometry (the retain axis, the faithful poles, and a bipolar
+leftover when both poles are passed) comes from ``conceptmod.toys`` —
+``hold_dir``, ``faithful_guard_e``, and ``leftover_bipolar``. Those
+helpers are the cover / leftover source of truth. This module does not
+restate their thresholds or the locked_shared adv recipe.
+
 CLI hook (unwired on purpose; default remains ESD)::
 
     # train.py
@@ -51,6 +57,14 @@ import torch
 import torch.nn.functional as F
 
 from conceptmod import dsl, ops
+from conceptmod.toys.cover_leftover import (
+    LEAK_RATIO_MAX,
+    LOCKED_TEACHER,
+    SAME_DIR_MAX,
+    faithful_guard_e,
+    hold_dir,
+    leftover_bipolar,
+)
 
 ERASE_MODES = ("esd", "gem", "ea")
 
@@ -179,3 +193,53 @@ def concept_probe(backend, prompt: str, direction: torch.Tensor,
     d = direction.reshape(-1).float()
     denom = d.norm().clamp(min=1e-8)
     return torch.dot(delta, d / denom).item()
+
+
+def erase_keep_geometry(
+    erase_axis: torch.Tensor,
+    keep_axis: torch.Tensor,
+    delta_plus: torch.Tensor | None = None,
+    delta_minus: torch.Tensor | None = None,
+) -> dict:
+    """Score erase/keep with the cover leftover helpers.
+
+    ``erase_axis`` is û and ``keep_axis`` is leftover ê. The retain
+    direction is :func:`conceptmod.toys.hold_dir` (ê perpendicular to û).
+    :func:`conceptmod.toys.faithful_guard_e` builds the teacher poles
+    (``faithful_guard_e``): leftover ê comes off the odd part when the
+    blend guard admits it. ``teacher_leak`` is that pole's component on ê.
+
+    ``delta_plus`` and ``delta_minus`` are residuals on the two poles of
+    the erase axis (the concept and its antipode). When both are passed,
+    :func:`conceptmod.toys.leftover_bipolar` reports even leftover
+    (``same_dir``). The keep probe is not a pole, so a one-sided erase
+    fixture omits them.
+    """
+    u = erase_axis.reshape(-1).float()
+    e = keep_axis.reshape(-1).float()
+    held = hold_dir(e, u)
+    neu = torch.zeros_like(u)
+    teacher_plus, _teacher_minus = faithful_guard_e(u, -u, neu, e, u)
+    e_unit = e / e.norm().clamp_min(1e-8)
+    teacher_leak = float((teacher_plus - neu) @ e_unit)
+    if held is None:
+        hold_cos = None
+    else:
+        hold_cos = float(F.cosine_similarity(held.unsqueeze(0), e.unsqueeze(0)))
+    report: dict = {
+        "teacher": LOCKED_TEACHER,
+        "teacher_leak": teacher_leak,
+        "teacher_leak_ok": abs(teacher_leak) <= LEAK_RATIO_MAX,
+        "hold_cos": hold_cos,
+    }
+    if delta_plus is None or delta_minus is None:
+        return report
+    bipolar = leftover_bipolar(delta_plus.reshape(-1).float(), delta_minus.reshape(-1).float())
+    report.update({
+        "leak_frac": float(bipolar["leak_frac"]),
+        "same_dir": float(bipolar["same_dir"]),
+        "even_norm": float(bipolar["even_norm"]),
+        "odd_norm": float(bipolar["odd_norm"]),
+        "same_dir_ok": bool(bipolar["same_dir"] <= SAME_DIR_MAX),
+    })
+    return report

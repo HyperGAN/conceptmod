@@ -5,6 +5,10 @@ What each operator actually does in velocity space, scored on the CPU
 the erase/GEM suite live in [2d-analysis.md](2d-analysis.md). This page
 is the job inventory: covered, already a recipe, or dead here.
 
+DSL job scores use the same locked_shared adv stamp and cover/leftover
+keep gates as the 2-D suite (`conceptmod.toys`). They do not define a
+second recipe.
+
 Notation: `v_f` / `v_t` frozen / trained velocity, `v0 = v('')`,
 `CFG(p) = v(p) − v0`. The trainer multiplies each rule's loss by
 `rule.alpha`.

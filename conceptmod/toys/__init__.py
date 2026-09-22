@@ -19,7 +19,8 @@ later local gate (Lunar #23); it was not one of those pulls. Keep-critic
 is a later family: the same locked_shared stamp with the host critic
 frozen, and the Music ``mlp`` head refused. Image UNI ``lm_target``
 (trajectory vs direct vs cfg_delta) is a later conceptmod family; it is
-not one of those ParticleGAN pulls.
+not one of those ParticleGAN pulls. Field lift is a later gate
+in this tree: the 2D sheet recipe on a tilted Field3D plane.
 
 The slow→fast residual student composes with shared_trajectory and lives in
 this tree.
@@ -34,6 +35,7 @@ from __future__ import annotations
 from . import (
     ae_gan_hold,
     cover_leftover,
+    field_lift,
     keep_critic,
     leaderboard_honesty,
     late_collapse,
@@ -130,6 +132,7 @@ train_locked = shared_trajectory.train_locked
 train_drift = shared_trajectory.train_drift
 run_residual_family = residual_student.run_family
 run_orbit_family = orbit_hold.run_family
+run_field_board = field_lift.run_board
 run_unipolar_arm = unipolar.run_arm
 train_ae_gan = ae_gan_hold.train
 train_mode_hold = mode_hold.train_mode_hold
@@ -158,6 +161,7 @@ __all__ = [
     "claim_pass",
     "claim_selection_pass",
     "cover_leftover",
+    "field_lift",
     "faithful_guard_e",
     "faithful_sub_e",
     "hold_dir",
@@ -176,6 +180,7 @@ __all__ = [
     "reject_unlocked",
     "residual_student",
     "run_cover_board",
+    "run_field_board",
     "run_honesty_board",
     "run_keep_critic_board",
     "run_locked_floor",

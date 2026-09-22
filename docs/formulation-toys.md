@@ -12,7 +12,7 @@ Toy code is not forked back into ParticleGAN.
 The nine Wave-1 families were first opened on
 [255BITS/ParticleGAN](https://github.com/255BITS/ParticleGAN) by mistake.
 **#26 (shared-trajectory) and #27 (orbit radius hold) were merged there and are being reverted.** This tree keeps both families. #28–#34 were closed unmerged and are ported from those PR heads.
-Late-collapse selection is a later local gate (Lunar #23). Keep-critic is a new family in this tree. Image UNI lm_target is a later conceptmod family. The residual student is a later family in this tree and composes with shared_trajectory. None of these was a ParticleGAN pull, and none is a fork of those toys.
+Late-collapse selection is a later local gate (Lunar #23). Keep-critic is a new family in this tree. Image UNI lm_target is a later conceptmod family. The residual student is a later family in this tree and composes with shared_trajectory. Field lift is a later CPU gate in this tree. None of these was a ParticleGAN pull, and none is a fork of those toys.
 
 | family | module | ParticleGAN source |
 |---|---|---|
@@ -29,6 +29,7 @@ Late-collapse selection is a later local gate (Lunar #23). Keep-critic is a new 
 | late-collapse selection | `conceptmod/toys/late_collapse.py` | local (Lunar #23); not a ParticleGAN pull |
 | keep-critic locked_shared | `conceptmod/toys/keep_critic.py` | new. Music Arm B handoff keeps `--adv_arch mlp`; this row freezes the host critic and refuses that swap |
 | image UNI lm_target | `conceptmod/toys/lm_target.py` | conceptmod (Anima image UNI; not a ParticleGAN pull) |
+| 2D→3D field lift | `conceptmod/toys/field_lift.py` | particle-sliders `tests/test_field3d.py` (reviewed; not a ParticleGAN pull) |
 
 Allowed `particlegan` imports are the primitives: `GANLoss`, `GradientPenalty`
 / `GradRegularizer`, `ParticlePrior`, `ParticleRegularizer`, and
@@ -41,9 +42,11 @@ shape, not a second penalty.
 
 Culture reviewed: HyperGAN/particle-sliders
 `analysis/slider2d/locked_baseline_defaults.py` (locked_shared / #94),
-Music Arm B (`docs/music-arm-b-gates.md`, trainer `ARM_B`: `adv_arch=mlp`,
-cover/pole 1.0), and this repo's `conceptmod/analysis_2d.py` (DSL geometry,
-a different fixture). Keep-critic does not adopt the Music `mlp` head.
+`analysis/slider2d/field3d.py` and `tests/test_field3d.py` (2D recipe on an
+R³ leftover field), Music Arm B (`docs/music-arm-b-gates.md`, trainer
+`ARM_B`: `adv_arch=mlp`, cover/pole 1.0), and this repo's
+`conceptmod/analysis_2d.py` (DSL geometry, a different fixture).
+Keep-critic does not adopt the Music `mlp` head.
 
 A PASS here is a CPU toy. It is **not** a Music or Anima GPU transfer.
 
@@ -258,6 +261,28 @@ arm. Structure hold stays 1 on the failing arms; the concept axis is
 the split. Adversarial loss does not apply. Stranger pairing, FM-on,
 and a thinned `b_cap` are refused. Not an Anima GPU transfer.
 
+### 2D→3D field lift (plane gates survive the tangent pushforward)
+
+Reviewed against particle-sliders Field3D (`analysis/slider2d/field3d.py`,
+`tests/test_field3d.py`): the locked 2D recipe transfers with no 3D-only
+hack. κ stays 1. The sheet is the cover toy's guarded odd residual
+(slider 1, content 0.55, unused ê stripped by `faithful_guard_e`). On the
+coordinate plane that vector is the paste `(1, 0.55, 0)`. The lift tilts
+û toward ê by π/4; the correction is `slider·û(θ) + content·ĉ`.
+
+| arm | frame | u_kept | content | leak | pole_err | gate |
+|---|---|---:|---:|---:|---:|---|
+| locked_2d | plane | 1 | 1 | 0 | 0 | **PASS** |
+| locked_lift | tilted | 1 | 1 | 0 | 0 | **PASS** |
+| naive_copy | tilted, no z correction | 0.707 | 1 | 1 | 0.504 | FAIL `naive_lift`, undershoot |
+| stranger_pairing | tilted, flipped pair | 1 | 1 | 0 | 0 | FAIL `stranger_pairing` (adv err 4.92e-4) |
+| fm_on | tilted, `fm_weight=0.1` | 1 | 1 | 0 | 0 | FAIL `fm_on` (fm term 6.36e-3) |
+| thinned_kappa | tilted, center hardcoded at 1 | 1 | 1 | 0 | 0 | FAIL `thinned_kappa` (κ probe **0.040**) |
+
+One scored step. The paste's cover gap is g err 0.439. At locked κ=1 the
+thinned center still matches the step penalty; the κ=0.2 probe is what
+fails it. Stranger pairing, FM-on, and the stub keep the lifted geometry.
+
 ## Run
 
 ```bash
@@ -275,7 +300,8 @@ pytest tests/test_toy_shared_trajectory.py \
        tests/test_toy_mode_hold.py \
        tests/test_toy_late_collapse.py \
        tests/test_toy_keep_critic.py \
-       tests/test_toy_lm_target.py -q
+       tests/test_toy_lm_target.py \
+       tests/test_toy_field_lift.py -q
 ```
 
 One family at a time, with a tailable log:
@@ -294,6 +320,7 @@ python -m conceptmod.toys.mode_hold
 python -m conceptmod.toys.late_collapse
 python -m conceptmod.toys.keep_critic
 python -m conceptmod.toys.lm_target
+python -m conceptmod.toys.field_lift
 ```
 
 `shared_trajectory` and `residual_student` are libraries (`train_locked` /

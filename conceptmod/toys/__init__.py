@@ -37,6 +37,10 @@ Formulation PASS is honesty that the phrase is the documented job.
 The DSL game-geometry bridge (``dsl_game_geometry``) PASSes only when a
 locked_shared ``loss_game`` step and geometric ``right`` from the 2-D
 phrase scoreboard are both true. A game PASS alone is not that gate.
+The cross-toy suite leaderboard (``suite_leaderboard``) scores candidate
+adv configs across these families and names which config(s) PASS every
+applicable stamp toy. It is not the single-toy honesty gate
+(``leaderboard_honesty``).
 
 The slow→fast residual student composes with shared_trajectory and lives in
 this tree.
@@ -69,6 +73,7 @@ from . import (
     path_suffix_lora,
     residual_student,
     shared_trajectory,
+    suite_leaderboard,
     unipolar,
     unused_token_hold,
 )
@@ -171,6 +176,7 @@ run_erase_keep_board = erase_keep_backend.run_board
 run_cover_posture_board = cover_posture_fork.run_board
 run_dsl_game_board = dsl_game_geometry.run_board
 run_dsl_phrase_board = dsl_phrase_jobs.run_board
+run_suite_board = suite_leaderboard.run_suite
 
 __all__ = [
     "CONTENT_KEPT_MIN",
@@ -233,12 +239,14 @@ __all__ = [
     "run_macro_expand_board",
     "run_mid_scale_board",
     "run_selection_board",
+    "run_suite_board",
     "run_orbit_family",
     "run_posture_family",
     "run_residual_family",
     "run_unipolar_arm",
     "score_geometry",
     "shared_trajectory",
+    "suite_leaderboard",
     "teacher_poles",
     "train_ae_gan",
     "train_drift",

@@ -17,7 +17,9 @@ The gates were opened on 255BITS/ParticleGAN by mistake (pulls #26–#34).
 are being reverted. Both families stay here. Late-collapse selection is a
 later local gate (Lunar #23); it was not one of those pulls. Keep-critic
 is a later family: the same locked_shared stamp with the host critic
-frozen, and the Music ``mlp`` head refused.
+frozen, and the Music ``mlp`` head refused. Image UNI ``lm_target``
+(trajectory vs direct vs cfg_delta) is a later conceptmod family; it is
+not one of those ParticleGAN pulls.
 
 A PASS is a CPU toy result. It is not a Music or Anima GPU transfer.
 
@@ -32,6 +34,7 @@ from . import (
     keep_critic,
     leaderboard_honesty,
     late_collapse,
+    lm_target,
     locked_shared_floor,
     mode_hold,
     orbit_hold,
@@ -157,6 +160,7 @@ __all__ = [
     "late_collapse",
     "leaderboard_honesty",
     "leftover_bipolar",
+    "lm_target",
     "locked_adv_defaults",
     "locked_shared_floor",
     "make_arm",

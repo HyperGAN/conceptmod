@@ -130,11 +130,6 @@ def require_drift_report(recipe: ModeHoldRecipe, drift: dict | None) -> None:
         )
 
 
-def thinned_b_cap_phi(norm: torch.Tensor) -> torch.Tensor:
-    """Known-bad stub: kappa hardcoded at 1, so a slope of 0.5 is free."""
-    return torch.relu(norm - 1.0).pow(2)
-
-
 def ring_means(n_modes: int = N_MODES, radius: float = RADIUS) -> torch.Tensor:
     angles = torch.linspace(0.0, 2.0 * math.pi, int(n_modes) + 1)[:-1]
     return torch.stack((angles.cos(), angles.sin()), dim=1) * float(radius)

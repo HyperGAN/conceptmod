@@ -76,4 +76,16 @@ def test_docs_do_not_tell_you_to_run_toys_from_particlegan():
     text = "\n".join(blobs)
     assert "python -m particlegan" not in text
     assert "particlegan @ git+" not in text
-    assert 'particlegan>=' in (ROOT / "pyproject.toml").read_text()
+    pyproject = (ROOT / "pyproject.toml").read_text()
+    requirements = (ROOT / "requirements.txt").read_text()
+    assert "particlegan>=" in pyproject
+    dep = next(line for line in requirements.splitlines() if line.startswith("particlegan"))
+    assert dep.startswith("particlegan>=")
+    assert "git+" not in dep
+    for path in (ROOT / "conceptmod").rglob("*.py"):
+        tree = ast.parse(path.read_text(), filename=str(path))
+        for node in ast.walk(tree):
+            if isinstance(node, ast.ClassDef) and node.name in {
+                "GradRegularizer", "GANLoss", "GradientPenalty",
+            }:
+                raise AssertionError(f"{path} copies {node.name}; use the particlegan package")

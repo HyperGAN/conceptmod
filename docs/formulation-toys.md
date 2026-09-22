@@ -1,10 +1,13 @@
 # Formulation toys (CPU scoreboard)
 
 **HyperGAN/conceptmod is the home for these gates.** ParticleGAN is
-core primitives only. Toys depend on the published `particlegan` package
-(`particlegan>=0.5.0` on PyPI) for `GANLoss` / RpGAN and `GradRegularizer`
-(`GradientPenalty`). They do not import toy modules from that package, and
-toy code is not forked back into ParticleGAN.
+core primitives only. Install the PyPI package (`pip install particlegan`,
+`particlegan>=0.5.0` in `pyproject.toml` and `requirements.txt`). Toys call
+that package for `GANLoss` / RpGAN, `GradRegularizer` / `b_cap`
+(`GradientPenalty`), and `ParticlePrior`. Those modules are not copied into
+conceptmod. The only local geometry is the leftover / cover / teacher field
+in `conceptmod/toys/cover_leftover.py` (and the per-toy fixtures around it).
+Toy code is not forked back into ParticleGAN.
 
 The nine families were first opened on
 [255BITS/ParticleGAN](https://github.com/255BITS/ParticleGAN) by mistake.

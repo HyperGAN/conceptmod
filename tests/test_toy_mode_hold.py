@@ -17,7 +17,6 @@ from conceptmod.toys.mode_hold import (
     formulation_mismatches,
     locked_recipe,
     ring_means,
-    thinned_b_cap_phi,
     train_mode_hold,
     verdict,
 )
@@ -51,11 +50,13 @@ def test_locked_card_is_rpgan_b_cap_shape():
 
 
 def test_thinned_kappa_stub_disagrees_with_grad_regularizer():
-    """A kappa-hardcoded phi is not the locked cap. kappa=0.2 must still bind."""
+    """kappa=1 is slack on ||g||=0.5. An explicit kappa=0.2 still binds.
+
+    Both calls go through the published GradientPenalty. There is no local phi.
+    """
     slope = torch.tensor([0.3, 0.4])  # ||g|| = 0.5
     norm = slope.norm()
     assert float(norm) == torch.tensor(0.5)
-    assert float(thinned_b_cap_phi(norm.view(1))) == 0.0  # hardcoded kappa=1 is slack
 
     class _Linear(torch.nn.Module):
         def __init__(self):

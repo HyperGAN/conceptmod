@@ -11,6 +11,8 @@ This package is the formulation source of truth. Live conceptmod
 (``analysis_2d``, ``analysis_dsl``, ``ops_erase``) calls
 :func:`locked_adv_defaults`, the cover / leftover helpers, and
 :func:`claim_pass`. It does not restate the adv recipe.
+``erase_keep_backend`` scores that same erase/keep geometry on the
+cpu/dummy backend (and a supra-shaped latent stub).
 
 The gates were opened on 255BITS/ParticleGAN by mistake (pulls #26–#34).
 #26 (shared-trajectory) and #27 (orbit radius hold) were merged there and
@@ -36,6 +38,7 @@ from __future__ import annotations
 from . import (
     ae_gan_hold,
     cover_leftover,
+    erase_keep_backend,
     field_lift,
     keep_critic,
     leaderboard_honesty,
@@ -140,6 +143,7 @@ train_ae_gan = ae_gan_hold.train
 train_mode_hold = mode_hold.train_mode_hold
 run_posture_family = particle_posture.run_family
 run_unused_token_family = unused_token_hold.run_family
+run_erase_keep_board = erase_keep_backend.run_board
 
 __all__ = [
     "CONTENT_KEPT_MIN",
@@ -164,9 +168,10 @@ __all__ = [
     "claim_pass",
     "claim_selection_pass",
     "cover_leftover",
-    "field_lift",
+    "erase_keep_backend",
     "faithful_guard_e",
     "faithful_sub_e",
+    "field_lift",
     "hold_dir",
     "keep_critic",
     "late_collapse",
@@ -183,6 +188,7 @@ __all__ = [
     "reject_unlocked",
     "residual_student",
     "run_cover_board",
+    "run_erase_keep_board",
     "run_field_board",
     "run_honesty_board",
     "run_keep_critic_board",

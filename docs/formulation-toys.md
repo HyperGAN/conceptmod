@@ -40,6 +40,22 @@ this repo's `conceptmod/analysis_2d.py` (DSL geometry, a different fixture).
 
 A PASS here is a CPU toy. It is **not** a Music or Anima GPU transfer.
 
+## Live conceptmod consumes this package
+
+These modules are the formulation source of truth. Live scoring does not
+keep a second copy of the adv recipe.
+
+| live path | what it calls |
+|---|---|
+| `conceptmod.analysis_2d` / `conceptmod.analysis_dsl` | `locked_adv_defaults()` — the `locked_shared_floor.LOCKED` stamp (RpGAN logistic, `b_cap` coeff=1 κ=1, FM off, demo cover 1.5, n=12). Keep/leak flags use `U_KEPT_MIN` and `SAME_DIR_MAX`. |
+| `conceptmod.ops_erase.erase_keep_geometry` | `hold_dir`, `faithful_guard_e`, and `leftover_bipolar` from the cover / leftover toy. |
+| formulation `PASS` | `claim_pass`. An empty negative list raises `HonestyError`. Geometric verdicts stay `right` / `needs help` / `recipe` and are not a PASS. |
+
+The 2-D Adam budget (40 steps, lr 8e-2) is fixture budget. It is not a new
+adv recipe, and it does not replace locked_shared as the winning default.
+`tests/test_live_toys.py` imports the analysis and erase paths and checks
+that they execute these helpers.
+
 ## Locked shape
 
 Demo posture, from the slider lock, unless a row below names a drift:
@@ -171,6 +187,8 @@ An empty negative list raises `HonestyError`. Cover alone would crown the thinne
 ## Run
 
 ```bash
+pytest tests/test_live_toys.py tests/test_2d_analysis.py tests/test_erase_cpu.py tests/test_dsl_jobs.py -q
+
 pytest tests/test_toy_shared_trajectory.py \
        tests/test_toy_orbit_hold.py \
        tests/test_toy_locked_shared_floor.py \

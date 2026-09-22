@@ -23,6 +23,7 @@ from conceptmod.analysis_2d import (
     run_suite,
     write_artifacts,
 )
+from conceptmod.toys import locked_adv_defaults
 from conceptmod.analysis_dsl import JOB_TITLES, run_jobs, write_job_artifacts
 
 
@@ -49,6 +50,14 @@ def main():
         paths = write_artifacts(results, out=args.out)
         label = "erase / GEM"
     total = sum(r.elapsed_s for r in results)
+    adv = locked_adv_defaults()
+    print(
+        "adv: locked_shared "
+        f"gan={adv['gan_mode']} loss={adv['loss_type']} "
+        f"b_cap coeff={adv['reg_coeff']} kappa={adv['reg_kappa']} "
+        f"fm={adv['fm_weight']} cover={adv['cover_weight']} "
+        f"n={adv['n_particles']}"
+    )
     print(f"fixture: red/blue (color) vs stripe/dot (pattern), shared LoRA")
     print(f"suite: {label}  wall time: {total:.2f}s  steps={args.steps}")
     print()

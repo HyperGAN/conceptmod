@@ -10,6 +10,15 @@ and leaves the keep axis alone.
 No GPU, no Hub, no 20B train. Plots live in
 [`outputs/2d_analysis/`](../outputs/2d_analysis/).
 
+Adv defaults on every score are the locked_shared stamp from
+[`conceptmod.toys`](formulation-toys.md) (`locked_adv_defaults`: RpGAN
+logistic, `b_cap` coeff=1 κ=1, FM off, demo cover 1.5). Keep/leak flags
+use that package's `U_KEPT_MIN` (0.85) and `SAME_DIR_MAX` (0.25). Erase/keep
+geometry calls `hold_dir`, `faithful_guard_e`, and `leftover_bipolar`.
+A geometric `right` is not a formulation PASS — PASS goes through
+`claim_pass` and is refused without a negative arm. The 40-step Adam
+budget is this fixture's budget, not a second adv recipe.
+
 ## Verdict
 
 | Method | Phrase | Verdict | What happened |

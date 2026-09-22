@@ -20,6 +20,14 @@ cosine can still leak onto the keep axis. That is the point of the fixture:
 Losses are the live ones: :func:`conceptmod.ops.rule_loss` for DSL ops and
 ESD, :func:`conceptmod.ops_erase.erase_loss` for the GEM / EA hooks. This
 is not a second trainer.
+
+The adversarial stamp on every score is
+:func:`conceptmod.toys.locked_adv_defaults` (the locked_shared floor).
+Erase/keep geometry goes through :func:`conceptmod.ops_erase.erase_keep_geometry`,
+which calls the cover / leftover helpers. A formulation ``PASS`` is
+:func:`claim_formulation`, which refuses an empty negative list. The
+Adam step count and learning rate below are this fixture's budget, not
+another adv recipe.
 """
 
 from __future__ import annotations
@@ -34,7 +42,14 @@ import torch
 import torch.nn.functional as F
 
 from conceptmod import dsl, ops
-from conceptmod.ops_erase import erase_loss
+from conceptmod.ops_erase import erase_keep_geometry, erase_loss
+from conceptmod.toys import (
+    LOCKED,
+    SAME_DIR_MAX,
+    U_KEPT_MIN,
+    claim_pass,
+    locked_adv_defaults,
+)
 
 LATENT_SHAPE = (4, 4, 4)
 TEXT_DIM = 4
@@ -52,9 +67,10 @@ _TOKEN_RE = re.compile(r"[a-z0-9]+")
 _BARE_TEMPLATES = ["{}"]
 
 # Cheap CPU budget: a few dozen Adam steps on a 64-d linear field.
+# Not the locked_shared trainer card (that is locked_adv_defaults()).
 DEFAULT_STEPS = 40
 DEFAULT_LR = 8e-2
-DEFAULT_SEED = 0
+DEFAULT_SEED = LOCKED.seed
 DEFAULT_GUIDANCE = 1.0
 EXAGGERATE_GUIDANCE = 3.0
 
@@ -184,6 +200,8 @@ class MethodResult:
     elapsed_s: float = 0.0
     points_before: dict[str, tuple[float, float]] = field(default_factory=dict)
     points_after: dict[str, tuple[float, float]] = field(default_factory=dict)
+    adv: dict = field(default_factory=dict)
+    geometry: dict = field(default_factory=dict)
 
     def as_dict(self) -> dict:
         # Keep the JSON reviewable: first, last, and every 5th step.
@@ -201,6 +219,8 @@ class MethodResult:
             "history": hist,
             "points_before": {k: list(v) for k, v in self.points_before.items()},
             "points_after": {k: list(v) for k, v in self.points_after.items()},
+            "adv": self.adv,
+            "geometry": self.geometry,
         }
 
 
@@ -309,12 +329,50 @@ def train_one(
         restore()
 
 
-def _verdict_for(name: str, before: ProbeSnapshot, after: ProbeSnapshot) -> tuple[str, str]:
+def keep_leak_flags(after: ProbeSnapshot, geometry: dict | None = None) -> tuple[bool, bool]:
+    """Keep-hold and target-leak flags.
+
+    The cosine floors are the cover toy's ``U_KEPT_MIN`` and
+    ``SAME_DIR_MAX``. When pole residuals were scored, even leftover
+    (``same_dir``) counts as a leak too.
+    """
+    keep_ok = after.stripe_hold > U_KEPT_MIN and abs(after.color_on_stripe) < SAME_DIR_MAX
+    leak_on_red = abs(after.pattern_on_red) > SAME_DIR_MAX
+    if geometry is not None and geometry.get("same_dir_ok") is False:
+        keep_ok = False
+        leak_on_red = True
+    return keep_ok, leak_on_red
+
+
+def score_edit_geometry(backend: TwoAxisBackend, z, t) -> dict:
+    """Pole residuals of the trained edit, scored by the leftover helpers."""
+    d_red = cfg_delta(backend, COLOR, z, t, frozen=False)
+    d_blue = cfg_delta(backend, COLOR_OPP, z, t, frozen=False)
+    d_red_f = cfg_delta(backend, COLOR, z, t, frozen=True)
+    d_blue_f = cfg_delta(backend, COLOR_OPP, z, t, frozen=True)
+    return erase_keep_geometry(
+        backend.d_color,
+        backend.d_pattern,
+        d_red - d_red_f,
+        d_blue - d_blue_f,
+    )
+
+
+def claim_formulation(*, winner, negatives):
+    """Formulation PASS is the honesty gate.
+
+    Geometric verdicts here are ``right``, ``needs help``, and ``recipe``.
+    They are not a PASS. :func:`conceptmod.toys.claim_pass` raises
+    :class:`conceptmod.toys.HonestyError` when ``negatives`` is empty.
+    """
+    return claim_pass(winner=winner, negatives=negatives)
+
+
+def _verdict_for(name: str, before: ProbeSnapshot, after: ProbeSnapshot,
+                 geometry: dict | None = None) -> tuple[str, str]:
     """Geometric verdict from probes. Thresholds are the claims tests gate."""
     color_move = after.color_on_red - before.color_on_red
-    keep_drop = before.pattern_on_stripe - after.pattern_on_stripe
-    keep_ok = after.stripe_hold > 0.85 and abs(after.color_on_stripe) < 0.25
-    leak_on_red = abs(after.pattern_on_red) > 0.25
+    keep_ok, leak_on_red = keep_leak_flags(after, geometry)
 
     if name == "write":
         if after.write_cosine > 0.7 and keep_ok and not leak_on_red:
@@ -411,7 +469,13 @@ def run_method(name: str, phrase: str, erase_mode: str | None = None,
     backend, history, elapsed = train_one(phrase, erase_mode=erase_mode, **kwargs)
     z, t = _probe_zt(backend, kwargs.get("seed", DEFAULT_SEED))
     before, after = history[0], history[-1]
-    verdict, note = _verdict_for(name, before, after)
+    geometry = score_edit_geometry(backend, z, t)
+    adv = locked_adv_defaults()
+    verdict, note = _verdict_for(name, before, after, geometry)
+    if verdict == "PASS":
+        # Geometric labels are not a formulation PASS. An empty negative
+        # list is refused by the honesty gate.
+        claim_formulation(winner=None, negatives=[])
     return MethodResult(
         name=name,
         phrase=phrase,
@@ -424,6 +488,8 @@ def run_method(name: str, phrase: str, erase_mode: str | None = None,
         elapsed_s=elapsed,
         points_before=plane_points(TwoAxisBackend(seed=kwargs.get("seed", DEFAULT_SEED)), z, t, True),
         points_after=plane_points(backend, z, t, False),
+        adv=adv,
+        geometry=geometry,
     )
 
 
@@ -611,6 +677,8 @@ def write_metrics(results: list[MethodResult], path: Path) -> None:
             "residual": "shared rank-2 LoRA on the class path",
             "losses": "ops.rule_loss (DSL + ESD) / ops_erase.erase_loss (GEM, EA)",
             "steps": results[0].history[-1].step if results else 0,
+            "adv": locked_adv_defaults(),
+            "formulation_pass": None,
         },
         "methods": [r.as_dict() for r in results],
     }

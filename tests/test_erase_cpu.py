@@ -21,6 +21,7 @@ from conceptmod import dsl, ops
 from conceptmod.ops_erase import (
     ERASE_MODES,
     concept_probe,
+    erase_keep_geometry,
     erase_loss,
     esd_loss,
 )
@@ -180,6 +181,16 @@ def test_gem_contrastive_reduces_erase_probe(bare_templates):
     erase1, keep1 = _probes(backend, z, t)
     assert erase1 < erase0
     assert (erase0 - erase1) > (keep0 - keep1)
+
+
+def test_erase_keep_axes_use_the_faithful_teacher():
+    """Keep vs erase on this fixture is the leftover hold, not a new recipe."""
+    backend = TwoConceptVelocity()
+    report = erase_keep_geometry(backend.d_erase, backend.d_keep)
+    assert report["teacher"] == "faithful_guard_e"
+    assert report["teacher_leak"] == pytest.approx(0.0, abs=1e-5)
+    assert report["hold_cos"] == pytest.approx(1.0, abs=1e-5)
+    assert report["teacher_leak_ok"] is True
 
 
 def test_unknown_erase_mode_rejected(bare_templates):

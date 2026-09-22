@@ -18,9 +18,10 @@ are being reverted. Both families stay here. Late-collapse selection is a
 later local gate (Lunar #23); it was not one of those pulls. Keep-critic
 is a later family: the same locked_shared stamp with the host critic
 frozen, and the Music ``mlp`` head refused. Image UNI ``lm_target``
-(trajectory vs direct vs cfg_delta) is a later conceptmod family; it is
-not one of those ParticleGAN pulls. Field lift is a later gate
-in this tree: the 2D sheet recipe on a tilted Field3D plane.
+(trajectory vs direct vs cfg_delta), unused-token UNI hold (an embed
+slot pinned while the concept slot moves), and field lift (the 2D sheet
+recipe on a tilted Field3D plane) are later conceptmod families. They
+are not those ParticleGAN pulls.
 
 The slow→fast residual student composes with shared_trajectory and lives in
 this tree.
@@ -47,6 +48,7 @@ from . import (
     residual_student,
     shared_trajectory,
     unipolar,
+    unused_token_hold,
 )
 from .cover_leftover import (
     CONTENT_KEPT_MIN,
@@ -137,6 +139,7 @@ run_unipolar_arm = unipolar.run_arm
 train_ae_gan = ae_gan_hold.train
 train_mode_hold = mode_hold.train_mode_hold
 run_posture_family = particle_posture.run_family
+run_unused_token_family = unused_token_hold.run_family
 
 __all__ = [
     "CONTENT_KEPT_MIN",
@@ -197,4 +200,6 @@ __all__ = [
     "train_locked",
     "train_mode_hold",
     "unipolar",
+    "unused_token_hold",
+    "run_unused_token_family",
 ]

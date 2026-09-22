@@ -16,7 +16,10 @@ Stable Diffusion) targeting current flow-matching DiT models via
 | `anima` | Anima Base | `circlestone-labs/Anima-Base-v1.0-Diffusers` | 2B | LoRA 16 · 768px | 40 steps · CFG 4 |
 | `krea` | Krea 2 Raw / local Turbo | `krea/Krea-2-Raw` or a ComfyUI `.safetensors` | 12B | LoRA 16 · 512px | Raw 28 / CFG 4.5 · Turbo 8 / CFG 0 |
 | `qwen` | Qwen-Image (Edit: same PEFT layout) | `Qwen/Qwen-Image` | 20B | LoRA 16 · 512px | 50 steps · CFG 4 |
+| `supra` | Supra2-IMG | `SupraLabs/Supra2-IMG` (`model_final_ema.pt`, not vendored) | 104.1M DiT + frozen Flan-T5-Base | LoRA 16 · 256px | 50 Euler steps · CFG 3.0 |
 | `cpu` (tests) | Tiny fake flow-matching DiT | none (in-repo, no Hub) | ~0 | LoRA 4 · 8px latent | 4 Euler steps · CFG 1 |
+
+Supra2-IMG (`--backend supra`) is the Hub DiT testbed: frozen Flan-T5-Base, SD-VAE-FT-MSE, 256², Euler `t = i/K`. Weights stay on the Hub. CPU tests use `model_id=dummy` (no download). See [docs/supra-backend.md](docs/supra-backend.md).
 
 The `cpu` backend is a tiny in-repo DiT for the pytest cycle (`tests/test_cpu_sample.py`, `scripts/smoke_cpu.py`) so `red=blue` trains without a GPU or Hub weights. A 2-D CPU suite (`scripts/analyze_2d.py`, [docs/2d-analysis.md](docs/2d-analysis.md)) scores write / ESD / GEM / EA / `++` on orthogonal color vs pattern axes. Phrase-DSL jobs (what is already a recipe vs a missing op) are in [docs/dsl.md](docs/dsl.md). Formulation toys for the locked_shared RpGAN + `b_cap` shape live in `conceptmod/toys/` ([docs/formulation-toys.md](docs/formulation-toys.md)). That package is the formulation source of truth: 2-D analysis, DSL scoring, and erase/keep geometry call it (`locked_adv_defaults`, the cover/leftover helpers, `claim_pass`) instead of restating the recipe. The published `particlegan` package supplies `GANLoss` and `GradRegularizer` only; the gates do not live in ParticleGAN.
 
@@ -311,7 +314,7 @@ python train.py --phrase "..." --stage model      # DiT finetune only (skip the 
 * **Stage 2 (model)**: the DiT is finetuned with the velocity-space losses.
   Default trains cross-attention weights directly (`--train-method
   xattn|selfattn|attn|full|noxattn`); `--lora RANK` trains a peft LoRA
-  instead (required for Z-Image, Anima, and Krea).
+  instead (required for Z-Image, Anima, Krea, and Supra2-IMG).
 
 ## Tuning notes (learned from the proofs)
 
@@ -358,6 +361,11 @@ python train.py --phrase "..." --stage model      # DiT finetune only (skip the 
   NVFP4 is dequantized to bf16 before the LoRA is attached (A6000-class
   cards do not have native FP4 tensor cores). Filename containing
   `turbo` selects 8 steps / CFG 0.
+* Supra2-IMG: LoRA-only on DiT attention (`self_attn.qkv/proj`,
+  `cross_attn.q/kv/proj`). 256px, generate at 50 Euler steps / CFG 3.0;
+  training samples use 8 steps at the same CFG. Checkpoint is
+  `model_final_ema.pt` (local path, `SUPRA_CKPT`, or HF cache).
+  `SUPRA_DOWNLOAD=1` fetches it. `model_id=dummy` is the offline CPU path.
 * Qwen-Image: LoRA-only, same velocity-space DSL. The 20B DiT is too
   large for a VM full-train smoke; `scripts/smoke_qwen.py` is the labeled
   GPU path. Qwen-Image-Edit shares the PEFT module layout and the same

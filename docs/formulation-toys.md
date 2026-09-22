@@ -12,7 +12,7 @@ Toy code is not forked back into ParticleGAN.
 The nine Wave-1 families were first opened on
 [255BITS/ParticleGAN](https://github.com/255BITS/ParticleGAN) by mistake.
 **#26 (shared-trajectory) and #27 (orbit radius hold) were merged there and are being reverted.** This tree keeps both families. #28–#34 were closed unmerged and are ported from those PR heads.
-Late-collapse selection is a later local gate (Lunar #23). Keep-critic is a new family in this tree. Image UNI lm_target, the residual student (composes with shared_trajectory), field lift, and unused-token UNI hold are later conceptmod families. None of these was a ParticleGAN pull, and none is a fork of those toys.
+Late-collapse selection is a later local gate (Lunar #23). Keep-critic is a new family in this tree. Image UNI lm_target, the residual student (composes with shared_trajectory), field lift, and unused-token UNI hold are later conceptmod families. None of these was a ParticleGAN pull, and none is a fork of those toys. Backend-agnostic erase/keep is later and lives only in this repo.
 
 | family | module | ParticleGAN source |
 |---|---|---|
@@ -23,6 +23,7 @@ Late-collapse selection is a later local gate (Lunar #23). Keep-critic is a new 
 | unipolar residual | `conceptmod/toys/unipolar.py` | [#29](https://github.com/255BITS/ParticleGAN/pull/29) |
 | AE-GAN + locked hold | `conceptmod/toys/ae_gan_hold.py` | [#30](https://github.com/255BITS/ParticleGAN/pull/30) |
 | cover / leftover / faithful teacher | `conceptmod/toys/cover_leftover.py` | [#31](https://github.com/255BITS/ParticleGAN/pull/31) |
+| backend-agnostic erase/keep | `conceptmod/toys/erase_keep_backend.py` | this repo (cpu/dummy path; not a ParticleGAN port) |
 | leaderboard honesty | `conceptmod/toys/leaderboard_honesty.py` | [#32](https://github.com/255BITS/ParticleGAN/pull/32) |
 | tiny particle posture | `conceptmod/toys/particle_posture.py` | [#33](https://github.com/255BITS/ParticleGAN/pull/33) |
 | mode-hold ring | `conceptmod/toys/mode_hold.py` | [#34](https://github.com/255BITS/ParticleGAN/pull/34) |
@@ -61,6 +62,7 @@ keep a second copy of the adv recipe.
 | `conceptmod.analysis_2d` / `conceptmod.analysis_dsl` | `locked_adv_defaults()` — the `locked_shared_floor.LOCKED` stamp (RpGAN logistic, `b_cap` coeff=1 κ=1, FM off, demo cover 1.5, n=12). Keep/leak flags use `U_KEPT_MIN` and `SAME_DIR_MAX`. |
 | `conceptmod.game.loss_game` | The same `locked_adv_defaults()` stamp. FM-on and thinned κ go through `reject_unlocked` when the game claims locked. Stranger pairing (flipped batch, `GANLoss` mode stays `rp`) is refused on that claim. The game does not sample `n_particles` or apply cover. |
 | `conceptmod.ops_erase.erase_keep_geometry` | `hold_dir`, `faithful_guard_e`, and `leftover_bipolar` from the cover / leftover toy. |
+| `conceptmod.toys.erase_keep_backend` | That same helper, with axes read back from `CpuBackend` / `dummy` `predict_v` (and a supra-shaped latent stub). |
 | formulation `PASS` | `claim_pass`. An empty negative list raises `HonestyError`. Geometric verdicts stay `right` / `needs help` / `recipe` and are not a PASS. |
 
 The 2-D Adam budget (40 steps, lr 8e-2) is fixture budget. It is not a new
@@ -179,6 +181,22 @@ overrides to n=12 and lazy=1.
 | teacher_drift | 1.5 | faithful | 0.935 | 0.468 | FAIL teacher_leak |
 
 800 steps (budget). Stranger pairing, FM-on, thinned `b_cap`, and n=128 are refused.
+
+### Backend-agnostic erase/keep (host `predict_v`, image latent)
+
+Axes round-trip through `erase_keep_geometry`. No GAN steps. `cover_zero`
+is an unpinned residual at half the pole, not the 800-step cover digit.
+The supra row is a weight-free `(4, 32, 32)` stub with flow time in
+`[0, 1]`. cpu and dummy are the same `CpuBackend` latent `(4, 8, 8)`.
+
+| arm | cover | leak | hold | same_dir | u_kept | pole_err | gate |
+|---|---:|---:|---:|---:|---:|---:|---|
+| locked | 1.5 | 0 | 1 | 0 | 1.000 | 0 | **PASS** |
+| teacher_leak | 1.5 | 1 | — | 0 | 1.000 | 0 | FAIL `teacher_leak` |
+| cover_zero | 0 | 0 | 1 | 0 | 0.500 | 0.500 | FAIL `undershoot` |
+| wrong_poles | 1.5 | 0 | 1 | 1 | 1.000 | 2 | FAIL `undershoot,wrong_poles` |
+
+The split is the same on `cpu`, `dummy`, and `supra_stub`. A `(C, 1, H, W)` latent is refused.
 
 ### Leaderboard honesty (mean_abs ≥ 0.30 and grad_med ≤ 1)
 
@@ -313,6 +331,7 @@ pytest tests/test_toy_shared_trajectory.py \
        tests/test_toy_unipolar.py \
        tests/test_toy_ae_gan_hold.py \
        tests/test_toy_cover_leftover.py \
+       tests/test_toy_erase_keep_backend.py \
        tests/test_toy_leaderboard_honesty.py \
        tests/test_toy_particle_posture.py \
        tests/test_toy_mode_hold.py \
@@ -333,6 +352,7 @@ python -m conceptmod.toys.locked_shared_floor
 python -m conceptmod.toys.unipolar
 python -m conceptmod.toys.ae_gan_hold
 python -m conceptmod.toys.cover_leftover
+python -m conceptmod.toys.erase_keep_backend
 python -m conceptmod.toys.leaderboard_honesty
 python -m conceptmod.toys.particle_posture
 python -m conceptmod.toys.mode_hold

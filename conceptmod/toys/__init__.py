@@ -24,7 +24,9 @@ frozen, and the Music ``mlp`` head refused. Image UNI ``lm_target``
 slot pinned while the concept slot moves), and field lift (the 2D sheet
 recipe on a tilted Field3D plane) are later conceptmod families. They
 are not those ParticleGAN pulls. Path-suffix LoRA honesty
-(``path_suffix_lora``) is a later CPU gate in this package.
+(``path_suffix_lora``) is a later CPU gate in this package. Mid-scale
+identity hold is a later family on the scale grid ``-1, 0, 0.5, 1``; it
+is not the lm_target teacher split.
 
 The slow→fast residual student composes with shared_trajectory and lives in
 this tree.
@@ -46,6 +48,7 @@ from . import (
     late_collapse,
     lm_target,
     locked_shared_floor,
+    mid_scale_identity,
     mode_hold,
     orbit_hold,
     particle_posture,
@@ -141,6 +144,7 @@ run_residual_family = residual_student.run_family
 run_orbit_family = orbit_hold.run_family
 run_field_board = field_lift.run_board
 run_unipolar_arm = unipolar.run_arm
+run_mid_scale_board = mid_scale_identity.run_board
 train_ae_gan = ae_gan_hold.train
 train_mode_hold = mode_hold.train_mode_hold
 run_posture_family = particle_posture.run_family
@@ -184,6 +188,7 @@ __all__ = [
     "locked_shared_floor",
     "make_arm",
     "make_regularizer",
+    "mid_scale_identity",
     "mode_hold",
     "orbit_hold",
     "particle_posture",
@@ -196,6 +201,7 @@ __all__ = [
     "run_honesty_board",
     "run_keep_critic_board",
     "run_locked_floor",
+    "run_mid_scale_board",
     "run_selection_board",
     "run_orbit_family",
     "run_posture_family",

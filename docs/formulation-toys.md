@@ -12,7 +12,7 @@ Toy code is not forked back into ParticleGAN.
 The nine Wave-1 families were first opened on
 [255BITS/ParticleGAN](https://github.com/255BITS/ParticleGAN) by mistake.
 **#26 (shared-trajectory) and #27 (orbit radius hold) were merged there and are being reverted.** This tree keeps both families. #28–#34 were closed unmerged and are ported from those PR heads.
-Late-collapse selection is a later local gate (Lunar #23). Keep-critic is a new family in this tree. Image UNI lm_target, the residual student (composes with shared_trajectory), field lift, unused-token UNI hold, and path-suffix LoRA honesty are later conceptmod families. None of these was a ParticleGAN pull, and none is a fork of those toys. Backend-agnostic erase/keep is later and lives only in this repo.
+Late-collapse selection is a later local gate (Lunar #23). Keep-critic is a new family in this tree. Image UNI lm_target, the residual student (composes with shared_trajectory), field lift, unused-token UNI hold, path-suffix LoRA honesty, and mid-scale identity hold (scale grid, not the lm_target teacher split) are later conceptmod families. None of these was a ParticleGAN pull, and none is a fork of those toys. Backend-agnostic erase/keep is later and lives only in this repo.
 
 | family | module | ParticleGAN source |
 |---|---|---|
@@ -33,6 +33,7 @@ Late-collapse selection is a later local gate (Lunar #23). Keep-critic is a new 
 | 2D→3D field lift | `conceptmod/toys/field_lift.py` | particle-sliders `tests/test_field3d.py` (reviewed; not a ParticleGAN pull) |
 | unused-token / UNI hold | `conceptmod/toys/unused_token_hold.py` | conceptmod (image-slider posture; not a ParticleGAN pull) |
 | path-suffix LoRA | `conceptmod/toys/path_suffix_lora.py` | native CPU gate (Anima attach / PEFT suffix match) |
+| mid-scale identity hold | `conceptmod/toys/mid_scale_identity.py` | conceptmod (Anima smile mid-scale; eval grid always includes −1) |
 
 Allowed `particlegan` imports are the primitives: `GANLoss`, `GradientPenalty`
 / `GradRegularizer`, `ParticlePrior`, `ParticleRegularizer`, and
@@ -94,6 +95,7 @@ Named omissions (reported, not silent aliases):
 - **Late-collapse** does not train. The curve is eight synthetic checkpoints. Train loss falls through the collapse; the val gate is the only export rule. The locked_shared stamp is read and not retuned.
 - **Image UNI lm_target** trains target MSE only. Adversarial loss does not apply (Anima image UNI is trajectory MSE). locked_shared is the only legal adv posture and is refused if drifted, not trained. Step budget is 80, lr 0.5.
 - **Unused-token hold** trains an embed-slot student (image-slider UNI). Hold weight is **1.0** (the image-slider default). Demo cover 1.5 and n=12 / `particle_l2=0.02` are recorded and are not a second loss. No particle cloud. Not an Anima or Supra GPU result.
+- **Mid-scale identity** has no particle cloud (residual student, same omission as unipolar). Eval grid is `-1, 0, 0.5, 1`. Step budget is 800. Cover stays demo 1.5. It is not the lm_target teacher split.
 
 ## Scoreboard
 
@@ -343,6 +345,20 @@ zeroes coverage even when the attention leaves also move.
 
 No Hub weights. A PASS here is not an Anima GPU transfer.
 
+### Mid-scale identity hold (concept cos ≥ 0.85 at ±1, identity ≥ 0.85 at 0 and 0.5)
+
+Poles may move the concept. Identity is the content retain axis (`hold_dir`); it has to hold at scale 0 and at mid-scale 0.5. Teacher poles are `faithful_guard_e` (leftover ê off the odd part). Pole motions use `leftover_bipolar`. Particle-sliders formulation sampling always includes `-1` (unipolar canary on every cell, bipolar gated pole). This eval grid is `-1, 0, 0.5, 1`. Anima smile's sample grid `0, 0.25, 0.5, 1` drops `-1` and is a FAIL even when the residual is fine. This is the scale-grid gate, not the image UNI `lm_target` teacher split.
+
+| arm | concept+ | concept− | identity@0 | identity@0.5 | eval grid | gate |
+|---|---:|---:|---:|---:|---|---|
+| locked | 1.000 | 1.000 | 0.987 | 0.998 | −1, 0, 0.5, 1 | **PASS** |
+| mid_collapse | 1.000 | 1.000 | 0.994 | **0.000** | −1, 0, 0.5, 1 | FAIL `identity_mid` |
+| missing_minus | 1.000 | n/a | 0.987 | 0.998 | 0, 0.25, 0.5, 1 | FAIL `missing_minus` |
+| polarity_flipped | **−1.000** | **−1.000** | 0.992 | 0.995 | −1, 0, 0.5, 1 | FAIL `polarity` |
+| stranger | 1.000 | 1.000 | **0.007** | **0.000** | −1, 0, 0.5, 1 | FAIL `stranger_pairing` |
+
+800 steps. Seed 0. `mid_collapse` is the smile failure: poles and scale 0 stay the person, scale 0.5 is a stranger. `missing_minus` rescores the locked residual on the Anima grid. Vanilla pairing, FM-on, and a thinned `b_cap` are refused. A CPU PASS is not a Music or Anima GPU transfer.
+
 ## Run
 
 ```bash
@@ -364,7 +380,8 @@ pytest tests/test_toy_shared_trajectory.py \
        tests/test_toy_lm_target.py \
        tests/test_toy_field_lift.py \
        tests/test_toy_unused_token_hold.py \
-       tests/test_toy_path_suffix_lora.py -q
+       tests/test_toy_path_suffix_lora.py \
+       tests/test_toy_mid_scale_identity.py -q
 ```
 
 One family at a time, with a tailable log:
@@ -387,6 +404,7 @@ python -m conceptmod.toys.lm_target
 python -m conceptmod.toys.field_lift
 python -m conceptmod.toys.unused_token_hold
 python -m conceptmod.toys.path_suffix_lora
+python -m conceptmod.toys.mid_scale_identity
 ```
 
 `shared_trajectory` and `residual_student` are libraries (`train_locked` /

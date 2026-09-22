@@ -23,7 +23,7 @@ from conceptmod.backends import BACKENDS
 
 
 def test_backends_tuple_unchanged():
-    assert BACKENDS == ("sana", "zimage", "anima", "krea", "qwen", "cpu", "klein")
+    assert BACKENDS == ("sana", "zimage", "anima", "krea", "qwen", "cpu", "klein", "supra")
 
 
 def test_neutralize_guidance_0_does_not_write_the_antipode():

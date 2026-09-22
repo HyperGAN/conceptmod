@@ -34,7 +34,7 @@ def _zt(backend, seed=0):
 
 
 def test_backends_tuple_unchanged():
-    assert BACKENDS == ("sana", "zimage", "anima", "krea", "qwen", "cpu", "klein")
+    assert BACKENDS == ("sana", "zimage", "anima", "krea", "qwen", "cpu", "klein", "supra")
 
 
 def test_prompt_axes_are_gated():

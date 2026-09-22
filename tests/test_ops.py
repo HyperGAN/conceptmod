@@ -172,7 +172,7 @@ def test_require_cuda_rejects_cpu():
 def test_unknown_backend_rejected():
     from conceptmod.backends import BACKENDS, load_backend
 
-    assert BACKENDS == ("sana", "zimage", "anima", "krea", "qwen", "cpu", "klein")
+    assert BACKENDS == ("sana", "zimage", "anima", "krea", "qwen", "cpu", "klein", "supra")
     with pytest.raises(ValueError, match="unknown backend"):
         load_backend("nope", device="cpu")
     with pytest.raises(ValueError, match="1.x"):
@@ -183,13 +183,14 @@ def test_backends_share_the_same_protocol():
     """Adding a model must not fork the trainer contract."""
     from conceptmod.backends.cpu import CpuBackend
     from conceptmod.backends.qwen import QwenBackend
+    from conceptmod.backends.supra import SupraBackend
 
     required = (
         "encode_text", "encode_text_grad", "predict_v", "partial_denoise",
         "render", "generate", "trainable_parameters", "save_trained",
         "training_defaults", "attach_encoder_lora",
     )
-    classes = [CpuBackend, QwenBackend]
+    classes = [CpuBackend, QwenBackend, SupraBackend]
     for mod_name, cls_name in (
         ("conceptmod.backends.sana", "SanaBackend"),
         ("conceptmod.backends.zimage", "ZImageBackend"),

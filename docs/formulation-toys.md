@@ -9,9 +9,10 @@ conceptmod. The only local geometry is the leftover / cover / teacher field
 in `conceptmod/toys/cover_leftover.py` (and the per-toy fixtures around it).
 Toy code is not forked back into ParticleGAN.
 
-Nine families were first opened on
+The nine Wave-1 families were first opened on
 [255BITS/ParticleGAN](https://github.com/255BITS/ParticleGAN) by mistake.
-**#26 (shared-trajectory) and #27 (orbit radius hold) were merged there and are being reverted.** This tree keeps both families. #28–#34 were closed unmerged and are ported from those PR heads. Late-collapse selection is a later local gate (Lunar #23) and is the last row. It was not a ParticleGAN pull.
+**#26 (shared-trajectory) and #27 (orbit radius hold) were merged there and are being reverted.** This tree keeps both families. #28–#34 were closed unmerged and are ported from those PR heads.
+Late-collapse selection is a later local gate (Lunar #23). Keep-critic is a new family in this tree. Neither was a ParticleGAN pull, and neither is a fork of those toys.
 
 | family | module | ParticleGAN source |
 |---|---|---|
@@ -25,6 +26,7 @@ Nine families were first opened on
 | tiny particle posture | `conceptmod/toys/particle_posture.py` | [#33](https://github.com/255BITS/ParticleGAN/pull/33) |
 | mode-hold ring | `conceptmod/toys/mode_hold.py` | [#34](https://github.com/255BITS/ParticleGAN/pull/34) |
 | late-collapse selection | `conceptmod/toys/late_collapse.py` | local (Lunar #23); not a ParticleGAN pull |
+| keep-critic locked_shared | `conceptmod/toys/keep_critic.py` | new. Music Arm B handoff keeps `--adv_arch mlp`; this row freezes the host critic and refuses that swap |
 
 Allowed `particlegan` imports are the primitives: `GANLoss`, `GradientPenalty`
 / `GradRegularizer`, `ParticlePrior`, `ParticleRegularizer`, and
@@ -36,8 +38,10 @@ package does not export the 100-Gaussians MLP; that class is host critic
 shape, not a second penalty.
 
 Culture reviewed: HyperGAN/particle-sliders
-`analysis/slider2d/locked_baseline_defaults.py` (locked_shared / #94) and
-this repo's `conceptmod/analysis_2d.py` (DSL geometry, a different fixture).
+`analysis/slider2d/locked_baseline_defaults.py` (locked_shared / #94),
+Music Arm B (`docs/music-arm-b-gates.md`, trainer `ARM_B`: `adv_arch=mlp`,
+cover/pole 1.0), and this repo's `conceptmod/analysis_2d.py` (DSL geometry,
+a different fixture). Keep-critic does not adopt the Music `mlp` head.
 
 A PASS here is a CPU toy. It is **not** a Music or Anima GPU transfer.
 
@@ -198,6 +202,26 @@ Eight checkpoints. No Adam budget. Train loss falls on every step, so the best t
 
 PASS requires the locked rule to export step 3 and every declared bad arm to export a collapsed checkpoint. An empty negative list raises `HonestyError`. A won flag that disagrees with the export is a dishonest board and raises `HonestyError`. `claim_pass` stays the two-pole gate.
 
+### Keep-critic (frozen host, no MLP swap)
+
+The host critic is a frozen linear scorer. It is not
+`conceptmod.toys.mlp.SimpleMLPDiscriminator`, and it is not stepped.
+Music Arm B's `--adv_arch mlp` is refused before any step. Cover posture
+is on every row: demo **1.5** is the lock, Music pole/cover **1.0** fails
+this stamp. A PASS does not transfer to a Music or Anima GPU run.
+
+| arm | gate | adv err | g err | cap err | κ probe | critic |
+|---|---|---:|---:|---:|---:|---|
+| locked_shared | **PASS** | 0 | 0 | 0 | 0 | frozen host, Δw=0 |
+| stranger_pairing | FAIL | 0.167 | 2.22e-4 | 0 | 0 | frozen host |
+| fm_on | FAIL | 0 | 0.200 | 0 | 0 | frozen host |
+| thinned_kappa | FAIL | 0 | 0 | 0 | **0.040** | frozen host |
+| music_cover_1 | FAIL | 0 | 0.233 | 0 | 0 | frozen host, cover 1.0 |
+| critic_step | FAIL | 0 | 0 | 0 | 0 | same host, Δw=0.0283 |
+| forced_mlp_swap | FAIL | — | — | — | — | **refused** (`mlp` not trained) |
+
+8 steps (budget). The κ=0.2 probe is what catches a cap that hardcodes center 1.
+
 ## Run
 
 ```bash
@@ -212,7 +236,8 @@ pytest tests/test_toy_shared_trajectory.py \
        tests/test_toy_leaderboard_honesty.py \
        tests/test_toy_particle_posture.py \
        tests/test_toy_mode_hold.py \
-       tests/test_toy_late_collapse.py -q
+       tests/test_toy_late_collapse.py \
+       tests/test_toy_keep_critic.py -q
 ```
 
 One family at a time, with a tailable log:
@@ -228,6 +253,7 @@ python -m conceptmod.toys.leaderboard_honesty
 python -m conceptmod.toys.particle_posture
 python -m conceptmod.toys.mode_hold
 python -m conceptmod.toys.late_collapse
+python -m conceptmod.toys.keep_critic
 ```
 
 `shared_trajectory` is a library (`train_locked` / `train_drift`); the others

@@ -1,32 +1,45 @@
-"""conceptmod DSL parser.
+"""Phrase parser for conceptmod's loss DSL.
 
-A *phrase* is a set of rules separated by ``|``:
+A phrase is rules separated by ``|``. :func:`parse_phrase` returns the
+rules; :func:`describe_phrase` is the one-sentence reading;
+:func:`conceptmod.ops.rule_loss` is the velocity loss each rule builds.
+The 2-D scoreboard for those losses is ``docs/dsl.md``. Catalog pages,
+worked phrases, and the how-to-add-an-op guide live under ``docs/dsl/``.
 
-    "vibrant colors++|boring--:0.5|#"
+    red++                         exaggerate red (default guidance 3)
+    red--                         neutralize red (default guidance 0)
+    red--:guidance=1              ESD overshoot
+    red=blue                      remap red so it behaves like blue
+    =blue                         write blue into the empty prompt
+    stripe#stripe                 pin stripe to the frozen model
+    #                             pin the empty prompt
+    red%stripe                    orthogonalize stripe against red
+    red%stripe:-0.1               negative alpha aligns instead
+    red~blue                      replace macro, not a fourth loss
+    painting^photo                pixel L2 (needs a backend with render)
+    ;a sunset                     parsed, not implemented
+    @                             stripped and ignored
 
-Operators (see README for semantics):
+``a~b[:λ]`` expands before parsing, with default ``λ = 0.1``:
 
-    c++            exaggerate concept c            (options: alpha, guidance)
-    c--            neutralize concept c            (options: alpha, guidance)
-                   default g=0 matches empty; :guidance=1 is ESD overshoot
-    a=b            write: remap prompt a so it behaves like concept b
-                   ("=b" / "b=" writes b into the empty/unconditional prompt)
-    a#b            freeze: keep a's prediction pinned to frozen model's b
-    #              freeze the unconditional prompt
-    a%b            make b orthogonal to a (negative alpha pulls b toward a)
-    a~b            replace a with b (macro, not a fourth loss): b++ | a=b | b%a:-λ
-    a^b            pixelwise L2 between renders of a and b
-    ;c             ImageReward scoring (not implemented, kept for compat)
-    @              deprecated, stripped and ignored
+    b++:2λ | a=b:4λ | b%a:-λ
 
-Per-rule options are appended with ``:``, either a bare float (the alpha
-multiplier for the rule's loss) or ``key=value`` pairs:
+Options hang off a rule with ``:``. A bare float is the alpha multiplier.
+``key=value`` pairs are named options (values are floats):
 
-    "final boss++:0.4|final boss%{random_prompt}:-0.1"
-    "cat++:guidance=2.5"
+    "red++:0.4:guidance=2.5"
+    "red--|stripe#stripe:0.5"
 
-``{random_prompt}`` is substituted per training step with a random prompt from
-a prompt dataset via :func:`materialize`.
+``{random_prompt}`` is filled per step by :func:`materialize`.
+
+This module does not choose an adversarial recipe. A phrase becomes a
+GAN game through :func:`conceptmod.game.loss_game`, which reads
+``locked_adv_defaults()`` and does not restate it.
+
+Status: the glyphs above are the live parser. ``;`` is not a loss.
+``^`` is a loss only on a backend that implements ``render`` — the 2-D
+fixture does not. Do not add a synonym operator for a job ``docs/dsl.md``
+already lists as a recipe.
 """
 
 from __future__ import annotations

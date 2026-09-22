@@ -5,6 +5,12 @@ What each operator actually does in velocity space, scored on the CPU
 the erase/GEM suite live in [2d-analysis.md](2d-analysis.md). This page
 is the job inventory: covered, already a recipe, or dead here.
 
+Catalog pages, worked parse trees, and the GAN-game layer
+(`loss_game` / `game`) are under [dsl/README.md](dsl/README.md). They
+do not replace the table below. A game `PASS` is locked_shared wiring
+on one CPU step, not a geometric verdict from this scoreboard, and not
+a Music or Anima GPU transfer.
+
 DSL job scores use the same locked_shared adv stamp and cover/leftover
 keep gates as the 2-D suite (`conceptmod.toys`). They do not define a
 second recipe.

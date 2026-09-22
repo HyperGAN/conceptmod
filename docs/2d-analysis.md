@@ -19,6 +19,10 @@ A geometric `right` is not a formulation PASS — PASS goes through
 `claim_pass` and is refused without a negative arm. The 40-step Adam
 budget is this fixture's budget, not a second adv recipe.
 
+`conceptmod.game.loss_game` can compile a phrase into one critic step
+plus one student step under that same stamp. It does not replace the
+verdicts in this suite. A game `PASS` is wiring, not a row below.
+
 ## Verdict
 
 | Method | Phrase | Verdict | What happened |

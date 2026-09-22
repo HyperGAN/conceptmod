@@ -31,6 +31,9 @@ on that stamp: demo cover 1.5 and Music cover 1.0 are named postures,
 and a silent swap fails. Replace-macro expand honesty
 (``dsl_macro_expand``) is a Wave-2 CPU gate: ``a~b`` must expand to the
 documented triple, and geometric ``right`` for bare ``red~blue`` fails.
+Phrase-DSL jobs (``dsl_phrase_jobs``) are a later family on the
+``docs/dsl.md`` scoreboard. Geometric ``right`` stays that verdict.
+Formulation PASS is honesty that the phrase is the documented job.
 
 The slow→fast residual student composes with shared_trajectory and lives in
 this tree.
@@ -46,12 +49,13 @@ from . import (
     ae_gan_hold,
     cover_leftover,
     cover_posture_fork,
+    dsl_macro_expand,
+    dsl_phrase_jobs,
     erase_keep_backend,
     field_lift,
     keep_critic,
     leaderboard_honesty,
     late_collapse,
-    dsl_macro_expand,
     lm_target,
     locked_shared_floor,
     mid_scale_identity,
@@ -161,6 +165,7 @@ run_posture_family = particle_posture.run_family
 run_unused_token_family = unused_token_hold.run_family
 run_erase_keep_board = erase_keep_backend.run_board
 run_cover_posture_board = cover_posture_fork.run_board
+run_dsl_phrase_board = dsl_phrase_jobs.run_board
 
 __all__ = [
     "CONTENT_KEPT_MIN",
@@ -188,6 +193,7 @@ __all__ = [
     "cover_leftover",
     "cover_posture_fork",
     "dsl_macro_expand",
+    "dsl_phrase_jobs",
     "erase_keep_backend",
     "faithful_guard_e",
     "faithful_sub_e",
@@ -211,6 +217,7 @@ __all__ = [
     "residual_student",
     "run_cover_board",
     "run_cover_posture_board",
+    "run_dsl_phrase_board",
     "run_erase_keep_board",
     "run_field_board",
     "run_honesty_board",

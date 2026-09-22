@@ -12,7 +12,7 @@ Toy code is not forked back into ParticleGAN.
 The nine Wave-1 families were first opened on
 [255BITS/ParticleGAN](https://github.com/255BITS/ParticleGAN) by mistake.
 **#26 (shared-trajectory) and #27 (orbit radius hold) were merged there and are being reverted.** This tree keeps both families. #28–#34 were closed unmerged and are ported from those PR heads.
-Late-collapse selection is a later local gate (Lunar #23). Keep-critic is a new family in this tree. Image UNI lm_target, the residual student (composes with shared_trajectory), field lift, unused-token UNI hold, path-suffix LoRA honesty, and mid-scale identity hold (scale grid, not the lm_target teacher split) are later conceptmod families. The cover-posture fork is a later conceptmod gate on that set. None of these was a ParticleGAN pull, and none is a fork of those toys. Backend-agnostic erase/keep is later and lives only in this repo. Replace-macro expand honesty is a Wave-2 CPU gate in this tree: `a~b` must expand to the documented triple, and a geometric `right` for bare `red~blue` fails.
+Late-collapse selection is a later local gate (Lunar #23). Keep-critic is a new family in this tree. Image UNI lm_target, the residual student (composes with shared_trajectory), field lift, unused-token UNI hold, path-suffix LoRA honesty, and mid-scale identity hold (scale grid, not the lm_target teacher split) are later conceptmod families. The cover-posture fork is a later conceptmod gate on that set. Replace-macro expand honesty is a Wave-2 CPU gate in this tree: `a~b` must expand to the documented triple, and a geometric `right` for bare `red~blue` fails. Phrase-DSL job honesty is a later gate on the `docs/dsl.md` scoreboard. None of these was a ParticleGAN pull, and none is a fork of those toys. Backend-agnostic erase/keep is later and lives only in this repo.
 
 | family | module | ParticleGAN source |
 |---|---|---|
@@ -36,6 +36,7 @@ Late-collapse selection is a later local gate (Lunar #23). Keep-critic is a new 
 | mid-scale identity hold | `conceptmod/toys/mid_scale_identity.py` | conceptmod (Anima smile mid-scale; eval grid always includes −1) |
 | cover posture fork | `conceptmod/toys/cover_posture_fork.py` | this tree (composes the locked floor with the two cover pins; not a ParticleGAN port) |
 | replace-macro expand honesty | `conceptmod/toys/dsl_macro_expand.py` | this tree (phrase DSL `~`; not a ParticleGAN port) |
+| phrase DSL jobs | `conceptmod/toys/dsl_phrase_jobs.py` | this tree (`docs/dsl.md` scoreboard; not a ParticleGAN port) |
 
 Allowed `particlegan` imports are the primitives: `GANLoss`, `GradientPenalty`
 / `GradRegularizer`, `ParticlePrior`, `ParticleRegularizer`, and
@@ -71,6 +72,7 @@ keep a second copy of the adv recipe.
 | `conceptmod.toys.erase_keep_backend` | That same helper, with axes read back from `CpuBackend` / `dummy` `predict_v` (and a supra-shaped latent stub). |
 | formulation `PASS` | `claim_pass`. An empty negative list raises `HonestyError`. Geometric verdicts stay `right` / `needs help` / `recipe` and are not a PASS. |
 | replace-macro expand | `dsl_macro_expand.claim_expand_pass`. `red~blue` PASS is the documented triple (exaggerate / write / orthogonal at 0.2 / 0.4 / −0.1). Geometric `right` on that phrase is a FAIL (`recipe`). An empty negative list raises `HonestyError`. |
+| `conceptmod.toys.dsl_phrase_jobs` | The same `locked_adv_defaults()` stamp and `U_KEPT_MIN` / `SAME_DIR_MAX` keep gates, via the 2-D job runners. `claim_phrase_pass` is phrase honesty (empty negatives raise). Geometric labels stay `right`. |
 
 The 2-D Adam budget (40 steps, lr 8e-2) is fixture budget. It is not a new
 adv recipe, and it does not replace locked_shared as the winning default.
@@ -398,6 +400,31 @@ The 0.233 alias gap is the generator-term split between cover 1.5 and cover 1.0 
 
 PASS requires the parser to match the triple and every declared bad arm to fail. An empty negative list raises `HonestyError`. `claim_pass` stays the two-pole gate.
 
+### Phrase DSL jobs (documented phrase, not a new operator)
+
+Geometric `right` from `docs/dsl.md` is the job verdict, scored by `analysis_dsl` / `analysis_2d` on the CPU 2-D field (40 steps, lr 8e-2, seed 0 — fixture budget, not a new adv recipe). Formulation PASS is honesty that the phrase is that job. `claim_phrase_pass` raises `HonestyError` on an empty negative list. A PASS is a CPU toy. It is not a Music, Anima, or Supra GPU transfer.
+
+| arm | phrase | geometric | color on red | stripe hold | probe | gate |
+|---|---|---|---:|---:|---|---|
+| neutralize | `red--` | right | +0.015 | 0.999 | origin; write cos −1 | **PASS** |
+| bipolar | `red++` | right | +3.167 | 0.998 | blue −3.167 | **PASS** |
+| remap | `red=blue` | right | −1.167 | 0.998 | write cos +1 | **PASS** |
+| keep_erase | `red--|stripe#stripe` | right | +0.015 | 1.000 | erase + `stripe#stripe` | **PASS** |
+| mix | `red=red stripe` | right | +1.000 | 1.000 | pattern on red +0.985 | **PASS** |
+| isolate | `red stripe=stripe` | right | — | 0.907 | mix (+0.037, +1.000) | **PASS** |
+
+| arm | phrase | geometric | reason | gate |
+|---|---|---|---|---|
+| plus_synonym | `red+stripe` | — | `honesty` | FAIL |
+| bang_synonym | `red!!` | — | `honesty` | FAIL |
+| slash_synonym | `red/` | — | `honesty` | FAIL |
+| percent_isolate | `red%red stripe` | right | `percent_isolate` | FAIL |
+| keep_erase_bare | `red--` claimed as keep+erase | right | `retain` | FAIL |
+| pixel_caret | `red^blue` | — | `dead_op` (no render) | REFUSE |
+| reward_semi | `;red` | — | `dead_op` (ImageReward) | REFUSE |
+
+`red++` is the bipolar slider: stripe holds and blue scales to −3.167 with red. Mix and isolate are the write recipes (`red=red stripe`, `red stripe=stripe`). A first-class `+`, `!!`, or `/` is an honesty FAIL; the parser still rejects those glyphs. `%` as isolate can satisfy the isolate landing check (mix x +0.192) while inflating the perpendicular (mix y +6.262). That row stays FAIL. Bare `red--` is neutralize (stripe hold 0.999). The same phrase claimed as keep+erase FAILs `retain`. `^` and `;` are refused on this fixture.
+
 ## Run
 
 ```bash
@@ -422,7 +449,8 @@ pytest tests/test_toy_shared_trajectory.py \
        tests/test_toy_path_suffix_lora.py \
        tests/test_toy_mid_scale_identity.py \
        tests/test_toy_cover_posture_fork.py \
-       tests/test_toy_dsl_macro_expand.py -q
+       tests/test_toy_dsl_macro_expand.py \
+       tests/test_toy_dsl_phrase_jobs.py -q
 ```
 
 One family at a time, with a tailable log:
@@ -448,6 +476,7 @@ python -m conceptmod.toys.path_suffix_lora
 python -m conceptmod.toys.mid_scale_identity
 python -m conceptmod.toys.cover_posture_fork
 python -m conceptmod.toys.dsl_macro_expand
+python -m conceptmod.toys.dsl_phrase_jobs
 ```
 
 `shared_trajectory` and `residual_student` are libraries (`train_locked` /

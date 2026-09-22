@@ -376,7 +376,7 @@ Same locked_shared shape on every row: RpGAN logistic, `b_cap` coeff=1 κ=1 l2, 
 | fm_on | demo_1_5 | 1.5 | demo | — | 7.28e-4 | 0.233 | FAIL `fm_on` |
 | thinned_kappa | demo_1_5 | 1.5 | demo | — | 0 | 0.233 | FAIL `thinned_bcap` |
 
-Music 1.0 still FAILs the locked-shared floor, which claims the demo posture only. The Music label does not waive stranger pairing, FM-on, or a thinned kappa cap.
+The 0.233 alias gap is the generator-term split between cover 1.5 and cover 1.0 on this seed (the same split the locked-shared floor reports for `music_cover_1`). Music 1.0 still FAILs that floor, which claims the demo posture only. The Music label does not waive stranger pairing, FM-on, or a thinned kappa cap.
 
 ## Run
 

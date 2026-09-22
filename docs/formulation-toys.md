@@ -12,7 +12,7 @@ Toy code is not forked back into ParticleGAN.
 The nine Wave-1 families were first opened on
 [255BITS/ParticleGAN](https://github.com/255BITS/ParticleGAN) by mistake.
 **#26 (shared-trajectory) and #27 (orbit radius hold) were merged there and are being reverted.** This tree keeps both families. #28–#34 were closed unmerged and are ported from those PR heads.
-Late-collapse selection is a later local gate (Lunar #23). Keep-critic is a new family in this tree. Image UNI lm_target, the residual student (composes with shared_trajectory), field lift, unused-token UNI hold, path-suffix LoRA honesty, and mid-scale identity hold (scale grid, not the lm_target teacher split) are later conceptmod families. None of these was a ParticleGAN pull, and none is a fork of those toys. Backend-agnostic erase/keep is later and lives only in this repo.
+Late-collapse selection is a later local gate (Lunar #23). Keep-critic is a new family in this tree. Image UNI lm_target, the residual student (composes with shared_trajectory), field lift, unused-token UNI hold, path-suffix LoRA honesty, and mid-scale identity hold (scale grid, not the lm_target teacher split) are later conceptmod families. The cover-posture fork is a later conceptmod gate on that set. None of these was a ParticleGAN pull, and none is a fork of those toys. Backend-agnostic erase/keep is later and lives only in this repo.
 
 | family | module | ParticleGAN source |
 |---|---|---|
@@ -34,6 +34,7 @@ Late-collapse selection is a later local gate (Lunar #23). Keep-critic is a new 
 | unused-token / UNI hold | `conceptmod/toys/unused_token_hold.py` | conceptmod (image-slider posture; not a ParticleGAN pull) |
 | path-suffix LoRA | `conceptmod/toys/path_suffix_lora.py` | native CPU gate (Anima attach / PEFT suffix match) |
 | mid-scale identity hold | `conceptmod/toys/mid_scale_identity.py` | conceptmod (Anima smile mid-scale; eval grid always includes −1) |
+| cover posture fork | `conceptmod/toys/cover_posture_fork.py` | this tree (composes the locked floor with the two cover pins; not a ParticleGAN port) |
 
 Allowed `particlegan` imports are the primitives: `GANLoss`, `GradientPenalty`
 / `GradRegularizer`, `ParticlePrior`, `ParticleRegularizer`, and
@@ -48,8 +49,10 @@ Culture reviewed: HyperGAN/particle-sliders
 `analysis/slider2d/locked_baseline_defaults.py` (locked_shared / #94),
 `analysis/slider2d/field3d.py` and `tests/test_field3d.py` (2D recipe on an
 R³ leftover field), Music Arm B (`docs/music-arm-b-gates.md`, trainer
-`ARM_B`: `adv_arch=mlp`, cover/pole 1.0), and this repo's
-`conceptmod/analysis_2d.py` (DSL geometry, a different fixture).
+`ARM_B`: `adv_arch=mlp`, cover/pole 1.0). Demo cover 1.5 and that Music pin
+are different postures; `"cover_weight=1"` is a substring of
+`"cover_weight=1.5"` and is not a match. This repo's
+`conceptmod/analysis_2d.py` is DSL geometry, a different fixture.
 Keep-critic does not adopt the Music `mlp` head.
 
 A PASS here is a CPU toy. It is **not** a Music or Anima GPU transfer.
@@ -96,6 +99,7 @@ Named omissions (reported, not silent aliases):
 - **Image UNI lm_target** trains target MSE only. Adversarial loss does not apply (Anima image UNI is trajectory MSE). locked_shared is the only legal adv posture and is refused if drifted, not trained. Step budget is 80, lr 0.5.
 - **Unused-token hold** trains an embed-slot student (image-slider UNI). Hold weight is **1.0** (the image-slider default). Demo cover 1.5 and n=12 / `particle_l2=0.02` are recorded and are not a second loss. No particle cloud. Not an Anima or Supra GPU result.
 - **Mid-scale identity** has no particle cloud (residual student, same omission as unipolar). Eval grid is `-1, 0, 0.5, 1`. Step budget is 800. Cover stays demo 1.5. It is not the lm_target teacher split.
+- **Cover posture fork** keeps the locked_shared shape (n=12 included) and splits only the cover pin. Demo **1.5** and Music **1.0** each PASS when the claim, the label, and (for Music) the drift report agree. A swapped pin with no report FAILs. The locked-shared floor still claims demo only, so Music 1.0 fails that stamp.
 
 ## Scoreboard
 
@@ -359,6 +363,21 @@ Poles may move the concept. Identity is the content retain axis (`hold_dir`); it
 
 800 steps. Seed 0. `mid_collapse` is the smile failure: poles and scale 0 stay the person, scale 0.5 is a stranger. `missing_minus` rescores the locked residual on the Anima grid. Vanilla pairing, FM-on, and a thinned `b_cap` are refused. A CPU PASS is not a Music or Anima GPU transfer.
 
+### Cover posture fork (demo 1.5 and Music 1.0 are named postures)
+
+Same locked_shared shape on every row: RpGAN logistic, `b_cap` coeff=1 κ=1 l2, FM off, n=12, `particle_l2=0.02`. The cover pin is the posture. 8-step floor budget (identity, not a train). A PASS is a CPU toy. It is not a Music or Anima GPU transfer. Wave-1 cover / leftover stays the demo-1.5 geometry gate; this row only checks the fork.
+
+| arm | claim | cover | label | drift reported | g err | alias gap | gate |
+|---|---|---:|---|---|---:|---:|---|
+| demo_1_5 | demo_1_5 | 1.5 | demo | — | 0 | 0.233 | **PASS** |
+| music_1_0 | music_1_0 | 1.0 | music | `cover_weight`, `cover_posture` | 0 | 0.233 | **PASS** |
+| mislabeled_swap | demo_1_5 | 1.0 | demo | none | **0.233** | 0.233 | FAIL unreported swap |
+| stranger | demo_1_5 | 1.5 | demo | — | 1.19e-6 | 0.233 | FAIL `stranger_pairing` |
+| fm_on | demo_1_5 | 1.5 | demo | — | 7.28e-4 | 0.233 | FAIL `fm_on` |
+| thinned_kappa | demo_1_5 | 1.5 | demo | — | 0 | 0.233 | FAIL `thinned_bcap` |
+
+The 0.233 alias gap is the generator-term split between cover 1.5 and cover 1.0 on this seed (the same split the locked-shared floor reports for `music_cover_1`). Music 1.0 still FAILs that floor, which claims the demo posture only. The Music label does not waive stranger pairing, FM-on, or a thinned kappa cap.
+
 ## Run
 
 ```bash
@@ -381,7 +400,8 @@ pytest tests/test_toy_shared_trajectory.py \
        tests/test_toy_field_lift.py \
        tests/test_toy_unused_token_hold.py \
        tests/test_toy_path_suffix_lora.py \
-       tests/test_toy_mid_scale_identity.py -q
+       tests/test_toy_mid_scale_identity.py \
+       tests/test_toy_cover_posture_fork.py -q
 ```
 
 One family at a time, with a tailable log:
@@ -405,6 +425,7 @@ python -m conceptmod.toys.field_lift
 python -m conceptmod.toys.unused_token_hold
 python -m conceptmod.toys.path_suffix_lora
 python -m conceptmod.toys.mid_scale_identity
+python -m conceptmod.toys.cover_posture_fork
 ```
 
 `shared_trajectory` and `residual_student` are libraries (`train_locked` /

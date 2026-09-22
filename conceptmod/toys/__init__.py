@@ -26,7 +26,9 @@ recipe on a tilted Field3D plane) are later conceptmod families. They
 are not those ParticleGAN pulls. Path-suffix LoRA honesty
 (``path_suffix_lora``) is a later CPU gate in this package. Mid-scale
 identity hold is a later family on the scale grid ``-1, 0, 0.5, 1``; it
-is not the lm_target teacher split.
+is not the lm_target teacher split. Cover-posture fork is a later family
+on that stamp: demo cover 1.5 and Music cover 1.0 are named postures,
+and a silent swap fails.
 
 The slow→fast residual student composes with shared_trajectory and lives in
 this tree.
@@ -41,6 +43,7 @@ from __future__ import annotations
 from . import (
     ae_gan_hold,
     cover_leftover,
+    cover_posture_fork,
     erase_keep_backend,
     field_lift,
     keep_critic,
@@ -150,6 +153,7 @@ train_mode_hold = mode_hold.train_mode_hold
 run_posture_family = particle_posture.run_family
 run_unused_token_family = unused_token_hold.run_family
 run_erase_keep_board = erase_keep_backend.run_board
+run_cover_posture_board = cover_posture_fork.run_board
 
 __all__ = [
     "CONTENT_KEPT_MIN",
@@ -174,6 +178,7 @@ __all__ = [
     "claim_pass",
     "claim_selection_pass",
     "cover_leftover",
+    "cover_posture_fork",
     "erase_keep_backend",
     "faithful_guard_e",
     "faithful_sub_e",
@@ -196,6 +201,7 @@ __all__ = [
     "reject_unlocked",
     "residual_student",
     "run_cover_board",
+    "run_cover_posture_board",
     "run_erase_keep_board",
     "run_field_board",
     "run_honesty_board",

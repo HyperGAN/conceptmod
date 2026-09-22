@@ -12,7 +12,7 @@ Toy code is not forked back into ParticleGAN.
 The nine Wave-1 families were first opened on
 [255BITS/ParticleGAN](https://github.com/255BITS/ParticleGAN) by mistake.
 **#26 (shared-trajectory) and #27 (orbit radius hold) were merged there and are being reverted.** This tree keeps both families. #28–#34 were closed unmerged and are ported from those PR heads.
-Late-collapse selection is a later local gate (Lunar #23). Keep-critic is a new family in this tree. Image UNI lm_target, the residual student (composes with shared_trajectory), field lift, unused-token UNI hold, path-suffix LoRA honesty, and mid-scale identity hold (scale grid, not the lm_target teacher split) are later conceptmod families. The cover-posture fork is a later conceptmod gate on that set. Replace-macro expand honesty is a Wave-2 CPU gate in this tree: `a~b` must expand to the documented triple, and a geometric `right` for bare `red~blue` fails. Phrase-DSL job honesty is a later gate on the `docs/dsl.md` scoreboard. The DSL game-geometry bridge is a later gate in this tree: locked_shared `loss_game` wiring and geometric `right` from the phrase scoreboard, both required. The cross-toy suite leaderboard is a later gate: which candidate adv config PASSes every applicable stamp toy (CPU only; not Music/Anima/Supra transfer). None of these was a ParticleGAN pull, and none is a fork of those toys. Backend-agnostic erase/keep is later and lives only in this repo.
+Late-collapse selection is a later local gate (Lunar #23). Keep-critic is a new family in this tree. Image UNI lm_target, the residual student (composes with shared_trajectory), field lift, unused-token UNI hold, path-suffix LoRA honesty, and mid-scale identity hold (scale grid, not the lm_target teacher split) are later conceptmod families. The cover-posture fork is a later conceptmod gate on that set. Replace-macro expand honesty is a Wave-2 CPU gate in this tree: `a~b` must expand to the documented triple, and a geometric `right` for bare `red~blue` fails. Phrase-DSL job honesty is a later gate on the `docs/dsl.md` scoreboard. The DSL game-geometry bridge is a later gate in this tree: locked_shared `loss_game` wiring and geometric `right` from the phrase scoreboard, both required. The cross-toy suite leaderboard is a later gate: which candidate adv config PASSes every applicable stamp toy (CPU only; not Music/Anima/Supra transfer). Cover-posture fork stays its own module and is not a suite column that FAILs a config for the other claim. None of these was a ParticleGAN pull, and none is a fork of those toys. Backend-agnostic erase/keep is later and lives only in this repo.
 
 | family | module | ParticleGAN source |
 |---|---|---|
@@ -38,7 +38,7 @@ Late-collapse selection is a later local gate (Lunar #23). Keep-critic is a new 
 | replace-macro expand honesty | `conceptmod/toys/dsl_macro_expand.py` | this tree (phrase DSL `~`; not a ParticleGAN port) |
 | phrase DSL jobs | `conceptmod/toys/dsl_phrase_jobs.py` | this tree (`docs/dsl.md` scoreboard; not a ParticleGAN port) |
 | DSL game geometry | `conceptmod/toys/dsl_game_geometry.py` | this tree (locked `loss_game` step and geometric `right`; not a ParticleGAN port) |
-| cross-toy suite leaderboard | `conceptmod/toys/suite_leaderboard.py` | this tree (config × toy matrix; not `leaderboard_honesty`) |
+| cross-toy suite leaderboard | `conceptmod/toys/suite_leaderboard.py` | this tree (stamp + DSL matrix; cover posture is its own toy, not `leaderboard_honesty`) |
 
 Allowed `particlegan` imports are the primitives: `GANLoss`, `GradientPenalty`
 / `GradRegularizer`, `ParticlePrior`, `ParticleRegularizer`, and
@@ -384,7 +384,7 @@ Same locked_shared shape on every row: RpGAN logistic, `b_cap` coeff=1 κ=1 l2, 
 | fm_on | demo_1_5 | 1.5 | demo | — | 7.28e-4 | 0.233 | FAIL `fm_on` |
 | thinned_kappa | demo_1_5 | 1.5 | demo | — | 0 | 0.233 | FAIL `thinned_bcap` |
 
-The 0.233 alias gap is the generator-term split between cover 1.5 and cover 1.0 on this seed (the same split the locked-shared floor reports for `music_cover_1`). Music 1.0 still FAILs that floor, which claims the demo posture only. The Music label does not waive stranger pairing, FM-on, or a thinned kappa cap.
+The 0.233 alias gap is the generator-term split between cover 1.5 and cover 1.0 on this seed (the same split the locked-shared floor reports for `music_cover_1`). Music 1.0 still FAILs that floor, which claims the demo posture only. The Music label does not waive stranger pairing, FM-on, or a thinned kappa cap. This fork is its own toy (`python -m conceptmod.toys.cover_posture_fork`). The suite leaderboard does not add opposite-claim columns for it.
 
 ### Replace-macro expand honesty (`a~b` is a macro)
 
@@ -458,15 +458,21 @@ The geometry budget is the 2-D fixture: 40 Adam steps, lr 8e-2, seed 0. That bud
 Cross-toy matrix in `conceptmod/toys/suite_leaderboard.py`. Distinct from
 `leaderboard_honesty` (single-toy two-pole gate). Candidate rows include
 `locked_shared` (demo LOCKED), `music_cover_1_0`, `stranger_pair`, `fm_on`,
-`thinned_kappa`, `vanilla_logistic`, and `hub128`. Columns are toy families
-classified as **stamp**, **posture**, or **dsl**.
+`thinned_kappa`, `vanilla_logistic`, and `hub128`. Columns are **stamp**
+and **dsl** only.
 
 A **stamp sweep** winner must PASS every applicable stamp cell (N/A
-excluded). Demo cover 1.5 and Music cover 1.0 can both PASS posture claims
-under their own names; the suite does not force one pin to win both.
-Phrase-DSL columns are scored under `locked_shared` only (or N/A for cover
-drifts). Claiming a sweep with no declared failing configs raises
-`HonestyError`.
+excluded). Phrase-DSL columns are scored under `locked_shared` only (or
+N/A for cover drifts). Claiming a sweep with no declared failing configs
+raises `HonestyError`.
+
+Cover posture is not a suite column. Demo cover 1.5 and Music cover 1.0
+are named claims on `conceptmod/toys/cover_posture_fork.py`
+(`python -m conceptmod.toys.cover_posture_fork`). That toy still PASSes a
+row only on the posture it claims, and still FAILs a silent swap or the
+wrong pin. The suite does not score `locked_shared` under the Music claim,
+or `music_cover_1_0` under the demo claim, and then report those mismatches
+as formulation FAILs.
 
 **PASS all stamp toys is a CPU formulation result. It is not a Music,
 Anima, or Supra GPU transfer.** See [suite-leaderboard.md](suite-leaderboard.md).

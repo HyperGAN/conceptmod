@@ -11,12 +11,15 @@ Applicability
 -------------
 * **stamp** — locked_shared / demo stamp toys. A suite *stamp sweep* winner
   must PASS every applicable stamp column (N/A excluded).
-* **posture** — :mod:`cover_posture_fork`. Demo 1.5 and Music 1.0 can both
-  PASS under their own claims; the suite does not force one cover pin to
-  win both.
 * **dsl** — phrase / expand / game-geometry honesty. Scored under
   ``locked_shared`` only (or N/A for cover drifts). Not a second phrase
   recipe per config.
+
+Cover posture (demo cover 1.5 vs Music cover 1.0) is
+:mod:`conceptmod.toys.cover_posture_fork`, run on its own
+(``python -m conceptmod.toys.cover_posture_fork``). It is not a suite
+column. Scoring a candidate under the other claim checks config identity,
+not formulation quality, and is not reported here.
 
 Culture: a suite PASS is a CPU formulation result. It is **not** a Music /
 Anima / Supra GPU transfer.
@@ -49,7 +52,6 @@ VERDICT_FAIL = "FAIL"
 VERDICT_NA = "N/A"
 
 KIND_STAMP = "stamp"
-KIND_POSTURE = "posture"
 KIND_DSL = "dsl"
 
 
@@ -813,45 +815,6 @@ def score_mid_scale_identity(candidate: SuiteCandidate) -> SuiteCell:
     return _na(candidate, toy, KIND_STAMP, "mid-scale forks eval grid / residual, not this drift")
 
 
-def score_cover_posture_demo(candidate: SuiteCandidate) -> SuiteCell:
-    """Posture column under the demo_1_5 claim."""
-    from conceptmod.toys.cover_posture_fork import DEMO_CLAIM, evaluate_claim
-
-    toy = "cover_posture_fork_demo"
-    row = evaluate_claim(
-        candidate.floor_cfg(),
-        claim=DEMO_CLAIM,
-        reported_drift=dict(candidate.reported_drift),
-        pairing=candidate.pairing,
-        regularizer=candidate.regularizer,
-        arm=candidate.name,
-        log=False,
-    )
-    why = "; ".join(row["mismatches"]) if row["mismatches"] else "demo_1_5 claim"
-    return _cell(candidate, toy, KIND_POSTURE, row["verdict"], why)
-
-
-def score_cover_posture_music(candidate: SuiteCandidate) -> SuiteCell:
-    """Posture column under the music_1_0 claim."""
-    from conceptmod.toys.cover_posture_fork import MUSIC_CLAIM, MUSIC_REPORT, evaluate_claim
-
-    toy = "cover_posture_fork_music"
-    reported = dict(candidate.reported_drift)
-    if candidate.name == "music_cover_1_0" and not reported:
-        reported = dict(MUSIC_REPORT)
-    row = evaluate_claim(
-        candidate.floor_cfg(),
-        claim=MUSIC_CLAIM,
-        reported_drift=reported,
-        pairing=candidate.pairing,
-        regularizer=candidate.regularizer,
-        arm=candidate.name,
-        log=False,
-    )
-    why = "; ".join(row["mismatches"]) if row["mismatches"] else "music_1_0 claim"
-    return _cell(candidate, toy, KIND_POSTURE, row["verdict"], why)
-
-
 @lru_cache(maxsize=1)
 def _dsl_macro_board():
     from conceptmod.toys.dsl_macro_expand import run_board
@@ -970,8 +933,6 @@ TOY_CATALOG: tuple[tuple[str, str, Callable[[SuiteCandidate], SuiteCell]], ...] 
     ("unused_token_hold", KIND_STAMP, score_unused_token_hold),
     ("path_suffix_lora", KIND_STAMP, score_path_suffix_lora),
     ("mid_scale_identity", KIND_STAMP, score_mid_scale_identity),
-    ("cover_posture_fork_demo", KIND_POSTURE, score_cover_posture_demo),
-    ("cover_posture_fork_music", KIND_POSTURE, score_cover_posture_music),
     ("dsl_macro_expand", KIND_DSL, score_dsl_macro_expand),
     ("dsl_phrase_jobs", KIND_DSL, score_dsl_phrase_jobs),
     ("dsl_game_geometry", KIND_DSL, score_dsl_game_geometry),
@@ -1016,25 +977,10 @@ def run_suite(
                 print(cell.line(), flush=True)
 
     stamp_cols = [name for name, kind, _ in TOY_CATALOG if name in columns and kind == KIND_STAMP]
-    posture_cols = [
-        name for name, kind, _ in TOY_CATALOG if name in columns and kind == KIND_POSTURE
-    ]
     dsl_cols = [name for name, kind, _ in TOY_CATALOG if name in columns and kind == KIND_DSL]
 
     stamp_winners = [
         c.name for c in rows if passes_all_applicable(c.name, matrix, stamp_cols)
-    ]
-    posture_demo_pass = [
-        c.name
-        for c in rows
-        if "cover_posture_fork_demo" in matrix[c.name]
-        and matrix[c.name]["cover_posture_fork_demo"].verdict == VERDICT_PASS
-    ]
-    posture_music_pass = [
-        c.name
-        for c in rows
-        if "cover_posture_fork_music" in matrix[c.name]
-        and matrix[c.name]["cover_posture_fork_music"].verdict == VERDICT_PASS
     ]
     dsl_pass = [
         c.name for c in rows if passes_all_applicable(c.name, matrix, dsl_cols)
@@ -1044,13 +990,10 @@ def run_suite(
         "candidates": [c.name for c in rows],
         "toys": list(columns),
         "stamp_toys": stamp_cols,
-        "posture_toys": posture_cols,
         "dsl_toys": dsl_cols,
         "cells": cells,
         "matrix": matrix,
         "stamp_winners": stamp_winners,
-        "posture_demo_pass": posture_demo_pass,
-        "posture_music_pass": posture_music_pass,
         "dsl_pass": dsl_pass,
         "music_gpu_transfer": False,
         "anima_gpu_transfer": False,
@@ -1141,9 +1084,7 @@ def format_matrix(suite: dict) -> str:
     # Compact header: truncate long toy names for terminal width.
     short = []
     for name in toys:
-        if name.startswith("cover_posture_fork_"):
-            short.append(name.replace("cover_posture_fork_", "posture_"))
-        elif name.startswith("dsl_"):
+        if name.startswith("dsl_"):
             short.append(name)
         else:
             short.append(name[:18])
@@ -1151,6 +1092,7 @@ def format_matrix(suite: dict) -> str:
     sep = "|---|" + "|".join(["---:"] * len(toys)) + "|"
     lines = [
         "SUITE formulation leaderboard (CPU). PASS all stamp ≠ Music/Anima/Supra transfer.",
+        "Cover posture fork is a separate toy: python -m conceptmod.toys.cover_posture_fork",
         header,
         sep,
     ]
@@ -1178,14 +1120,6 @@ def format_matrix(suite: dict) -> str:
         + (",".join(suite["stamp_winners"]) if suite["stamp_winners"] else "(none)")
     )
     lines.append(
-        "posture_demo_pass="
-        + (",".join(suite["posture_demo_pass"]) if suite["posture_demo_pass"] else "(none)")
-    )
-    lines.append(
-        "posture_music_pass="
-        + (",".join(suite["posture_music_pass"]) if suite["posture_music_pass"] else "(none)")
-    )
-    lines.append(
         "dsl_pass=" + (",".join(suite["dsl_pass"]) if suite["dsl_pass"] else "(none)")
     )
     lines.append(
@@ -1204,7 +1138,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--kinds",
         nargs="*",
-        choices=(KIND_STAMP, KIND_POSTURE, KIND_DSL),
+        choices=(KIND_STAMP, KIND_DSL),
         default=None,
         help="limit columns to these kinds (default: all)",
     )

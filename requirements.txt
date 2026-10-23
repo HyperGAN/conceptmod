@@ -10,4 +10,4 @@ accelerate
 safetensors
 datasets
 sentencepiece
-pillow
+pillow>=13.0.0

@@ -231,10 +231,10 @@ def _load_weights(model: nn.Module, weights: dict) -> None:
 def load_supra_checkpoint(model: nn.Module, path: str) -> dict:
     """Load Hub ``model_final_ema.pt`` (or a raw state dict) into ``model``.
 
-    ``weights_only=False`` matches Hub ``inference.py``: the file stores a
-    config dict alongside the EMA tensors.
+    Config dictionaries and EMA tensors use the restricted weights-only
+    unpickler; object-bearing pickle checkpoints are rejected.
     """
-    state = torch.load(path, map_location="cpu", weights_only=False)
+    state = torch.load(path, map_location="cpu", weights_only=True)
     weights, cfg = _split_checkpoint(state)
     _load_weights(model, weights)
     return cfg

@@ -315,3 +315,20 @@ def test_stored_uncond_is_the_empty_prompt():
 def test_dummy_rejects_wrong_resolution():
     with pytest.raises(ValueError, match="resolution"):
         _dummy(resolution=256)
+
+
+def test_checkpoint_rejects_pickle_objects_even_if_unsafe_default_requested(tmp_path, monkeypatch):
+    import pickle
+
+    marker = tmp_path / "pickle-executed"
+
+    class Payload:
+        def __reduce__(self):
+            return os.system, (f"touch {marker}",)
+
+    checkpoint = tmp_path / "hostile.pt"
+    torch.save({"config": {"payload": Payload()}}, checkpoint)
+    monkeypatch.setenv("TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD", "1")
+    with pytest.raises(pickle.UnpicklingError):
+        load_supra_checkpoint(build_dit(DUMMY_SPEC), str(checkpoint))
+    assert not marker.exists()

@@ -1,0 +1,451 @@
+{
+  "schema": 1,
+  "scope": "Modern CPU v3 core pin migration and required cleanup API compatibility only",
+  "reviewed_product_base": "66a57ca2786dbb7283fd5a150bed0512fc4b2c11",
+  "core_commit": "a794e3b4a8813b012f2c4faa3da82b78d4a90214",
+  "core_version": "0.12.0",
+  "core_source_profile": "release-0.9.4/auto; unchanged",
+  "cohort": "conceptmod-cpu-alpha-velocity-pg094-hg-hndl010-v3",
+  "previous_cohorts": "v1/v2 metadata and evidence retained; no compatibility or relabeling claimed",
+  "qualified_here": "CPU software fixture only; no native model/GPU admission",
+  "source_command": "../.resolve/bin/python -m pytest -q -rP tests/test_modern_game.py",
+  "build_command": "../.venv/bin/python -m build --no-isolation",
+  "installed_commands": [
+    {
+      "command": [
+        "$WORKSPACE/.venv/bin/python",
+        "-m",
+        "build",
+        "--wheel",
+        "--no-isolation",
+        "$WORKSPACE/modern-core-a794-artifacts/sdist/conceptmod-2.0.0",
+        "--outdir",
+        "$WORKSPACE/modern-core-a794-artifacts/sdist-wheel"
+      ],
+      "cwd": "/tmp",
+      "exit_code": 0,
+      "result_file": "sdist-build.txt"
+    },
+    {
+      "command": [
+        "$WORKSPACE/.resolve/bin/python",
+        "-m",
+        "pip",
+        "install",
+        "--no-deps",
+        "--force-reinstall",
+        "$WORKSPACE/conceptmod/dist/conceptmod-2.0.0-py3-none-any.whl"
+      ],
+      "cwd": "/tmp",
+      "exit_code": 0,
+      "result_file": "wheel-install.txt"
+    },
+    {
+      "command": [
+        "$WORKSPACE/.resolve/bin/python",
+        "-I",
+        "$WORKSPACE/modern-core-a794-artifacts/installed-probe.py",
+        "$WORKSPACE/modern-core-a794-artifacts",
+        "wheel"
+      ],
+      "cwd": "/tmp",
+      "exit_code": 0,
+      "result_file": "wheel-probe.txt"
+    },
+    {
+      "command": [
+        "$WORKSPACE/.resolve/bin/python",
+        "-I",
+        "-m",
+        "pytest",
+        "--import-mode=importlib",
+        "-q",
+        "-rP",
+        "$WORKSPACE/conceptmod/tests/test_modern_game.py"
+      ],
+      "cwd": "/tmp",
+      "exit_code": 0,
+      "result_file": "wheel-conformance.txt"
+    },
+    {
+      "command": [
+        "$WORKSPACE/.resolve/bin/python",
+        "-m",
+        "pip",
+        "check"
+      ],
+      "cwd": "/tmp",
+      "exit_code": 0,
+      "result_file": "wheel-pip-check.txt"
+    },
+    {
+      "command": [
+        "$WORKSPACE/.resolve/bin/python",
+        "-m",
+        "pip",
+        "install",
+        "--no-deps",
+        "--force-reinstall",
+        "$WORKSPACE/modern-core-a794-artifacts/sdist-wheel/conceptmod-2.0.0-py3-none-any.whl"
+      ],
+      "cwd": "/tmp",
+      "exit_code": 0,
+      "result_file": "sdist-install.txt"
+    },
+    {
+      "command": [
+        "$WORKSPACE/.resolve/bin/python",
+        "-I",
+        "$WORKSPACE/modern-core-a794-artifacts/installed-probe.py",
+        "$WORKSPACE/modern-core-a794-artifacts",
+        "sdist"
+      ],
+      "cwd": "/tmp",
+      "exit_code": 0,
+      "result_file": "sdist-probe.txt"
+    },
+    {
+      "command": [
+        "$WORKSPACE/.resolve/bin/python",
+        "-I",
+        "-m",
+        "pytest",
+        "--import-mode=importlib",
+        "-q",
+        "-rP",
+        "$WORKSPACE/conceptmod/tests/test_modern_game.py"
+      ],
+      "cwd": "/tmp",
+      "exit_code": 0,
+      "result_file": "sdist-conformance.txt"
+    },
+    {
+      "command": [
+        "$WORKSPACE/.resolve/bin/python",
+        "-m",
+        "pip",
+        "check"
+      ],
+      "cwd": "/tmp",
+      "exit_code": 0,
+      "result_file": "sdist-pip-check.txt"
+    }
+  ],
+  "actual_installed_identity": {
+    "wheel": {
+      "conceptmod": {
+        "version": "2.0.0",
+        "direct_url": "{\"archive_info\": {\"hash\": \"sha256=5962443c09fe20836b1dd461eec48f106b150fd9365550d9b40f7c7ae879eab3\", \"hashes\": {\"sha256\": \"5962443c09fe20836b1dd461eec48f106b150fd9365550d9b40f7c7ae879eab3\"}}, \"url\": \"file://$WORKSPACE/conceptmod/dist/conceptmod-2.0.0-py3-none-any.whl\"}"
+      },
+      "particle-sliders-core": {
+        "version": "0.12.0",
+        "direct_url": "{\"subdirectory\": \"packages/particle-sliders-core\", \"url\": \"https://github.com/HyperGAN/particle-sliders.git\", \"vcs_info\": {\"commit_id\": \"a794e3b4a8813b012f2c4faa3da82b78d4a90214\", \"requested_revision\": \"a794e3b4a8813b012f2c4faa3da82b78d4a90214\", \"vcs\": \"git\"}}"
+      },
+      "particlegan": {
+        "version": "0.9.4",
+        "direct_url": null
+      },
+      "hypergan": {
+        "version": "2.0.0",
+        "direct_url": "{\"url\": \"https://github.com/HyperGAN/HyperGAN.git\", \"vcs_info\": {\"commit_id\": \"5f368a3770cf5bdae0448995c9f76e29af8049f7\", \"requested_revision\": \"5f368a3770cf5bdae0448995c9f76e29af8049f7\", \"vcs\": \"git\"}}"
+      },
+      "hndl": {
+        "version": "0.10.0",
+        "direct_url": null
+      },
+      "torch": {
+        "version": "2.14.1+cpu",
+        "direct_url": null
+      },
+      "diffusers": {
+        "version": "0.42.0.dev0",
+        "direct_url": "{\"url\":\"https://github.com/huggingface/diffusers.git\",\"vcs_info\":{\"vcs\":\"git\",\"commit_id\":\"86ef420b17363c28e36ebad6b58555e9aa8feda2\"}}"
+      },
+      "conceptmod_origin": "$WORKSPACE/.resolve/lib/python3.12/site-packages/conceptmod/__init__.py",
+      "session_origin": "$WORKSPACE/.resolve/lib/python3.12/site-packages/conceptmod/modern/session.py",
+      "core_origin": "$WORKSPACE/.resolve/lib/python3.12/site-packages/particle_sliders/__init__.py",
+      "product_sources": {
+        "modern/session.py": "3ee42d1ba0eed1216e7e33ca938b9a60b70ea72d5dc6d05c5d2a283703f2533a",
+        "modern/sources.json": "4d3538f02b9c461fe775a8a0d333f5bdaf04eb0dd32385c2f40d74ee43ba730c",
+        "modern/lora.hndl": "c09bb012a479eb103dd3e710a8909251c0cb3a852f45a26112f2a9cc972a30e3",
+        "backends/cpu.py": "fa526e10c0f806ea4b469b36703d1f0031df07d89c27bb4f07082f84567f1d4b",
+        "backends/base.py": "4fabcac6865354cda9d15d1707578065d3386c8eb60c1a18c05f69de77b2299e"
+      },
+      "builder": {
+        "profile": "hypergan-hndl-v2",
+        "hndl_version": "0.10.0",
+        "hypergan_commit": "5f368a3770cf5bdae0448995c9f76e29af8049f7",
+        "hypergan_build_provenance_sha256": "fa0aaed8eea39a1cc545bafb96c9a72eb155b52cb79f2d34c44f505aaf4ac179",
+        "runtime_sources_sha256": "69e65e3daf18ac5c99154fd735d0b6fc8e8c95433c5b0618a074cdd203ed6251",
+        "projection_sha256": "b5efac1cfb0c597e5d6e0839af6077ff36dec916901bfa254be78db9f691c086",
+        "critic_sha256": "31f95ccf2178363d7a027597a00694c571c9d69a170151fcbe36e05326ac4707"
+      },
+      "cohort": "conceptmod-cpu-alpha-velocity-pg094-hg-hndl010-v3",
+      "backend": "conceptmod-dsl-cpu-hg-v3",
+      "protocol": "conceptmod-cpu-peft-native-velocity-hg-v3",
+      "core_source_closure_files": 49,
+      "core_source_closure_matches_lock": true
+    },
+    "sdist": {
+      "conceptmod": {
+        "version": "2.0.0",
+        "direct_url": "{\"archive_info\": {\"hash\": \"sha256=5962443c09fe20836b1dd461eec48f106b150fd9365550d9b40f7c7ae879eab3\", \"hashes\": {\"sha256\": \"5962443c09fe20836b1dd461eec48f106b150fd9365550d9b40f7c7ae879eab3\"}}, \"url\": \"file://$WORKSPACE/modern-core-a794-artifacts/sdist-wheel/conceptmod-2.0.0-py3-none-any.whl\"}"
+      },
+      "particle-sliders-core": {
+        "version": "0.12.0",
+        "direct_url": "{\"subdirectory\": \"packages/particle-sliders-core\", \"url\": \"https://github.com/HyperGAN/particle-sliders.git\", \"vcs_info\": {\"commit_id\": \"a794e3b4a8813b012f2c4faa3da82b78d4a90214\", \"requested_revision\": \"a794e3b4a8813b012f2c4faa3da82b78d4a90214\", \"vcs\": \"git\"}}"
+      },
+      "particlegan": {
+        "version": "0.9.4",
+        "direct_url": null
+      },
+      "hypergan": {
+        "version": "2.0.0",
+        "direct_url": "{\"url\": \"https://github.com/HyperGAN/HyperGAN.git\", \"vcs_info\": {\"commit_id\": \"5f368a3770cf5bdae0448995c9f76e29af8049f7\", \"requested_revision\": \"5f368a3770cf5bdae0448995c9f76e29af8049f7\", \"vcs\": \"git\"}}"
+      },
+      "hndl": {
+        "version": "0.10.0",
+        "direct_url": null
+      },
+      "torch": {
+        "version": "2.14.1+cpu",
+        "direct_url": null
+      },
+      "diffusers": {
+        "version": "0.42.0.dev0",
+        "direct_url": "{\"url\":\"https://github.com/huggingface/diffusers.git\",\"vcs_info\":{\"vcs\":\"git\",\"commit_id\":\"86ef420b17363c28e36ebad6b58555e9aa8feda2\"}}"
+      },
+      "conceptmod_origin": "$WORKSPACE/.resolve/lib/python3.12/site-packages/conceptmod/__init__.py",
+      "session_origin": "$WORKSPACE/.resolve/lib/python3.12/site-packages/conceptmod/modern/session.py",
+      "core_origin": "$WORKSPACE/.resolve/lib/python3.12/site-packages/particle_sliders/__init__.py",
+      "product_sources": {
+        "modern/session.py": "3ee42d1ba0eed1216e7e33ca938b9a60b70ea72d5dc6d05c5d2a283703f2533a",
+        "modern/sources.json": "4d3538f02b9c461fe775a8a0d333f5bdaf04eb0dd32385c2f40d74ee43ba730c",
+        "modern/lora.hndl": "c09bb012a479eb103dd3e710a8909251c0cb3a852f45a26112f2a9cc972a30e3",
+        "backends/cpu.py": "fa526e10c0f806ea4b469b36703d1f0031df07d89c27bb4f07082f84567f1d4b",
+        "backends/base.py": "4fabcac6865354cda9d15d1707578065d3386c8eb60c1a18c05f69de77b2299e"
+      },
+      "builder": {
+        "profile": "hypergan-hndl-v2",
+        "hndl_version": "0.10.0",
+        "hypergan_commit": "5f368a3770cf5bdae0448995c9f76e29af8049f7",
+        "hypergan_build_provenance_sha256": "fa0aaed8eea39a1cc545bafb96c9a72eb155b52cb79f2d34c44f505aaf4ac179",
+        "runtime_sources_sha256": "69e65e3daf18ac5c99154fd735d0b6fc8e8c95433c5b0618a074cdd203ed6251",
+        "projection_sha256": "b5efac1cfb0c597e5d6e0839af6077ff36dec916901bfa254be78db9f691c086",
+        "critic_sha256": "31f95ccf2178363d7a027597a00694c571c9d69a170151fcbe36e05326ac4707"
+      },
+      "cohort": "conceptmod-cpu-alpha-velocity-pg094-hg-hndl010-v3",
+      "backend": "conceptmod-dsl-cpu-hg-v3",
+      "protocol": "conceptmod-cpu-peft-native-velocity-hg-v3",
+      "core_source_closure_files": 49,
+      "core_source_closure_matches_lock": true
+    }
+  },
+  "artifacts": {
+    "conceptmod/dist/conceptmod-2.0.0-py3-none-any.whl": {
+      "sha256": "5962443c09fe20836b1dd461eec48f106b150fd9365550d9b40f7c7ae879eab3",
+      "bytes": 238769
+    },
+    "conceptmod/dist/conceptmod-2.0.0.tar.gz": {
+      "sha256": "bc9ecd26ac629f28a2f98bd82ae3c0fbba21dc811b1e18ea93d44f7b5d4e753a",
+      "bytes": 279927
+    },
+    "modern-core-a794-artifacts/sdist-v3-training.pt": {
+      "sha256": "1a962b804c25e1191ae95e92b6c68f179cce31ba94556379b6b9e96bcd086139",
+      "bytes": 70110
+    },
+    "modern-core-a794-artifacts/sdist-v3-ema.pt": {
+      "sha256": "8dd39774828c42135d38dc874d243ab7f7b16a13cd81891557de2ec0309f9b12",
+      "bytes": 14437
+    },
+    "modern-core-a794-artifacts/wheel-v3-training.pt": {
+      "sha256": "1a962b804c25e1191ae95e92b6c68f179cce31ba94556379b6b9e96bcd086139",
+      "bytes": 70110
+    },
+    "modern-core-a794-artifacts/sdist-v3-raw.pt": {
+      "sha256": "55bf29365daff895d7cbaaa89d977ad4bda20628b2a0b281b75e21108dfa2583",
+      "bytes": 14437
+    },
+    "modern-core-a794-artifacts/wheel-v3-raw.pt": {
+      "sha256": "55bf29365daff895d7cbaaa89d977ad4bda20628b2a0b281b75e21108dfa2583",
+      "bytes": 14437
+    },
+    "modern-core-a794-artifacts/wheel-v3-ema.pt": {
+      "sha256": "8dd39774828c42135d38dc874d243ab7f7b16a13cd81891557de2ec0309f9b12",
+      "bytes": 14437
+    }
+  },
+  "test_receipts": {
+    "source-conformance.txt": {
+      "sha256": "0e3ee20a34913a2696308470f54329c86a95f779231790b6c58ad150b2abb50b",
+      "stdout_stderr": "................................................                         [100%]\n==================================== PASSES ====================================\n_______ test_actual_shared_training_moves_student_toward_frozen_teacher ________\n----------------------------- Captured stdout call -----------------------------\nBEHAVIOR {\"steps\": 128, \"alphas\": [0.25, 1.0, 0.6], \"before_teacher_mse\": [0.16786012053489685, 2.6857619285583496, 0.9668743014335632], \"after_teacher_mse\": [0.09416172653436661, 1.5065876245498657, 0.5423715114593506]}\n48 passed in 18.40s\n"
+    },
+    "wheel-conformance.txt": {
+      "sha256": "dd352b52fac592876521d336743867ae9f5606bbf390d143974f8b8898eb6eac",
+      "stdout_stderr": "................................................                         [100%]\n==================================== PASSES ====================================\n_______ test_actual_shared_training_moves_student_toward_frozen_teacher ________\n----------------------------- Captured stdout call -----------------------------\nBEHAVIOR {\"steps\": 128, \"alphas\": [0.25, 1.0, 0.6], \"before_teacher_mse\": [0.16786012053489685, 2.6857619285583496, 0.9668743014335632], \"after_teacher_mse\": [0.09416172653436661, 1.5065876245498657, 0.5423715114593506]}\n48 passed in 17.61s\n"
+    },
+    "sdist-conformance.txt": {
+      "sha256": "36878b43affbb9a71e812ea4bbef626a843c62f79c4f12652e22e06f1b61ea29",
+      "stdout_stderr": "................................................                         [100%]\n==================================== PASSES ====================================\n_______ test_actual_shared_training_moves_student_toward_frozen_teacher ________\n----------------------------- Captured stdout call -----------------------------\nBEHAVIOR {\"steps\": 128, \"alphas\": [0.25, 1.0, 0.6], \"before_teacher_mse\": [0.16786012053489685, 2.6857619285583496, 0.9668743014335632], \"after_teacher_mse\": [0.09416172653436661, 1.5065876245498657, 0.5423715114593506]}\n48 passed in 17.95s\n"
+    },
+    "wheel-pip-check.txt": {
+      "sha256": "96bc635630b542865f7a57c2bd792ffd575b956a6c8b664994295e1da006c0c1",
+      "stdout_stderr": "No broken requirements found.\nWARNING: The directory '$PIP_CACHE' or its parent directory is not owned or is not writable by the current user. The cache has been disabled. Check the permissions and owner of that directory. If executing pip with sudo, you should use sudo's -H flag.\n"
+    },
+    "sdist-pip-check.txt": {
+      "sha256": "96bc635630b542865f7a57c2bd792ffd575b956a6c8b664994295e1da006c0c1",
+      "stdout_stderr": "No broken requirements found.\nWARNING: The directory '$PIP_CACHE' or its parent directory is not owned or is not writable by the current user. The cache has been disabled. Check the permissions and owner of that directory. If executing pip with sudo, you should use sudo's -H flag.\n"
+    },
+    "resolution.txt": {
+      "sha256": "6b1b5c9f7d5519f924e1e604bab62352593fc5cc8f51839de0cb8fca3f768080",
+      "stdout_stderr": "Requirement already satisfied: markdown-it-py>=2.2.0 in ./.resolve/lib/python3.12/site-packages (from rich>=13.8.0->typer->transformers>=4.57->conceptmod==2.0.0) (4.2.0)\nRequirement already satisfied: pygments<3.0.0,>=2.13.0 in ./.resolve/lib/python3.12/site-packages (from rich>=13.8.0->typer->transformers>=4.57->conceptmod==2.0.0) (2.21.0)\nRequirement already satisfied: mdurl~=0.1 in ./.resolve/lib/python3.12/site-packages (from markdown-it-py>=2.2.0->rich>=13.8.0->typer->transformers>=4.57->conceptmod==2.0.0) (0.1.2)\nWould install conceptmod-2.0.0\n\n[notice] A new release of pip is available: 25.0.1 -> 26.2.2\n[notice] To update, run: $WORKSPACE/.resolve/bin/python -m pip install --upgrade pip\n"
+    },
+    "product-build.txt": {
+      "sha256": "59d98631a10071e562a11e83c2c98c6500c3a56cff47b3e273fc01b81410f4f1",
+      "stdout_stderr": "adding 'conceptmod-2.0.0.dist-info/licenses/LICENSE'\nadding 'conceptmod-2.0.0.dist-info/METADATA'\nadding 'conceptmod-2.0.0.dist-info/WHEEL'\nadding 'conceptmod-2.0.0.dist-info/top_level.txt'\nadding 'conceptmod-2.0.0.dist-info/RECORD'\nremoving build/bdist.linux-x86_64/wheel\nSuccessfully built conceptmod-2.0.0.tar.gz and conceptmod-2.0.0-py3-none-any.whl\n"
+    },
+    "wheel-probe.txt": {
+      "sha256": "a58042510b59af7a6ec028f5951a5279dad6ad7364ad3e792bb720b4a56cd5cd",
+      "stdout_stderr": "Installed source closure and VCS identity matched; old v1/v2 training/raw/EMA refused before hooks; v3 exports created; CUDA uninitialized.\n"
+    },
+    "sdist-probe.txt": {
+      "sha256": "a58042510b59af7a6ec028f5951a5279dad6ad7364ad3e792bb720b4a56cd5cd",
+      "stdout_stderr": "Installed source closure and VCS identity matched; old v1/v2 training/raw/EMA refused before hooks; v3 exports created; CUDA uninitialized.\n"
+    },
+    "core-install.txt": {
+      "sha256": "a56ca4da6faa135a42e8f8717cc7c127ec6ba2be097e9ef1d2509660b32ce3db",
+      "stdout_stderr": "    Found existing installation: particle-sliders-core 0.12.0\n    Uninstalling particle-sliders-core-0.12.0:\n      Successfully uninstalled particle-sliders-core-0.12.0\nSuccessfully installed particle-sliders-core-0.12.0\n\n[notice] A new release of pip is available: 25.0.1 -> 26.2.2\n[notice] To update, run: $WORKSPACE/.resolve/bin/python -m pip install --upgrade pip\n"
+    }
+  },
+  "old_packets": {
+    "wheel": {
+      "results": [
+        {
+          "artifact": "old-v2-training.pt",
+          "sha256": "06670f392bf19d0ac88b46cf2db6bea7592706862f866b4b8b6eefcac6e9b542",
+          "result": "refused",
+          "error_type": "CheckpointError",
+          "error": "modern CPU config/cohort differs before native binding"
+        },
+        {
+          "artifact": "old-v2-raw.pt",
+          "sha256": "9a5d007caed4d089a348408674e70b086145df9e254313bfde024dc4d17057a1",
+          "result": "refused",
+          "error_type": "ValueError",
+          "error": "native CPU protocol differs"
+        },
+        {
+          "artifact": "old-v2-ema.pt",
+          "sha256": "0d7ebe724052ca8b0c6802ceece03298ee523ca0fe7619fdc5dabde2f6caa588",
+          "result": "refused",
+          "error_type": "ValueError",
+          "error": "native CPU protocol differs"
+        },
+        {
+          "artifact": "return-review-v1-training.pt",
+          "sha256": "6a61efcfa18ebf867f96efaa6c2bc2f7e1a8c39202694e2624ffa78c57202bb2",
+          "result": "refused",
+          "error_type": "CheckpointError",
+          "error": "modern CPU config/cohort differs before native binding"
+        },
+        {
+          "artifact": "return-review-v1-native.pt",
+          "sha256": "e47332733ccf6b14ffa522715c1a1d7ee30108b17a3844eb7637cfc5bae15996",
+          "result": "refused",
+          "error_type": "ValueError",
+          "error": "unknown native CPU configuration"
+        }
+      ],
+      "hook_mutations": [],
+      "borrowed_flags_and_weights_unchanged": true
+    },
+    "sdist": {
+      "results": [
+        {
+          "artifact": "old-v2-training.pt",
+          "sha256": "06670f392bf19d0ac88b46cf2db6bea7592706862f866b4b8b6eefcac6e9b542",
+          "result": "refused",
+          "error_type": "CheckpointError",
+          "error": "modern CPU config/cohort differs before native binding"
+        },
+        {
+          "artifact": "old-v2-raw.pt",
+          "sha256": "9a5d007caed4d089a348408674e70b086145df9e254313bfde024dc4d17057a1",
+          "result": "refused",
+          "error_type": "ValueError",
+          "error": "native CPU protocol differs"
+        },
+        {
+          "artifact": "old-v2-ema.pt",
+          "sha256": "0d7ebe724052ca8b0c6802ceece03298ee523ca0fe7619fdc5dabde2f6caa588",
+          "result": "refused",
+          "error_type": "ValueError",
+          "error": "native CPU protocol differs"
+        },
+        {
+          "artifact": "return-review-v1-training.pt",
+          "sha256": "6a61efcfa18ebf867f96efaa6c2bc2f7e1a8c39202694e2624ffa78c57202bb2",
+          "result": "refused",
+          "error_type": "CheckpointError",
+          "error": "modern CPU config/cohort differs before native binding"
+        },
+        {
+          "artifact": "return-review-v1-native.pt",
+          "sha256": "e47332733ccf6b14ffa522715c1a1d7ee30108b17a3844eb7637cfc5bae15996",
+          "result": "refused",
+          "error_type": "ValueError",
+          "error": "unknown native CPU configuration"
+        }
+      ],
+      "hook_mutations": [],
+      "borrowed_flags_and_weights_unchanged": true
+    }
+  },
+  "borrowed_gradient_buffers": {
+    "parameters_with_existing_gradient_buffers": 13,
+    "gradient_buffers_exact": true,
+    "weights_exact": true,
+    "mixed_modes_restored": true,
+    "requires_grad_restored": true,
+    "owned_hook_removed": true,
+    "cuda_initialized": false
+  },
+  "dependency_resolution": {
+    "command": ".resolve/bin/python -m pip install --dry-run --no-build-isolation --report modern-core-a794-artifacts/resolution.json --extra-index-url https://download.pytorch.org/whl/cpu -c conceptmod/requirements/modern-cpu-constraints.txt './conceptmod[modern]'",
+    "exit_code": 0,
+    "requested_installs": [
+      {
+        "name": "conceptmod",
+        "version": "2.0.0"
+      }
+    ],
+    "scope": "Existing isolated CPU virtualenv from earlier clean resolution; exact core VCS revision reinstalled, unchanged dependencies satisfied. This is not a fresh empty-environment solve."
+  },
+  "unchanged_git_blobs": {
+    "conceptmod/backends/sana.py": "3af9039debd053564b0a7e804ec5a40eacbf0e2b",
+    "conceptmod/backends/klein.py": "c33b021af3e672f390b76cd414dfdc5f9bfd6d10",
+    "conceptmod/backends/krea.py": "6bcc909677d1aa6e2d7ccc925b449dfb5852f00f",
+    "conceptmod/backends/__init__.py": "764c0b1d8257a4faf00823010b6d3e7fa1cf20c6",
+    "conceptmod/backends/anima.py": "22eb17194edc9754694ae2c017deb2ab16af0b41",
+    "conceptmod/backends/qwen.py": "c548cbb83e703603d68a12fccec08dd3bc2d5028",
+    "conceptmod/backends/supra.py": "c90701c4f5c70545546846724df3eb02960ffa2e",
+    "conceptmod/backends/krea_weights.py": "39c8f4a784fdd0ef20ecb947a98f9e3a0c90e66f",
+    "conceptmod/backends/zimage.py": "312656712847f9c42863b73df3144449d50a4f3c",
+    "conceptmod/backends/base.py": "a397daabb28e8582e4b2500828e438489ce69230",
+    "conceptmod/backends/cpu.py": "f6d50011c66e465afd76ba58766d9377ee8f410f",
+    "conceptmod/model_train.py": "33edd53f30748921256f222aa3429975ebde7e36",
+    "conceptmod/encoder_train.py": "13f220f9444b0a8b7eb1f8d064456fac74d6fd51",
+    "conceptmod/game.py": "b1c56b11ea742261eb0ce9e2ee58e8a5c505acb9",
+    "conceptmod/modern/lora.hndl": "67f0816154957ccee61fe5db6102ec429e46dad9",
+    "requirements/modern-cpu-constraints.txt": "3b4efa1d25499fb54b42b3b62a979608412b57d9",
+    "docs/validation/modern-cpu-return-review.json": "5ffe393a82449c1d0d32e545430ea31822d56db0"
+  },
+  "artifact_impact": "New v3 backend, cohort and native protocol IDs; source-bound signatures change. Actual old v1/v2 packets refuse before hook attachment. No old packet bytes or historical evidence were rewritten.",
+  "limitations": [
+    "No training objective, alpha, architecture, seed, native backend, default dependency, HNDL optimization, workflow, visibility or license change.",
+    "No GPU jobs, model downloads, weights release, package release, deployment or merge.",
+    "The cleared upstream synthetic CUDA evidence was reported by the coordinator; this product validation was CPU only.",
+    "Default diffusers remains unpinned Git HEAD; historical default install reproducibility is unchanged.",
+    "Claude actual-diff RETURN review is still required."
+  ]
+}

@@ -1,0 +1,232 @@
+{
+  "schema": "conceptmod-cpu-return-review-receipt-v1",
+  "checked_utc": "2026-10-31T20:19:05.061112+00:00",
+  "reviewed_from_head": "abe34b17f7ebf513a6d65d123edfb03ed734a84b",
+  "cohort": "conceptmod-cpu-alpha-velocity-pg094-hg-hndl010-v2",
+  "protocol": "conceptmod-cpu-peft-native-velocity-hg-v2",
+  "initialization_policy": "fresh-seeded-peft-rank4-alpha4-v1",
+  "tested_source_snapshot_sha256": {
+    "conceptmod/modern/session.py": "8e14055bd13f5a6cca0067dd43d92d0dde5694caaf16ff72933cf26a699f9dd2",
+    "conceptmod/modern/lora.hndl": "c09bb012a479eb103dd3e710a8909251c0cb3a852f45a26112f2a9cc972a30e3",
+    "conceptmod/modern/sources.json": "e41077968339e72482d28e2bd558b4cf896726c44ff4cbb43deb28492af8632d",
+    "conceptmod/backends/cpu.py": "fa526e10c0f806ea4b469b36703d1f0031df07d89c27bb4f07082f84567f1d4b",
+    "conceptmod/backends/base.py": "4fabcac6865354cda9d15d1707578065d3386c8eb60c1a18c05f69de77b2299e",
+    "tests/test_modern_game.py": "33d6adbe404c8a6942633d710754c294f5b2808935074f10afa8a487c4bd3622"
+  },
+  "installed_source": "/ml2/codex-storage/future-workspaces/2026-10-31/task-22/.resolve/lib/python3.12/site-packages/conceptmod/modern/session.py",
+  "installed_source_sha256": "8e14055bd13f5a6cca0067dd43d92d0dde5694caaf16ff72933cf26a699f9dd2",
+  "core_commit": "7a8a321d04323d49319d0b08e6093a0ddce36b27",
+  "core_profile": "release-0.9.4/auto; unchanged",
+  "runtime": {
+    "python": "3.12.15 (main, Oct  3 2026, 01:03:07) [Clang 22.1.3 ]",
+    "torch": "2.14.1+cpu",
+    "cuda_initialized": false,
+    "dependencies": {
+      "particle-sliders-core": {
+        "version": "0.12.0",
+        "direct_url": "{\"url\":\"https://github.com/HyperGAN/particle-sliders.git\",\"vcs_info\":{\"vcs\":\"git\",\"commit_id\":\"7a8a321d04323d49319d0b08e6093a0ddce36b27\",\"requested_revision\":\"7a8a321d04323d49319d0b08e6093a0ddce36b27\"},\"subdirectory\":\"packages/particle-sliders-core\"}"
+      },
+      "particlegan": {
+        "version": "0.9.4",
+        "direct_url": null
+      },
+      "hypergan": {
+        "version": "2.0.0",
+        "direct_url": "{\"url\": \"https://github.com/HyperGAN/HyperGAN.git\", \"vcs_info\": {\"commit_id\": \"5f368a3770cf5bdae0448995c9f76e29af8049f7\", \"requested_revision\": \"5f368a3770cf5bdae0448995c9f76e29af8049f7\", \"vcs\": \"git\"}}"
+      },
+      "hndl": {
+        "version": "0.10.0",
+        "direct_url": null
+      },
+      "peft": {
+        "version": "0.21.2",
+        "direct_url": null
+      },
+      "numpy": {
+        "version": "2.5.4",
+        "direct_url": null
+      }
+    }
+  },
+  "wheel": {
+    "sha256": "782e937c4d4c5b8fbfb2ce01bda1b043b3517ab43baca8c7a1aefdb5a93b0a4e",
+    "install_command": "../.resolve/bin/python -m pip install --force-reinstall --no-deps dist/conceptmod-2.0.0-py3-none-any.whl",
+    "test_cwd": "/tmp",
+    "test_command": "OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 /ml2/codex-storage/future-workspaces/2026-10-31/task-22/.resolve/bin/python -m pytest --import-mode=importlib /ml2/codex-storage/future-workspaces/2026-10-31/task-22/conceptmod/tests/test_modern_game.py -q -rP",
+    "stdout": "..........................................                               [100%]\n==================================== PASSES ====================================\n_______ test_actual_shared_training_moves_student_toward_frozen_teacher ________\n----------------------------- Captured stdout call -----------------------------\nBEHAVIOR {\"steps\": 128, \"alphas\": [0.25, 1.0, 0.6], \"before_teacher_mse\": [0.16786012053489685, 2.6857619285583496, 0.9668743014335632], \"after_teacher_mse\": [0.09416171908378601, 1.5065876245498657, 0.5423716306686401]}\n42 passed in 16.65s\n",
+    "result": "42 passed"
+  },
+  "sdist": {
+    "sha256": "f7bae19f8bc7477b025d1dae2a9b2c1fa428464ba382495fd8016013f8c709e8",
+    "install_command": "../.resolve/bin/python -m pip install --force-reinstall --no-deps --no-build-isolation dist/conceptmod-2.0.0.tar.gz",
+    "test_cwd": "/tmp",
+    "test_command": "OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 /ml2/codex-storage/future-workspaces/2026-10-31/task-22/.resolve/bin/python -m pytest --import-mode=importlib /ml2/codex-storage/future-workspaces/2026-10-31/task-22/conceptmod/tests/test_modern_game.py -q -rP",
+    "stdout": "..........................................                               [100%]\n==================================== PASSES ====================================\n_______ test_actual_shared_training_moves_student_toward_frozen_teacher ________\n----------------------------- Captured stdout call -----------------------------\nBEHAVIOR {\"steps\": 128, \"alphas\": [0.25, 1.0, 0.6], \"before_teacher_mse\": [0.16786012053489685, 2.6857619285583496, 0.9668743014335632], \"after_teacher_mse\": [0.09416171908378601, 1.5065876245498657, 0.5423716306686401]}\n42 passed in 16.50s\n",
+    "result": "42 passed"
+  },
+  "behavior": {
+    "steps": 128,
+    "alphas": [
+      0.25,
+      1.0,
+      0.6
+    ],
+    "before_teacher_mse": [
+      0.16786012053489685,
+      2.6857619285583496,
+      0.9668743014335632
+    ],
+    "after_teacher_mse": [
+      0.09416171908378601,
+      1.5065876245498657,
+      0.5423716306686401
+    ]
+  },
+  "behavior_scope": "128 actual shared GAN updates; MSE evaluation only. Fixed latent/time; training alpha0.25/1 and held-out alpha0.6. No native-model/GPU or time-generalization claim.",
+  "critic_verification": "Actual nn.Conv2d1x1 and3x3 modules; matched logits/VJPs and public BISPF penalty second derivatives. Generator TinyFlowDiT is an affine MLP with flat256 output reshaped4x8x8.",
+  "build_metadata_comparison": {
+    "uv_metadata": {
+      "commit": "5f368a3770cf5bdae0448995c9f76e29af8049f7",
+      "dirty": true,
+      "schema_version": 1
+    },
+    "pip_metadata": {
+      "commit": "5f368a3770cf5bdae0448995c9f76e29af8049f7",
+      "dirty": false,
+      "schema_version": 1
+    },
+    "python_files": 100,
+    "all_python_source_bytes_equal": true,
+    "source_hashes": {
+      "summary.py": "9339ebad93f0211254aad254c46800ff5f3d8664d120d84c3a5cacc4adb66cb1",
+      "colorization_components.py": "92bf1d1032a81f8432dd7e4a3e017acbac3b0350f1fda2ae425cf1827bace103",
+      "hndl_networks.py": "899293a128f71dc5d9a2579787b935e5fb696a82d28f26759af417c618269533",
+      "execution_preflight.py": "97dfd9b84838a624e6a9d4e97ddc28738014fd6244bfdf15623dd806ccac66b1",
+      "cli.py": "80761fb3a08baf33f175572d7616fd93d860314537d9a21e011bf1f72bda1587",
+      "ports.py": "f5dbe22cc73efe70afd99d1298740ee2b7823104de4ef405be1dc2b3f81b5664",
+      "image_cache.py": "4cdb1dd7cf710b66efd19fbbea1b6ee4fb962f1e2a00551092a81daa4d77bca6",
+      "objective_program.py": "8691ce5fc6cb9915bb0979ef7a3cec60d7e8181ff0a951c31db856ad04be4a9a",
+      "diversity_metrics.py": "976671ad9a892a34255c6e5b279be669ed78ace82fec39d5a3e745c8c57ce5c4",
+      "previews.py": "2c13c2f3b15b8d9318398475702e69325b67c9cfd38196dd46c573c0e303d385",
+      "run_events.py": "d1b4246e05f0505a867c43034b603d7a06620a38f1006272f7aa951b910a862b",
+      "web_server.py": "cbc9712a6a1d4b2ec23fa626b1b8613ec0fff64ae977d645fe98f8c4dab1acf8",
+      "distributed_checkpoints.py": "0032cacc44c34a421aba73895e05319cdafdbc1d0e75bcb9379d7ebf39281441",
+      "api.py": "44ad4593862947fcff83ea80ac2f5527002537c5b770de426f7331f658cb6350",
+      "provenance.py": "108ac86f0c3be9a8e204535fc90d1ee4c1b5f3433273c43f0b09f2fa2ba0f981",
+      "web_session.py": "683d31f674e927643f76ce7f593fbba6927a60c6086f0a2605cbfe952f94a192",
+      "cache.py": "c6c80a2e72c2da0e0ab368bc0f4780049ea49dea3e6944f57c573ac216ad35ff",
+      "colorization_metrics.py": "13d2814fb2adbf2edd24b7ca8f708224b4de5d951565ed8db756093e9498bea7",
+      "model_description.py": "b5af6611db13a56e6a323beac345e43b29b29015ab5668442185157174ce9cec",
+      "plugin_functions.py": "3608af5f47f6056e723ec5b32040d1e7d0ac8cd9916942accae09d4ed24d0e9b",
+      "web_autostart.py": "cadb167243977f59713a1f68a0c9a15ab3e8e78d77de64a1fb39fc057654df52",
+      "distributed_training.py": "159082e3fb09631ec36cca4a0b43cbcfd2150894c1c211444cc17bfe74a69939",
+      "inspection.py": "eed2bd4091f53a8c213ff36c2074b0a44392e9299c7b3736f1fb44577daa9e85",
+      "web_schema.py": "5ccca03940863222cfc7587a89c251b35c5587525558bf02af527d8a419530df",
+      "evaluation_snapshot.py": "3d0ea1f3638c55f98bcfbfb989b977462b3c3dc66e9c416127fdfbf959ccbbbc",
+      "snapshot_renderer.py": "7795f2082c4e00b776faee1418af18d4b6ed32862472191f2659f828b563cf3b",
+      "run_requests.py": "d0390fbca0d47ca8fb18936e934b9f9b07b6c82a0f5440d9345b7816ef888922",
+      "main_guard.py": "96531a9988d8927f3d626fe01532c798afaef191e7c64f2bb6a75e9fdb20d96e",
+      "distributed_commit.py": "013e2312375b9f7d39a61a137ab3a1a720acfe51b41f84d74bbdb972b0b53613",
+      "registry.py": "99dd3962a78920513248876315fef4e3c3ef59bcba7cae4a4728dfcb8e5c97a2",
+      "web_service.py": "581d2cc77524636b1e001f9a81fde8da1d0da1d612b48fbbaa46b897b99c64b0",
+      "run_controller.py": "624de3933202a76903656fc2cfe283e095cc82d22b70ae39636968cfe1c4c5f2",
+      "interval_evaluation.py": "ce81f406e47f23c3a074ca9a4e05d0ff53bc46c4485991ba2e518bc541273406",
+      "gpu_inventory.py": "61c3d3da9dc35b735692756b72f2819b9841b9d442a5073ca6d82af5d4686876",
+      "__init__.py": "dcb4a85c9fa6b6835dbf94427d01537793ea4031de8ffc9c111abb38ff03bdf0",
+      "run_state.py": "dc8b3998c55676d36c6cede12282ff92665762a859ba35464d53b8209a4444ab",
+      "data.py": "f7da1d7ccfba30df8b21d2c5a20f9a510f92b0b2b21e76b1bfa880cfd26bcdca",
+      "metric_plugins.py": "eed08e47618773ee08a9ef467a3d07459705ae586b9948fc68cfb7d81b993e3f",
+      "metric_evaluation.py": "42e243b125753630b9d0029814a9f1c0aaf15bf4d650bf6a9edfe5d1c7fc8504",
+      "single_execution.py": "10194818a56ebce32d09587a220ad2d6c664565b795c1606e0f9a3a1e8f5db8e",
+      "datasets.py": "faeffbad8196ddfba9d57960672e619f08a0cef0bb1fd781b1063c9e39a72f41",
+      "web_launch.py": "00973ba5a8e3aad8e6e372d35e7331dd99a612f1d8578939fb2a22cf9a088107",
+      "cpu_worker_service.py": "dcae01f46e7fbfe0edd9bca3e04fd16d22a6013ccb7b428b29f1031f15d5f483",
+      "preview_worker.py": "91cebaed7728e467ad8b1def5af81d72f82d93977f76a55df238ca3cb9288b73",
+      "evaluation_cli.py": "cf8747e23b1e1b7d4e60a3490d1b036c1778bc9a9cd2a44f5cbefef417737c2a",
+      "run_signals.py": "82e918589581c5d3393ea9d661e90a2ba7401e5fc3758812da1fdc236d3254dd",
+      "model_file.py": "5fd88ceebfba91faf44cda3b1614b7f18baf9d4db8a58dd04bf4200642b58f2e",
+      "console_settings.py": "27592d4168bdaeaab672240a1b2c9bca9fe6d0cb6bc83ae0475b3ab16988210e",
+      "bounded_cli_output.py": "50f84f729c70a3243053d76a613e793f75b8fff636180f9bf2949246d9df7b76",
+      "bounded_observer.py": "0a1882ecc0c880486e37635296bf9e5721578fd2af311717935fe4fdfe246b02",
+      "queue.py": "2efeb952183c742c8df15765893bc141027dd36d16c1c71183e36fc460829017",
+      "ops_info.py": "8e9e1ac937bb3663ff2b8c58478c990dfbaf76c7962506b6ec3fef48e68dccdd",
+      "dataset_download.py": "ad698be3d76a13187b1d9bcd5831fc2942bd42150cb383aa3a34bac6215b0338",
+      "metric_examples.py": "93e92cf53c82f489121a8ce06cdacefbbaec60f92dc5265f915b672f87f99820",
+      "autoencoder_components.py": "bde3b446cc709130d4da950b3ee5eb2192e6cf2685bbd04bed2b7a03a075721e",
+      "observation_io.py": "65f215dbec4c5f7ff584b663d3f2fe8fca467039c82c5676198d022f30cd48f7",
+      "metrics.py": "c65305ada60be86d836778ef3d1a05458d27295db14cf1a87a0f4a804b9481d9",
+      "diff_augment.py": "c24718e79fbc31b98d2f3654a89fdd742b31e32a0443ba03d603ccdf7d507a5b",
+      "preview_snapshot.py": "c7f049a198638b90e48c6adf633947b2926255a0e235b4c54b920464c5b18ea4",
+      "execution_profiles.py": "11d9fdd7fc8338f625cfef34adaf2193b23e525423c03f88ff35d2b58e427624",
+      "distributed.py": "cd38e4df12e0bed2dfd18a1b7ab7f557b08fe06ca70c0aba5f8f9a62df69198a",
+      "image_components.py": "35b81819b1c850f00a6c896b3de4ee57ebaa5e2e0302521597d7cbdce58834a5",
+      "run_info.py": "98c161f800d4e5c667e435349c36951d413886b59133b9f0a54c5794acb9acc6",
+      "checkpoints.py": "9575035cf63e1da3738b5806e21ce69e38ddd970708bf8a957ca7f65dae5e32d",
+      "config.py": "9ead736dd6efef72892a9ecc7bb4d80bde221b61ff256ae36d0dc4200305c1eb",
+      "workspace.py": "f90453dcb285cb0933855503a463a46fcd17a17a3dad71d8ba40e83ceea5155e",
+      "cpu_workers.py": "31f973d75a5f00ec5c8d15ca68ca7acf37d05dcaa3c8560cd5b6e1a12567be5f",
+      "recipes.py": "dafedc0b4330af98b1673288b9de9a377c3fb3a3fee514a1152ca925a38e3af1",
+      "background_poll.py": "7a897a33d47e1f776cac21f53eafbdc232808116ddc297efacc9aa5083e89564",
+      "web_dev.py": "fee1d3e2f0afa4def7fca05e9b13ce6bff2a48a17ef807d26cacc0565dadd9b5",
+      "colorization_data.py": "a09915b48d37d250dbfc8d54fe7e743afd42894feeb30c82304dda039bd98f23",
+      "replicated_worker.py": "33b352f87beffb3131a1e3c54371cda42fe793365e024f6b316ad40a59b16d8c",
+      "item_data.py": "ba353c4a979b7102dff729b5b4d4b68b057f267aafe467584cecf9ec9ec41075",
+      "colorspace.py": "7e3846235f19234896e4079a7accbbbc823efffd84cf91db93844e6c3b737c7b",
+      "metric_evaluation_worker.py": "94f521abb8b0b264345e7f41705ceac61f2498256b9351583fbc3f36d6b3bd2a",
+      "aggregation.py": "96c996cd1c64ccbdd1757d9f806ff016f0e8125d20a2a21bee8b6f21cb8f8599",
+      "color_words.py": "5ffe8130036d19b03665096a9295bdfcb0a31f2e4bc70e0032d0adb84f6becd5",
+      "qualify.py": "a70c7fd0ba25d1033b55e6041e51739f6ee4da3c60e624b043e20819e439b47d",
+      "numerical_policy.py": "0b5aa287df25da6dcc3c19fb59a9b76033fbf283b0eb0e283aa38fa3441707ab",
+      "image_metrics.py": "3c8cecddc1a27e3fd1d2269f3641c843959c8a80367fb93df9eae2d1918ca0bd",
+      "artifacts.py": "c19b98f1f7643cf3fcf37f0b3406c800b09a158ae4df896595ab70c41ce2bb51",
+      "checkpoint_compatibility.py": "19ebe6134c06f0c7e5a8311b149c5daf10c4ab7c17e244f8cdb504b1d1422822",
+      "__main__.py": "553d7431cfae3c43fb9b4fd95c929c2cdfb3521036d1f6705f96730d314588cf",
+      "particlegan_integration.py": "ac7f7cde94943127f134e692aa87ac70639ef35274f300eca004ccae08afc96f",
+      "toml_writer.py": "ac7b6b6cca14fdf9644dd9d9c41886be913e5666615e6bd729b6ed03a2e82287",
+      "execution.py": "dd4436ab7bbad50c1ec8fbdcd448792b8fdb92d73445294d9ef5cfcb4ab957a1",
+      "_file_lock.py": "62aa2368f06695b0bbb7b97aeced5925f253e2dd1b04db50ecc3f1cb975b4f38",
+      "web_files.py": "6782daff8c5ad2b87fd5a23670a7bb03141d4514336dc810814ef828b54daae6",
+      "hndl_augmentation.py": "892bf6c3fd4b4118d2ce675e95be7587d1608249dc0bebeb3a7d3f05fd5dfe01",
+      "image_data.py": "c398a712b0855f0c333d85f9ff8c7a32947a5c688edf340ae47dd8a8b2534c7d",
+      "schema_info.py": "1a0d3b29006110f93e15e4b448fb4c2c924ef5c8437acf207cca6baa98556a64",
+      "recipe_generator.py": "ce1e450d86126b0487fbfe92c633e6b47f94d6581361ed014a2eda3b0812ded8",
+      "image_grids.py": "f7323c6cabfd8f68e348738c0684c285defb0b7a9afcdb33b2bba4915b3a85a5",
+      "network_config.py": "f4ac3f38dae063b68b5b89433aaff1c632d943586e00aee98695dac454233f59",
+      "replicated_execution.py": "a53b325e011740f40affcff99d5ee2a742dd3cba90b2332ed20a77cb2d435a29",
+      "event_views.py": "5a96543b132b7af19a7ceb57b009c429bad50ea4d9430333c34f2c4eeaf1feec",
+      "training.py": "e7f0c7b30060a56a9e15d523829057687e8521b85b0eeb7a232b05852f577883",
+      "pretrained_providers.py": "d1af92d47fddc603938eaedd73c625c7d7ba0c0c315fb3e44f8eb1581b065817",
+      "web_assets/__init__.py": "62eadeafba02f4590e091e76067aecd845c7f63800c05e2e968c22507f147e8a",
+      "metrics_reducer/__init__.py": "5612a6f86a6f27eda490f4c090805fa6942a07ffde91493022dff2911393b2b9"
+    },
+    "interpretation": "dirty is self-reported build metadata; the differing flags here do not demonstrate differing HyperGAN Python source bytes"
+  },
+  "old_v1_artifact_refusals": {
+    "results": [
+      {
+        "artifact": "return-review-v1-training.pt",
+        "sha256": "6a61efcfa18ebf867f96efaa6c2bc2f7e1a8c39202694e2624ffa78c57202bb2",
+        "result": "refused",
+        "error_type": "CheckpointError",
+        "error": "modern CPU config/cohort differs before native binding"
+      },
+      {
+        "artifact": "return-review-v1-native.pt",
+        "sha256": "e47332733ccf6b14ffa522715c1a1d7ee30108b17a3844eb7637cfc5bae15996",
+        "result": "refused",
+        "error_type": "ValueError",
+        "error": "unknown native CPU configuration"
+      }
+    ],
+    "hook_mutations": []
+  },
+  "pip_check": {
+    "command": ".resolve/bin/python -m pip check",
+    "stdout": "WARNING: The directory '/mnt/nvme/ai/caches/pip' or its parent directory is not owned or is not writable by the current user. The cache has been disabled. Check the permissions and owner of that directory. If executing pip with sudo, you should use sudo's -H flag.\nNo broken requirements found.\n"
+  },
+  "unchanged_source_check": {
+    "command": "git diff --quiet abe34b17f7ebf513a6d65d123edfb03ed734a84b -- pyproject.toml conceptmod/modern/sources.json conceptmod/backends conceptmod/model_train.py conceptmod/encoder_train.py conceptmod/game.py",
+    "exit_code": 0
+  },
+  "review_status": "Mandatory Claude actual-diff RETURN review pending. Core admission unchanged and pending. No merge, native/GPU expansion, model/package release or deployment."
+}

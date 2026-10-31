@@ -1,0 +1,2 @@
+hidden = linear(value, $rank, bias=False, name="down")
+linear(hidden, $output_width, bias=False, name="up")

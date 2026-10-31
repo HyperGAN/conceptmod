@@ -20,6 +20,12 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = ["pytest", "matplotlib"]
+modern = [
+    "particle-sliders-core[hypergan-hndl] @ git+https://github.com/HyperGAN/particle-sliders.git@a794e3b4a8813b012f2c4faa3da82b78d4a90214#subdirectory=packages/particle-sliders-core",
+]
+
+[tool.setuptools.package-data]
+"conceptmod.modern" = ["sources.json", "*.hndl"]
 
 [tool.setuptools.packages.find]
 include = ["conceptmod*"]

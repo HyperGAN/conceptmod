@@ -9,11 +9,12 @@ example images. This is a modernization of
 Stable Diffusion) targeting current flow-matching DiT models via
 🤗 diffusers + transformers + peft.
 
-The separately installed [modern shared-game preview](docs/modern-game.md) adds
-an opt-in PG0.9.4 / HyperGAN develop / HNDL0.10 CPU route. It uses a new
-velocity GAN objective; it does not migrate the historical DSL, encoder or
+The [modern shared-game preview](docs/modern-game.md) is the same `conceptmod`
+distribution with a `modern` optional dependency extra, installed in a new
+environment. It adds an opt-in PG0.9.4 / HyperGAN develop / HNDL0.10 CPU route
+using the existing shared velocity GAN objective. It does not migrate the historical DSL, encoder or
 locked_shared game objectives. All eight backend admission states are listed
-there, including the seven native model routes that remain gated.
+there, including the seven native model routes that remain unmigrated and gated.
 
 | `--backend` | Model | Checkpoint | Size | Train | Sample |
 |---|---|---|---|---|---|

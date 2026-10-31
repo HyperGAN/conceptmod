@@ -79,13 +79,17 @@ def test_native_peft_outputs_input_and_parameter_vjps_match_hndl():
 
 def test_native_full_velocity_matches_existing_cpu_backend():
     runtime, cfg = module._configuration()
-    nn.init.normal_(runtime.transformer.base_model.model.linear2.lora_B['default'].weight, std=.1)
+    reference = deepcopy(runtime)
+    nn.init.normal_(reference.transformer.base_model.model.linear2.lora_B['default'].weight, std=.1)
     args = native_args()
-    expected = runtime.predict_v(args['prompt'], args['latent'], args['timestep'], frozen=False)
+    expected = reference.predict_v(args['prompt'], args['latent'], args['timestep'], frozen=False)
     frozen = runtime.predict_v(args['prompt'], args['latent'], args['timestep'], frozen=True)
     before, state = flags(runtime), deepcopy(runtime.transformer.state_dict())
     binding = module.CpuResponse(runtime, cfg)
     try:
+        with torch.no_grad():
+            binding.network.graph['up'].weight.copy_(
+                reference.transformer.base_model.model.linear2.lora_B['default'].weight)
         torch.testing.assert_close(binding.response(**args), expected)
         assert torch.equal(binding.response(**args, strength=0), frozen)
     finally:
@@ -98,6 +102,10 @@ def test_native_full_velocity_matches_existing_cpu_backend():
 def test_critic_outputs_vjps_and_actual_public_penalty_second_derivatives():
     with open_game(steps=2) as session:
         graph = session.game.critic
+        assert isinstance(graph.graph['field0'], nn.Conv2d)
+        assert isinstance(graph.graph['field2'], nn.Conv2d)
+        assert graph.graph['field0'].kernel_size == (1, 1)
+        assert graph.graph['field2'].kernel_size == (3, 3)
         old = FieldCritic(4, 1, width=4)
         for name, layer in [('field0', old.field[0]), ('field2', old.field[2]),
                             ('condition', old.condition), ('score0', old.score[0]), ('score2', old.score[2])]:
@@ -391,3 +399,74 @@ def test_native_geometry_and_time_refusal(field, value):
         args[field] = value
         with pytest.raises(ValueError):
             loaded.response(**args)
+
+
+def test_alpha_conditions_change_actual_teacher_student_and_vjp():
+    from dataclasses import replace
+    with open_game(steps=2) as session:
+        rows = session.game.rows
+        alphas = [prepared.row.guidance for prepared in rows]
+        assert alphas == list(module.TRAINING_ALPHAS)
+        assert torch.equal(session.game.conditions, torch.tensor(alphas).unsqueeze(1))
+        assert torch.equal(rows[0].row.latent, rows[1].row.latent)
+        assert torch.equal(rows[0].row.timestep, rows[1].row.timestep)
+        backend = session.game.backend
+        residuals = [backend.generated(row) - row.target for row in rows]
+        assert not torch.equal(residuals[0], residuals[1])
+        torch.testing.assert_close(residuals[0] / alphas[0], residuals[1] / alphas[1])
+        gradients = [torch.autograd.grad(backend.generated(row).sum(),
+            backend.network.graph['up'].weight)[0] for row in rows]
+        assert gradients[1].abs().sum() > 0
+        torch.testing.assert_close(gradients[0], alphas[0] * gradients[1])
+        zero = backend.prepare(replace(rows[1].row, guidance=0.))
+        assert torch.equal(backend.generated(zero), zero.target)
+        torch.testing.assert_close(rows[0].target, rows[0].neutral + alphas[0] *
+            (rows[1].target - rows[1].neutral))
+
+
+@pytest.mark.parametrize('matrix', ['lora_A', 'lora_B'])
+def test_borrowed_nonfresh_initialization_rejects_before_mutation(matrix):
+    runtime, configuration = module._configuration()
+    leaf = runtime.transformer.base_model.model.linear2
+    getattr(leaf, matrix)['default'].weight.data.add_(.125)
+    before, modes = deepcopy(runtime.transformer.state_dict()), flags(runtime)
+    with pytest.raises(ValueError, match='fresh seed-matched A/B'):
+        open_game(runtime=runtime)
+    assert 'forward' not in vars(leaf)
+    same(before, runtime.transformer.state_dict())
+    assert flags(runtime) == modes
+    assert module._lora_initialization_identity(leaf) != configuration['initialization_sha256']
+
+
+def test_actual_shared_training_moves_student_toward_frozen_teacher():
+    from dataclasses import replace
+    import json
+    with open_game(steps=128) as session:
+        backend = session.game.backend
+        rows = list(session.game.rows)
+        # An unseen alpha tests the declared interpolation, not z/t generality.
+        rows.append(backend.prepare(replace(rows[1].row, guidance=.6)))
+        targets = [row.target.clone() for row in rows]
+        def errors():
+            with torch.no_grad():
+                return [float((backend.generated(row) - row.target).square().mean()) for row in rows]
+        before = errors()
+        session.train()
+        after = errors()
+        assert all(end < .8 * start for start, end in zip(before, after))
+        for row, target in zip(rows, targets):
+            assert torch.equal(row.target, target)
+        print('BEHAVIOR ' + json.dumps(dict(steps=128, alphas=[row.row.guidance for row in rows],
+            before_teacher_mse=before, after_teacher_mse=after)))
+
+
+def test_critic_initialization_is_seeded_independently_of_caller_rng():
+    before = torch.get_rng_state().clone()
+    with open_game(steps=2) as first:
+        expected = deepcopy(first.game.critic.state_dict())
+    assert torch.equal(before, torch.get_rng_state())
+    torch.rand(7)
+    changed = torch.get_rng_state().clone()
+    with open_game(steps=2) as second:
+        same(expected, second.game.critic.state_dict())
+    assert torch.equal(changed, torch.get_rng_state())

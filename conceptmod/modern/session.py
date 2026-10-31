@@ -15,7 +15,7 @@ from torch import nn
 
 from particle_sliders.fibo_hndl import verified_builder, HNDLFieldCritic
 from particle_sliders.pg094 import ConditionalPG094, validate_pg09_domain
-from particle_sliders.pg09 import _validate_module
+from particle_sliders.pg09 import _hash, _validate_module
 from particle_sliders.pg09_backends import FrozenResponseAdapter, ResponseRow
 from particle_sliders.lifecycle import (
     Backend, Binding, Capabilities, SessionConfig, CheckpointError, TRAINING,
@@ -27,9 +27,11 @@ from particle_sliders.inference import (
 )
 
 ROOT = Path(__file__).parent
-NAME = 'conceptmod-dsl-cpu-hg-v1'
-COHORT = 'conceptmod-cpu-native-velocity-pg094-hg-hndl010-v1'
-PROTOCOL = 'conceptmod-cpu-peft-native-velocity-hg-v1'
+NAME = 'conceptmod-dsl-cpu-hg-v2'
+COHORT = 'conceptmod-cpu-alpha-velocity-pg094-hg-hndl010-v2'
+PROTOCOL = 'conceptmod-cpu-peft-native-velocity-hg-v2'
+INITIALIZATION_POLICY = 'fresh-seeded-peft-rank4-alpha4-v1'
+TRAINING_ALPHAS = (.25, 1.)
 BACKEND_STATES = {
     'cpu': 'CPU software fixture qualified; native 4x8x8 velocity, ordinary rank4 LoRA',
     'sana': 'gated: native field, timestep_scale and learned-variance split need own conformance',
@@ -98,6 +100,7 @@ class HNDLLoRA(nn.Module):
         self.identity = dict(identity, product_source_sha256=_sha(ROOT / 'lora.hndl'),
             input_shape=['B', leaf.in_features], output_shape=['B', leaf.out_features],
             rank=a.out_features, factor=self.factor,
+            initialization_sha256=_lora_initialization_identity(leaf),
             graph_plan=str(self.graph))
         object.__setattr__(self, '_base', leaf.base_layer)
 
@@ -133,6 +136,10 @@ def _base_identity(runtime):
     return hashlib.sha256(json.dumps(values, sort_keys=True).encode()).hexdigest()
 
 
+def _lora_initialization_identity(leaf):
+    return _hash(dict(A=leaf.lora_A['default'].weight, B=leaf.lora_B['default'].weight))
+
+
 def _validate_runtime(runtime, configuration):
     from conceptmod.backends.cpu import CpuBackend
     if type(runtime) is not CpuBackend or runtime.encoder_lora or runtime.frozen is not None:
@@ -147,6 +154,9 @@ def _validate_runtime(runtime, configuration):
     leaf = runtime.transformer.base_model.model.linear2
     if leaf.r != {'default': 4} or leaf.lora_alpha != {'default': 4} or leaf.scaling != {'default': 1.}:
         raise ValueError('native CPU PEFT rank/alpha/scale differs before binding')
+    if (configuration['initialization_policy'] != INITIALIZATION_POLICY
+            or _lora_initialization_identity(leaf) != configuration['initialization_sha256']):
+        raise ValueError('native CPU requires fresh seed-matched A/B initialization before binding')
     if 'forward' in vars(leaf):
         raise ValueError('CPU projection already has a forward owner')
     return leaf
@@ -209,6 +219,14 @@ class CpuResponse(FrozenResponseAdapter):
         text = self.backend._encode_raw(condition)
         return self.backend._forward(self.backend.transformer, latent, timestep, text)
 
+    def metadata(self):
+        return dict(super().metadata(),
+            conditioning='alpha: shared CFG interpolation between frozen red and the conditional branch',
+            training_alphas=list(TRAINING_ALPHAS),
+            target_convention='frozen red + alpha*(frozen blue - frozen red)',
+            student_convention='frozen red + alpha*(adapted red - frozen red)',
+            latent_time_contract='one fixed native latent and raw timestep500; residual has no z/t dependence')
+
     def response(self, *, prompt, latent, timestep, strength=1., seed=0):
         del seed
         _validate_request(prompt, latent, timestep)
@@ -233,7 +251,9 @@ def _configuration(seed=0):
     from conceptmod.backends.cpu import CpuBackend
     with torch.random.fork_rng(devices=[]):
         runtime = CpuBackend(device='cpu', lora_rank=4, seed=seed)
-    return runtime, dict(model_seed=seed, rank=4, base_sha256=_base_identity(runtime))
+    return runtime, dict(model_seed=seed, rank=4, base_sha256=_base_identity(runtime),
+        initialization_policy=INITIALIZATION_POLICY,
+        initialization_sha256=_lora_initialization_identity(runtime.transformer.base_model.model.linear2))
 
 
 def _native_validate(options, spec):
@@ -241,7 +261,8 @@ def _native_validate(options, spec):
         raise ValueError('native CPU inference accepts no source/model overrides')
     verify_sources()
     cfg = spec.configuration
-    if (set(cfg) != {'model_seed', 'rank', 'base_sha256'} or cfg['rank'] != 4
+    if (set(cfg) != {'model_seed', 'rank', 'base_sha256', 'initialization_policy', 'initialization_sha256'}
+            or cfg['rank'] != 4 or cfg['initialization_policy'] != INITIALIZATION_POLICY
             or type(cfg['model_seed']) is not int or not 0 <= cfg['model_seed'] < 2**31):
         raise ValueError('unknown native CPU configuration')
     if spec.identity['protocol'] != PROTOCOL:
@@ -295,11 +316,17 @@ def _prepare(options, runtime=None):
     try:
         rule = _write_rule(options['phrase'])
         generator = torch.Generator().manual_seed(options['seed'])
-        rows = [native.prepare(ResponseRow(rule.a, rule.b, '',
-            torch.randn((1, 4, 8, 8), generator=generator), torch.tensor([time])))
-            for time in (250., 750.)]
-        critic = HNDLFieldCritic(4, 1, (8, 8), width=4)
-        game = ConditionalPG094(native, rows, critic, conditions=torch.tensor([[.25], [.75]]),
+        latent = torch.randn((1, 4, 8, 8), generator=generator)
+        # Shared CFG applies the actual alpha to both teacher and student.
+        # The adapted class path has no latent/time dependence; do not present
+        # duplicate residuals at different z/t as conditional training.
+        rows = [native.prepare(ResponseRow(rule.a, rule.b, rule.a,
+            latent, torch.tensor([500.]), guidance=alpha)) for alpha in TRAINING_ALPHAS]
+        with torch.random.fork_rng(devices=[]):
+            torch.default_generator.manual_seed(options['seed'] + 1)
+            critic = HNDLFieldCritic(4, 1, (8, 8), width=4)
+        conditions = torch.tensor([[prepared.row.guidance] for prepared in rows])
+        game = ConditionalPG094(native, rows, critic, conditions=conditions,
             total_steps=options['steps'], batch_size=options['batch'], seed=options['seed'])
         specification = NATIVE.specification(native, model_identity=native.model_identity,
             protocol=PROTOCOL, configuration=configuration)
@@ -316,7 +343,8 @@ def open_game(phrase='red=blue', *, backend='cpu', steps=4, batch=2, seed=7,
               model_seed=0, ema_decay=.9, runtime=None, resume=None):
     """Open an actual shared session using the new GAN objective.
 
-    A borrowed CpuBackend is restored on close/failure; HNDL weights are exported
+    A borrowed CpuBackend must have fresh seed-matched A/B initialization and
+    is restored on close/failure; HNDL weights are exported
     via the shared session. Historical PEFT artifacts are never overwritten.
     """
     if backend != 'cpu':

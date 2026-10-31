@@ -2,21 +2,34 @@
 
 This preview implements a real shared-game route for the repository's tiny
 `CpuBackend`. Its two PEFT LoRA matrices execute through actual HyperGAN-built
-HNDL, its native spatial critic executes the shared HNDL graph, and
+HNDL, its Conv2d critic executes the shared HNDL graph, and
 `ConditionalPG094` owns the GAN loss, public BISPF penalty, optimizer and
 updates. Shared `SliderSession` owns checkpoints, EMA, evaluation and export;
 shared native inference loads the adapter without constructing a game, critic
-or prepared training rows.
+or prepared training rows. This is the same `conceptmod` distribution with a
+`modern` optional dependency extra, intended for a new environment.
 
-This is a **new objective and artifact cohort**. It does not transparently
+TinyFlowDiT is an affine MLP: its flat 256-coordinate output is reshaped into
+`[B,4,8,8]`. The critic itself has 1x1 and 3x3 Conv2d layers followed by
+FiLM, spatial mean and a linear readout. Native
+field shape here does not qualify an image model or learned spatial geometry.
+
+This is a **distinct cohort using the existing shared GAN objective**. It does not transparently
 migrate `model_train.train_model`'s DSL `ops.rule_loss`, `encoder_train`'s
 embedding MSE/cosine/curriculum, or `game.py`'s 2-D locked_shared RpGAN/b_cap
 and local PlaneCritic. Those files and all eight historical backend source
 files remain unchanged. The modern CPU fixture admits exactly `red=blue` at
-alpha1: student raw velocity at `red` versus frozen raw velocity at `blue`,
-at two native latent/timestep rows. It uses the shared conditional residual
+DSL rule weight 1. Its two rows use slider alpha 0.25 and 1 with the same native
+latent and raw timestep 500. Shared CFG computes both sides:
+`teacher = frozen red + alpha*(frozen blue - frozen red)` and
+`student = frozen red + alpha*(adapted red - frozen red)`.
+The critic condition is that actual alpha, derived from each response row.
+Only `linear2` is adapted, so the class-path residual is independent of latent
+and time. Different z/t rows would duplicate the residual; no timestep- or
+latent-conditional learning is claimed. It uses the shared conditional residual
 GAN objective, not the historical write-rule CFG squared error. There is no
-new local GAN mathematics or optimizer loop.
+new local GAN mathematics or optimizer loop. The critic is initialized with
+CPU seed `seed + 1` in a reversible RNG scope, independently of caller RNG.
 
 ## Installation and reviewed source boundary
 
@@ -42,10 +55,14 @@ historical default install reproducible. Native model imports or downloads
 are not needed by this CPU path.
 
 The clean CPU dependency solve and install also succeeded with uv. However,
-uv stamped its exact HyperGAN VCS build as `dirty: true`; the shared gate
-correctly rejected that runtime. Rebuilding that same public HG commit with
-pip is required in that environment. Do not edit the provenance file or
-relax the gate. The tested pip command is:
+uv stamped its exact HyperGAN VCS build metadata as `dirty: true`; the shared
+gate rejected that self-reported flag. A comparison of the retained uv build
+and pip build found every HyperGAN Python source file byte-identical despite
+the differing flags. `dirty` is self-reported build metadata, not proof of
+differing source bytes or a security verdict. The independent source hash
+checks and required metadata gate are retained. A pip rebuild produced the
+required `dirty: false` metadata in this environment. Do not edit the stamp
+or relax verification. The tested pip command is:
 
 ```sh
 .venv-modern/bin/python -m pip install --no-cache-dir --force-reinstall --no-deps \
@@ -60,8 +77,9 @@ Modern source pins:
   pin is a tested candidate pending root's Claude review, fixes and return
   review/admission; publication is not admission or a package release.**
 - PG0.9.4, official `release-0.9.4/auto`, verified by the shared manifest.
-- HyperGAN develop `5f368a3770cf5bdae0448995c9f76e29af8049f7`, clean build
-  provenance; HNDL0.10.0; shared builder profile `hypergan-hndl-v2`.
+- HyperGAN develop `5f368a3770cf5bdae0448995c9f76e29af8049f7`, required
+  self-reported `dirty:false` build metadata plus verified source hashes;
+  HNDL0.10.0; shared builder profile `hypergan-hndl-v2`.
 - `conceptmod/modern/sources.json` checks the complete installed core Python,
   JSON and HNDL closure plus original CPU/base sources and this product's
   `lora.hndl`. Shared `verified_builder()` additionally verifies the actual
@@ -69,9 +87,11 @@ Modern source pins:
   runtime. No explicit-domain upstream overlay is admitted.
 
 The new cohort is
-`conceptmod-cpu-native-velocity-pg094-hg-hndl010-v1`. Shared signatures and
+`conceptmod-cpu-alpha-velocity-pg094-hg-hndl010-v2`. Shared signatures and
 native exports bind actual implementation source, graph source/plan/shapes,
-base model bytes, target/rank/alpha, native response geometry and runtime.
+base model bytes, target/rank/alpha, fresh A/B initialization hash/policy,
+native response geometry and runtime. The v1 preview packets retain their
+original identities and are refused by v2; they are not silently rebound.
 Cross-source/runtime continuation must be qualified as a separate cohort.
 
 ## Executable CPU route
@@ -96,8 +116,14 @@ with load_native('modern-native.pt') as native:
 ```
 
 `open_game(runtime=existing_cpu_backend)` borrows the exact CPU class path,
-checks deterministic base bytes/rank/shape/device before attachment, copies
-its A/B values to HNDL, and temporarily owns only `linear2.forward`. Original
+checks deterministic base bytes/rank/shape/device and **fresh seed-matched
+A/B initialization** before attachment. Both A and B must exactly match the
+seeded rank4/alpha4 CpuBackend. Arbitrary existing/trained PEFT initialization
+is refused, including a changed A with B still zero. The initialization hash
+and explicit policy are bound in model, graph and native export identities.
+The binding copies these fresh A/B values to HNDL and temporarily owns only
+`linear2.forward`. Resume uses the modern HNDL checkpoint, not borrowed
+legacy trained PEFT values. Original
 native weights, PEFT artifacts, mode flags and gradient flags are restored on
 close and preparation/update failures. Training modifies only the separate
 HNDL adapter leaves and critic. The active binding is exclusive; a second
@@ -109,7 +135,9 @@ The native payload's tensor schema and finiteness are also validated on that
 unattached candidate, before the shared inference factory can install a hook.
 
 Strength0 returns the untouched native base exactly. Intermediate strength
-scales the LoRA delta and strength1 applies the trained delta. Render/image
+scales the LoRA delta and strength1 applies the trained delta. Training-row
+evaluation applies the row alpha times the requested strength; data-independent
+native inference uses the requested strength directly. Render/image
 capability is deliberately absent: this cohort exports native velocity, not a
 new sampler. Other DSL rules/alphas and backend names refuse before loading
 any pretrained model. Training checkpoints and raw/EMA native exports use
@@ -119,12 +147,12 @@ their different shared schemas and cannot substitute for one another.
 
 These are source-level findings at ConceptMod base
 `13271a8b3ac963832a8bdfd1e9a8c74eaf0344aa`, not refreshed model quality claims.
-All seven native model backends currently refuse in `open_game`; no loader is
+All seven native model backends remain **unmigrated** and refuse in `open_game`; no loader is
 called when one is selected. Their historical DSL/encoder routes stay intact.
 
 | Backend | Existing native velocity contract | Modern qualification / remaining gate |
 |---|---|---|
-| `cpu` | `[B,4,8,8]`; `t/1000` inside TinyFlowDiT; PEFT `linear2`, rank4/alpha4 | **CPU software fixture qualified.** Exact ordinary two-linear LoRA HNDL graph; shared native field critic/game/session/inference. No routed bank or pretrained-model claim. |
+| `cpu` | `[B,4,8,8]`; `t/1000` inside TinyFlowDiT; PEFT `linear2`, rank4/alpha4 | **CPU software fixture qualified.** Exact ordinary two-linear LoRA HNDL graph; shared Conv2d critic/game/session/inference over the reshaped affine MLP output. No routed bank or pretrained-model claim. |
 | `sana` | `[B,C,H,W]`; backend multiplies scheduler time by `timestep_scale`; learned-variance output may split channels | **Gated.** Native field is compatible in principle, but projection ownership, timestep/output split, masks, target selection and VJP/second-derivative evidence are not supplied here. |
 | `zimage` | `[B,C,H,W]` externally, list inputs with singleton time internally; `(1000-t)/1000`; output sign negated | **Gated.** Needs its own list/text-layout, reversed-time/sign and checkpoint-scale adapter conformance. The CPU class path cannot stand in for this architecture. |
 | `anima` | `[B,C,1,H,W]`, singleton time retained; normalized scheduler time and padding mask | **Gated.** Preserve 5D at game/penalty boundary. Core candidate's HNDLFieldCritic is 4D; a reviewed internal singleton-time wrapper with matched derivatives is still needed for this backend. |
@@ -149,11 +177,18 @@ exact uninterrupted/split resume including optimizer/RNG/EMA; zero/half/full
 strength; raw/EMA native-only inference in a fresh interpreter; source,
 builder, base-model, shape, cohort and old-artifact rejection; borrowed
 restoration; observation/update/preparation failures; late-load rollback;
-and continuation of cleanup when projection ownership has changed.
+and continuation of cleanup when projection ownership has changed. It also
+asserts Conv2d types, alpha-dependent teacher/student values and VJPs,
+nonfresh borrowed A/B rejection, and that 128 shared-game updates move
+the student toward the frozen teacher at both training alphas and held-out
+alpha 0.6. Teacher MSE is an evaluation metric only; it is not added to training.
+The four-step example above illustrates lifecycle wiring, not convergence.
 
 The focused historical PG0.5 suite passes separately. Wheel and sdist builds,
 installed artifact tests, public CPU dependency resolution and actual source
-identity checks accompany the draft review packet. No model weights, GPU
+identity checks accompany the draft review packet. Actual installed-test
+commands/stdout, source snapshot hashes, behavior values and artifact hashes
+are published in `docs/validation/modern-cpu-return-review.json`. No model weights, GPU
 training, model-quality benchmark, merge, release, deployment or new compute
 is part of these CPU receipts. Root owns Claude review/corrections/return
 review, GPU qualification routing and merge decisions.

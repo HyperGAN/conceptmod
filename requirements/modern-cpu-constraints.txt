@@ -1,0 +1,4 @@
+# CPU conformance runtime; use the PyTorch CPU index alongside PyPI.
+torch==2.14.1+cpu
+torchvision==0.29.2+cpu
+# The shared source lock separately fixes PG0.9.4, core, HG develop and HNDL0.10.

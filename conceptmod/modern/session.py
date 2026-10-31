@@ -27,9 +27,9 @@ from particle_sliders.inference import (
 )
 
 ROOT = Path(__file__).parent
-NAME = 'conceptmod-dsl-cpu-hg-v2'
-COHORT = 'conceptmod-cpu-alpha-velocity-pg094-hg-hndl010-v2'
-PROTOCOL = 'conceptmod-cpu-peft-native-velocity-hg-v2'
+NAME = 'conceptmod-dsl-cpu-hg-v3'
+COHORT = 'conceptmod-cpu-alpha-velocity-pg094-hg-hndl010-v3'
+PROTOCOL = 'conceptmod-cpu-peft-native-velocity-hg-v3'
 INITIALIZATION_POLICY = 'fresh-seeded-peft-rank4-alpha4-v1'
 TRAINING_ALPHAS = (.25, 1.)
 BACKEND_STATES = {
@@ -190,28 +190,32 @@ class CpuResponse(FrozenResponseAdapter):
             runtime.text_encoder.eval().requires_grad_(False)
             self._leaf.forward = self._forward
             self._attached = True
-        except BaseException:
-            self.close()
+        except BaseException as primary:
+            _restore_all([self.close], primary=primary)
             raise
 
     def close(self):
         if self._closed:
             return
-        self._closed = True
         def unhook():
             if not self._attached:
                 return
             if vars(self._leaf).get('forward') is not self._forward:
                 raise RuntimeError('CPU projection forward ownership changed')
             del self._leaf.forward
+            self._attached = False
         _restore_all([unhook, *self._restores])
+        self._closed = True
 
     @contextmanager
     def observation(self):
         restores = [native_cleanup(self.backend.transformer), native_cleanup(self.backend.text_encoder)]
         try:
             yield
-        finally:
+        except BaseException as primary:
+            _restore_all(restores, primary=primary)
+            raise
+        else:
             _restore_all(restores)
 
     def _velocity(self, condition, latent, timestep):
@@ -282,8 +286,8 @@ def _native_prepare(options, spec):
         return InferenceBinding(native.network,
             identity,
             native.close, response=native.response, observation=native.observation)
-    except BaseException:
-        native.close()
+    except BaseException as primary:
+        _restore_all([native.close], primary=primary)
         raise
 
 
@@ -331,8 +335,8 @@ def _prepare(options, runtime=None):
         specification = NATIVE.specification(native, model_identity=native.model_identity,
             protocol=PROTOCOL, configuration=configuration)
         return Binding(game, native.close, inference=specification, observation=native.observation)
-    except BaseException:
-        native.close()
+    except BaseException as primary:
+        _restore_all([native.close], primary=primary)
         raise
 
 
@@ -363,8 +367,8 @@ def open_game(phrase='red=blue', *, backend='cpu', steps=4, batch=2, seed=7,
             staged.restore(packet)
             if runtime is None:
                 return staged
-        except BaseException:
-            staged.close()
+        except BaseException as primary:
+            _restore_all([staged.close], primary=primary)
             raise
         staged.close()
         resume = packet
@@ -373,8 +377,8 @@ def open_game(phrase='red=blue', *, backend='cpu', steps=4, batch=2, seed=7,
         if resume is not None:
             session.restore(resume)
         return session
-    except BaseException:
-        session.close()
+    except BaseException as primary:
+        _restore_all([session.close], primary=primary)
         raise
 
 
@@ -392,9 +396,13 @@ def load_native(packet, *, strength=1.):
             raise CheckpointError('native CPU base identity differs before binding')
         candidate = CpuResponse(runtime, configuration, attach=False)
         try:
-            _validate_module(candidate.network, packet['network'])
-        except (ValueError, TypeError, AttributeError) as exc:
-            raise CheckpointError('native CPU payload differs before binding') from exc
-        finally:
+            try:
+                _validate_module(candidate.network, packet['network'])
+            except (ValueError, TypeError, AttributeError) as exc:
+                raise CheckpointError('native CPU payload differs before binding') from exc
+        except BaseException as primary:
+            _restore_all([candidate.close], primary=primary)
+            raise
+        else:
             candidate.close()
     return open_inference(packet, backend=NATIVE, operation='response', strength=strength)

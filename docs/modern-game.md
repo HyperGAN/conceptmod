@@ -34,7 +34,7 @@ CPU seed `seed + 1` in a reversible RNG scope, independently of caller RNG.
 ## Installation and reviewed source boundary
 
 Use a new environment. Keep a working historical environment/checkpoint with
-its original dependency versions. In particular, PG0.9.4 does not export the
+its original dependency versions. In particular, PG 0.9.4 does not export the
 historical `GradRegularizer`, so importing the old locked game in the modern
 environment is unsupported. Do not reinterpret an old PASS, state dict or
 PEFT artifact as a modern checkpoint.
@@ -71,15 +71,16 @@ or relax verification. The tested pip command is:
 
 Modern source pins:
 
-- Shared core0.12: `7a8a321d04323d49319d0b08e6093a0ddce36b27`, package
-  `packages/particle-sliders-core` in HyperGAN/particle-sliders, draft PR148.
-  This includes lifecycle rollback corrections after `4abc0eb`. **This draft
-  pin is a tested candidate pending root's Claude review, fixes and return
-  review/admission; publication is not admission or a package release.**
-- PG0.9.4, official `release-0.9.4/auto`, verified by the shared manifest.
+- Shared core 0.12: `a794e3b4a8813b012f2c4faa3da82b78d4a90214`, package
+  `packages/particle-sliders-core` in HyperGAN/particle-sliders. Upstream evidence for this
+  exact source includes CPU and actual-source review plus a bounded synthetic
+  CUDA software fixture. That upstream fixture is not native model, width, audio or Flux
+  admission. This product remains a CPU software fixture and awaits its own
+  post-pin Claude RETURN review; publication is not a package release.
+- PG 0.9.4, official `release-0.9.4/auto`, verified by the shared manifest.
 - HyperGAN develop `5f368a3770cf5bdae0448995c9f76e29af8049f7`, required
   self-reported `dirty:false` build metadata plus verified source hashes;
-  HNDL0.10.0; shared builder profile `hypergan-hndl-v2`.
+  HNDL 0.10.0; shared builder profile `hypergan-hndl-v2`.
 - `conceptmod/modern/sources.json` checks the complete installed core Python,
   JSON and HNDL closure plus original CPU/base sources and this product's
   `lora.hndl`. Shared `verified_builder()` additionally verifies the actual
@@ -87,11 +88,14 @@ Modern source pins:
   runtime. No explicit-domain upstream overlay is admitted.
 
 The new cohort is
-`conceptmod-cpu-alpha-velocity-pg094-hg-hndl010-v2`. Shared signatures and
+`conceptmod-cpu-alpha-velocity-pg094-hg-hndl010-v3`. Shared signatures and
 native exports bind actual implementation source, graph source/plan/shapes,
 base model bytes, target/rank/alpha, fresh A/B initialization hash/policy,
-native response geometry and runtime. The v1 preview packets retain their
-original identities and are refused by v2; they are not silently rebound.
+native response geometry and runtime. The v1 and v2 preview packets retain their
+original identities and are refused by v3; they are not silently rebound.
+The v3 backend/cohort/native protocol identifies the cleared core source.
+Training v2 config and native v2 protocol refusals precede borrowed hook
+attachment. No packet metadata or historical checkpoint is rewritten.
 Cross-source/runtime continuation must be qualified as a separate cohort.
 
 ## Executable CPU route
@@ -118,7 +122,7 @@ with load_native('modern-native.pt') as native:
 `open_game(runtime=existing_cpu_backend)` borrows the exact CPU class path,
 checks deterministic base bytes/rank/shape/device and **fresh seed-matched
 A/B initialization** before attachment. Both A and B must exactly match the
-seeded rank4/alpha4 CpuBackend. Arbitrary existing/trained PEFT initialization
+seeded rank 4 / alpha 4 CpuBackend. Arbitrary existing/trained PEFT initialization
 is refused, including a changed A with B still zero. The initialization hash
 and explicit policy are bound in model, graph and native export identities.
 The binding copies these fresh A/B values to HNDL and temporarily owns only
@@ -128,14 +132,20 @@ native weights, PEFT artifacts, mode flags and gradient flags are restored on
 close and preparation/update failures. Training modifies only the separate
 HNDL adapter leaves and critic. The active binding is exclusive; a second
 owner or replacement of its forward method is refused, and every remaining
-cleanup still runs. Complete resume validation is staged on an owned tiny
+cleanup still runs. Failed cleanup leaves the session and CPU binding open for
+an explicit retry; a successfully removed hook is recorded independently so a
+later restoration failure can be retried without removing another owner.
+Product cleanup call sites pass the actual operation exception explicitly to
+the cleared core, so a second cleanup failure is attached as a note while every
+remaining restoration is attempted.
+Complete resume validation is staged on an owned tiny
 instance before attaching to a borrowed model. Native artifact identity is
 checked on an unattached candidate before native attachment.
 The native payload's tensor schema and finiteness are also validated on that
 unattached candidate, before the shared inference factory can install a hook.
 
-Strength0 returns the untouched native base exactly. Intermediate strength
-scales the LoRA delta and strength1 applies the trained delta. Training-row
+Strength 0 returns the untouched native base exactly. Intermediate strength
+scales the LoRA delta and strength 1 applies the trained delta. Training-row
 evaluation applies the row alpha times the requested strength; data-independent
 native inference uses the requested strength directly. Render/image
 capability is deliberately absent: this cohort exports native velocity, not a
@@ -152,7 +162,7 @@ called when one is selected. Their historical DSL/encoder routes stay intact.
 
 | Backend | Existing native velocity contract | Modern qualification / remaining gate |
 |---|---|---|
-| `cpu` | `[B,4,8,8]`; `t/1000` inside TinyFlowDiT; PEFT `linear2`, rank4/alpha4 | **CPU software fixture qualified.** Exact ordinary two-linear LoRA HNDL graph; shared Conv2d critic/game/session/inference over the reshaped affine MLP output. No routed bank or pretrained-model claim. |
+| `cpu` | `[B,4,8,8]`; `t/1000` inside TinyFlowDiT; PEFT `linear2`, rank 4 / alpha 4 | **CPU software fixture qualified.** Exact ordinary two-linear LoRA HNDL graph; shared Conv2d critic/game/session/inference over the reshaped affine MLP output. No routed bank or pretrained-model claim. |
 | `sana` | `[B,C,H,W]`; backend multiplies scheduler time by `timestep_scale`; learned-variance output may split channels | **Gated.** Native field is compatible in principle, but projection ownership, timestep/output split, masks, target selection and VJP/second-derivative evidence are not supplied here. |
 | `zimage` | `[B,C,H,W]` externally, list inputs with singleton time internally; `(1000-t)/1000`; output sign negated | **Gated.** Needs its own list/text-layout, reversed-time/sign and checkpoint-scale adapter conformance. The CPU class path cannot stand in for this architecture. |
 | `anima` | `[B,C,1,H,W]`, singleton time retained; normalized scheduler time and padding mask | **Gated.** Preserve 5D at game/penalty boundary. Core candidate's HNDLFieldCritic is 4D; a reviewed internal singleton-time wrapper with matched derivatives is still needed for this backend. |
@@ -184,7 +194,7 @@ the student toward the frozen teacher at both training alphas and held-out
 alpha 0.6. Teacher MSE is an evaluation metric only; it is not added to training.
 The four-step example above illustrates lifecycle wiring, not convergence.
 
-The focused historical PG0.5 suite passes separately. Wheel and sdist builds,
+The focused historical PG 0.5 suite passes separately. Wheel and sdist builds,
 installed artifact tests, public CPU dependency resolution and actual source
 identity checks accompany the draft review packet. Actual installed-test
 commands/stdout, source snapshot hashes, behavior values and artifact hashes
@@ -192,3 +202,8 @@ are published in `docs/validation/modern-cpu-return-review.json`. No model weigh
 training, model-quality benchmark, merge, release, deployment or new compute
 is part of these CPU receipts. Root owns Claude review/corrections/return
 review, GPU qualification routing and merge decisions.
+
+Post-pin installed receipts, actual old-v2 packet refusal results and recursive
+source identity are recorded separately in
+`docs/validation/modern-cpu-core-a794.json`. The earlier
+`modern-cpu-return-review.json` is retained as historical v2 evidence.

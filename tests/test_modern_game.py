@@ -470,3 +470,107 @@ def test_critic_initialization_is_seeded_independently_of_caller_rng():
     with open_game(steps=2) as second:
         same(expected, second.game.critic.state_dict())
     assert torch.equal(changed, torch.get_rng_state())
+
+
+def test_previous_v2_training_cohort_refuses_before_borrowed_hook(monkeypatch):
+    with open_game(steps=2) as session:
+        packet = session.checkpoint()
+    packet['manifest']['config']['backend'] = 'conceptmod-dsl-cpu-hg-v2'
+    packet['manifest']['config']['cohort'] = 'conceptmod-cpu-alpha-velocity-pg094-hg-hndl010-v2'
+    seal(packet)
+    runtime, _ = module._configuration()
+    state, modes, calls = deepcopy(runtime.transformer.state_dict()), flags(runtime), []
+    monkeypatch.setattr(module.CpuResponse, 'attach', lambda *a: calls.append('attach'))
+    with pytest.raises(CheckpointError, match='config/cohort differs before native binding'):
+        open_game(steps=2, runtime=runtime, resume=packet)
+    assert calls == []
+    assert flags(runtime) == modes
+    same(state, runtime.transformer.state_dict())
+
+
+def test_previous_v2_native_protocol_refuses_before_any_hook(monkeypatch):
+    with open_game(steps=2) as session:
+        packet = session.export_inference()
+    packet['specification']['identity']['protocol'] = 'conceptmod-cpu-peft-native-velocity-hg-v2'
+    seal(packet)
+    calls = []
+    monkeypatch.setattr(module.CpuResponse, 'attach', lambda *a: calls.append('attach'))
+    with pytest.raises(ValueError, match='native CPU protocol differs'):
+        load_native(packet)
+    assert calls == []
+
+
+@pytest.mark.parametrize('route', ['native', 'session'])
+def test_product_cleanup_failure_is_retryable_after_hook_removed(route):
+    runtime, configuration = module._configuration()
+    before = flags(runtime)
+    if route == 'session':
+        owner = open_game(runtime=runtime)
+        native = owner.game.backend
+    else:
+        owner = native = module.CpuResponse(runtime, configuration)
+    original = native._restores[0]
+    calls = []
+    def fail_once():
+        calls.append('restore')
+        if len(calls) == 1:
+            raise RuntimeError('retry restoration')
+        original()
+    native._restores[0] = fail_once
+    try:
+        with pytest.raises(RuntimeError, match='retry restoration'):
+            owner.close()
+        assert not native._closed and not native._attached
+        assert 'forward' not in vars(runtime.transformer.base_model.model.linear2)
+        if route == 'session':
+            assert not owner.closed
+        owner.close()
+        assert native._closed
+        assert flags(runtime) == before
+        assert calls == ['restore', 'restore']
+        owner.close()
+        assert calls == ['restore', 'restore']
+    finally:
+        owner.close()
+
+
+def test_prepare_primary_error_survives_both_cleanup_failures(monkeypatch):
+    runtime, _ = module._configuration()
+    before, calls = flags(runtime), []
+    capture = module.native_cleanup
+    def cleanup_with_failure(model):
+        restore = capture(model)
+        def fail():
+            restore()
+            calls.append(model)
+            raise RuntimeError('cleanup also failed')
+        return fail
+    monkeypatch.setattr(module, 'native_cleanup', cleanup_with_failure)
+    monkeypatch.setattr(module, 'HNDLFieldCritic', lambda *a, **k: (_ for _ in ()).throw(ValueError('primary prepare failure')))
+    with pytest.raises(ValueError, match='primary prepare failure') as caught:
+        open_game(runtime=runtime)
+    assert len(calls) == 2
+    assert any('cleanup also failed' in note for note in caught.value.__notes__)
+    assert flags(runtime) == before
+    assert 'forward' not in vars(runtime.transformer.base_model.model.linear2)
+
+
+def test_observation_primary_error_survives_both_cleanup_failures(monkeypatch):
+    runtime, _ = module._configuration()
+    with open_game(runtime=runtime) as session:
+        before, calls = flags(runtime), []
+        capture = module.native_cleanup
+        def cleanup_with_failure(model):
+            restore = capture(model)
+            def fail():
+                restore()
+                calls.append(model)
+                raise RuntimeError('observation cleanup failed')
+            return fail
+        monkeypatch.setattr(module, 'native_cleanup', cleanup_with_failure)
+        monkeypatch.setattr(session.game.backend, '_velocity', lambda *a, **k: (_ for _ in ()).throw(ValueError('primary observation failure')))
+        with pytest.raises(ValueError, match='primary observation failure') as caught:
+            session.evaluate()
+        assert len(calls) == 2
+        assert any('observation cleanup failed' in note for note in caught.value.__notes__)
+        assert flags(runtime) == before

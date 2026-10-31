@@ -105,6 +105,8 @@ owner or replacement of its forward method is refused, and every remaining
 cleanup still runs. Complete resume validation is staged on an owned tiny
 instance before attaching to a borrowed model. Native artifact identity is
 checked on an unattached candidate before native attachment.
+The native payload's tensor schema and finiteness are also validated on that
+unattached candidate, before the shared inference factory can install a hook.
 
 Strength0 returns the untouched native base exactly. Intermediate strength
 scales the LoRA delta and strength1 applies the trained delta. Render/image

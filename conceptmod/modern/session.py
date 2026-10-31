@@ -15,6 +15,7 @@ from torch import nn
 
 from particle_sliders.fibo_hndl import verified_builder, HNDLFieldCritic
 from particle_sliders.pg094 import ConditionalPG094, validate_pg09_domain
+from particle_sliders.pg09 import _validate_module
 from particle_sliders.pg09_backends import FrozenResponseAdapter, ResponseRow
 from particle_sliders.lifecycle import (
     Backend, Binding, Capabilities, SessionConfig, CheckpointError, TRAINING,
@@ -22,6 +23,7 @@ from particle_sliders.lifecycle import (
 )
 from particle_sliders.inference import (
     InferenceBackend, InferenceBinding, native_identity, open_inference,
+    read_inference, _validate_packet,
 )
 
 ROOT = Path(__file__).parent
@@ -350,4 +352,21 @@ def open_game(phrase='red=blue', *, backend='cpu', steps=4, batch=2, seed=7,
 
 def load_native(packet, *, strength=1.):
     """Load data-independent raw/EMA native inference without a training factory."""
+    packet = read_inference(packet) if isinstance(packet, (str, Path)) else deepcopy(packet)
+    spec = _validate_packet(packet)
+    _native_validate({}, spec)
+    # The shared inference loader validates tensors before copying them. Check
+    # that same schema on an unattached native candidate before installing any
+    # product hook, including for a well-checksummed malformed payload.
+    with torch.random.fork_rng(devices=[]):
+        runtime, configuration = _configuration(spec.configuration['model_seed'])
+        if configuration != spec.configuration:
+            raise CheckpointError('native CPU base identity differs before binding')
+        candidate = CpuResponse(runtime, configuration, attach=False)
+        try:
+            _validate_module(candidate.network, packet['network'])
+        except (ValueError, TypeError, AttributeError) as exc:
+            raise CheckpointError('native CPU payload differs before binding') from exc
+        finally:
+            candidate.close()
     return open_inference(packet, backend=NATIVE, operation='response', strength=strength)

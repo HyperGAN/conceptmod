@@ -265,6 +265,23 @@ def test_native_artifact_identity_rejected_before_attach(monkeypatch):
     assert calls == []
 
 
+@pytest.mark.parametrize('corruption', ['shape', 'nonfinite'])
+def test_native_payload_rejects_before_any_hook_attachment(monkeypatch, corruption):
+    with open_game(steps=2) as session:
+        packet = session.export_inference()
+    key = next(iter(packet['network']))
+    if corruption == 'shape':
+        packet['network'][key] = packet['network'][key].flatten()
+    else:
+        packet['network'][key].fill_(float('nan'))
+    seal(packet)
+    calls = []
+    monkeypatch.setattr(module.CpuResponse, 'attach', lambda *a: calls.append('native mutation'))
+    with pytest.raises(CheckpointError, match='payload differs before binding'):
+        load_native(packet)
+    assert calls == []
+
+
 def test_borrowed_cleanup_on_prepare_step_observation_and_restore_failure(monkeypatch):
     runtime, _ = module._configuration()
     runtime.transformer.train()

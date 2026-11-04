@@ -43,13 +43,16 @@ A CPU PASS is not an Anima, Supra, or Music GPU transfer.
 
 from __future__ import annotations
 
+from conceptmod.particle_api import make_gan_loss, make_gradient_penalty
+
 from dataclasses import dataclass, replace
 
 import torch
 import torch.nn.functional as F
 from torch import nn
 
-from particlegan import GANLoss, GradientPenalty
+from particlegan.grad_regularizers import GradientPenalty
+from particlegan import GANLoss
 
 
 # Image-slider gates. Same 0.85 floor as the unipolar neu_hold / cover board.
@@ -119,13 +122,16 @@ class ThinnedBCap(GradientPenalty):
             arm="b_cap",
             coeff=1.0,
             kappa=1.0,
-            norm="l2",
             lazy_k=1,
-            target_anneal="none",
         )
 
     def center(self, step: int = 0) -> float:
         return 0.0
+
+    def penalty(self, D, x_real, x_fake, step=1, collect_stats=True, **kwargs):
+        return make_gradient_penalty(
+            arm=self.arm, coeff=self.coeff, kappa=self.center(step), lazy_k=self.lazy_k,
+        ).penalty(D, x_real, x_fake, step, collect_stats=collect_stats, **kwargs)
 
 
 def hold_pairs(pairing: str) -> list[tuple[int, int]]:
@@ -230,7 +236,7 @@ def bcap_probe(reg: GradientPenalty) -> tuple[float, float, bool]:
     with torch.no_grad():
         critic.weight.copy_(torch.tensor([[3.0, 0.0]]))
     batch = torch.zeros(4, DIM)
-    champion = GradientPenalty(
+    champion = make_gradient_penalty(
         arm="b_cap",
         coeff=1.0,
         kappa=1.0,
@@ -308,7 +314,7 @@ def _log(name: str, step: int, metrics: dict[str, float], verdict: str | None = 
 
 
 def _make_regularizer(recipe: UnusedHoldRecipe) -> GradientPenalty:
-    return GradientPenalty(
+    return make_gradient_penalty(
         arm=recipe.reg_arm,
         coeff=recipe.reg_coeff,
         kappa=recipe.reg_kappa,
@@ -323,7 +329,7 @@ def train(recipe: UnusedHoldRecipe, regularizer: GradientPenalty | None = None) 
     torch.manual_seed(int(recipe.seed))
     student = SharedSlotStudent()
     critic = SlotCritic()
-    gan = GANLoss(loss_type=recipe.loss_type, mode=recipe.gan_mode)
+    gan = make_gan_loss(loss_type=recipe.loss_type, mode=recipe.gan_mode)
     reg = regularizer if regularizer is not None else _make_regularizer(recipe)
     opt_g = torch.optim.Adam(student.parameters(), lr=LR, betas=BETAS)
     opt_d = torch.optim.Adam(critic.parameters(), lr=LR, betas=BETAS)

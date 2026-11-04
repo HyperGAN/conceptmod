@@ -16,6 +16,8 @@ The critic is this toy's own MLP. ``TrajectoryDiscriminator`` is left alone.
 
 from __future__ import annotations
 
+from conceptmod.particle_api import make_gan_loss, make_gradient_penalty
+
 import json
 from typing import Callable
 
@@ -23,7 +25,7 @@ import torch
 from torch import nn
 
 from particlegan import GANLoss, ParticlePrior, ParticleRegularizer
-from particlegan.grad_regularizers import GradRegularizer
+from particlegan.grad_regularizers import GradientPenalty as GradRegularizer
 
 
 # Budget and formulation pins. Only ``pairing`` may change, and only on a
@@ -196,8 +198,8 @@ def train(*, pairing: str = "shared", locked: bool = True, echo: bool = False,
         LOCKED["n_particles"], LOCKED["z_dim"], init_std=0.1,
         generator=torch.Generator().manual_seed(LOCKED["seed"]),
     )
-    gan = GANLoss(LOCKED["loss_type"], LOCKED["gan_mode"])
-    regularizer = GradRegularizer(
+    gan = make_gan_loss(LOCKED["loss_type"], LOCKED["gan_mode"])
+    regularizer = make_gradient_penalty(
         LOCKED["reg_arm"], LOCKED["reg_coeff"], kappa=LOCKED["reg_kappa"],
         norm=LOCKED["reg_norm"], lazy_k=LOCKED["reg_lazy"],
         target_anneal=LOCKED["target_anneal"],

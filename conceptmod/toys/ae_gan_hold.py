@@ -16,13 +16,15 @@ A PASS is a CPU toy result only. It is not a Music or Anima GPU transfer claim.
 """
 from __future__ import annotations
 
+from conceptmod.particle_api import loss_name, make_gan_loss, make_gradient_penalty
+
 from dataclasses import dataclass
 
 import torch
 from torch import nn
 
 from particlegan import get_recipe
-from particlegan.grad_regularizers import GradRegularizer
+from particlegan.grad_regularizers import GradientPenalty as GradRegularizer
 
 
 # Demo cover, not Music 1.0. See module docstring.
@@ -106,10 +108,15 @@ class ThinnedBCap(GradRegularizer):
     """b_cap stub that advertises kappa=1 but applies a hardcoded thin cap."""
 
     def __init__(self) -> None:
-        super().__init__(arm="b_cap", coeff=1.0, kappa=1.0, norm="l2", lazy_k=1, target_anneal="none")
+        super().__init__(arm="b_cap", coeff=1.0, kappa=1.0, lazy_k=1)
 
     def center(self, step: int = 0) -> float:
         return 0.1
+
+    def penalty(self, D, x_real, x_fake, step=1, collect_stats=True, **kwargs):
+        return make_gradient_penalty(
+            arm=self.arm, coeff=self.coeff, kappa=self.center(step), lazy_k=self.lazy_k,
+        ).penalty(D, x_real, x_fake, step, collect_stats=collect_stats, **kwargs)
 
 
 def regularizer_mismatches(reg) -> list[str]:
@@ -134,7 +141,7 @@ def regularizer_mismatches(reg) -> list[str]:
             bad.append(f"reg.{key}: {got!r} != locked {value!r}")
     if bad:
         return bad
-    champion = GradRegularizer(arm="b_cap", coeff=1.0, kappa=1.0, norm="l2", lazy_k=1, target_anneal="none")
+    champion = make_gradient_penalty(arm="b_cap", coeff=1.0, kappa=1.0, norm="l2", lazy_k=1, target_anneal="none")
     torch.manual_seed(0)
     critic = nn.Linear(2, 1)
     real = torch.randn(8, 2)
@@ -201,13 +208,13 @@ def make_recipe(cfg: HoldConfig):
     """``ae_gan`` recipe with this arm's knobs. Formulation drift is caught separately."""
     return get_recipe(
         "ae_gan",
+        trainer="bcap_adam",
         num_particles=cfg.n_particles,
         reg_every=cfg.reg_lazy,
         reg_arm=cfg.reg_arm,
         reg_coeff=cfg.reg_coeff,
         reg_kappa=cfg.reg_kappa,
-        loss_type=cfg.loss_type,
-        gan_mode=cfg.gan_mode,
+        loss=loss_name(cfg.loss_type, cfg.gan_mode),
         reconstruction_weight=cfg.reconstruction_weight,
         lr=cfg.lr,
         encoder_mode=cfg.encoder_mode,
@@ -225,8 +232,9 @@ def train(cfg: HoldConfig) -> dict:
     prior = recipe.make_prior()
     encoder, decoder, critic = MLP(2, 4), MLP(2, 2), MLP(2, 1)
     opt_g, opt_d = recipe.make_optimizers(decoder, critic, prior, encoder=encoder)
-    gan = recipe.make_loss()
-    regularizer = recipe.make_gradient_penalty(norm=cfg.reg_norm, target_anneal=cfg.target_anneal)
+    gan = make_gan_loss(cfg.loss_type, cfg.gan_mode)
+    regularizer = make_gradient_penalty(arm=cfg.reg_arm, coeff=cfg.reg_coeff, kappa=cfg.reg_kappa,
+                                        norm=cfg.reg_norm, lazy_k=cfg.reg_lazy, target_anneal=cfg.target_anneal)
     if cfg.adversarial_weight > 0:
         reg_bad = regularizer_mismatches(regularizer)
         if cfg.name != "ae_only" and reg_bad:

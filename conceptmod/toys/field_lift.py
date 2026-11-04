@@ -34,13 +34,16 @@ Tail the board with ``python -m conceptmod.toys.field_lift``.
 
 from __future__ import annotations
 
+from conceptmod.particle_api import make_gan_loss, make_gradient_penalty
+
 import math
 from dataclasses import dataclass
 
 import torch
 import torch.nn as nn
 
-from particlegan import GANLoss, GradientPenalty
+from particlegan.grad_regularizers import GradientPenalty
+from particlegan import GANLoss
 
 from conceptmod.toys.cover_leftover import (
     CONTENT_KEPT_MIN,
@@ -176,12 +179,12 @@ def _kappa_probe(reg_cls: type) -> float:
     with torch.no_grad():
         critic.weight.copy_(torch.tensor([[0.4, 0.0]]))
     batch = torch.zeros(4, 2)
-    probed = reg_cls(
+    probed = make_gradient_penalty(cls=reg_cls,
         arm="b_cap", coeff=1.0, kappa=0.2, norm="l2",
         lazy_k=1, target_anneal="none",
     )
     got = probed.penalty(critic, batch, batch)[0]
-    faithful = GradientPenalty(
+    faithful = make_gradient_penalty(
         arm="b_cap", coeff=1.0, kappa=0.2, norm="l2",
     ).penalty(critic, batch, batch)[0]
     return abs(float(got.detach()) - float(faithful.detach()))
@@ -194,7 +197,7 @@ def _make_regularizer(kind: str) -> GradientPenalty:
         cls = ThinnedKappaCap
     else:
         raise ValueError(f"unknown regularizer kind {kind!r}")
-    return cls(
+    return make_gradient_penalty(cls=cls,
         arm="b_cap", coeff=1.0, kappa=1.0, norm="l2",
         lazy_k=1, target_anneal="none",
     )
@@ -291,8 +294,8 @@ def evaluate(arm: LiftArm) -> dict:
     fake_logits = critic(fake)
     paired_fake = fake_logits.flip(0) if arm.pairing == "stranger" else fake_logits
 
-    locked_loss = GANLoss("logistic", "rp")
-    arm_loss = GANLoss("logistic", arm.gan_mode)
+    locked_loss = make_gan_loss("logistic", "rp")
+    arm_loss = make_gan_loss("logistic", arm.gan_mode)
     ref_d = locked_loss.d_loss(real_logits, fake_logits)
     arm_d = arm_loss.d_loss(real_logits, paired_fake)
     ref_g = locked_loss.g_loss(fake_logits, real_logits)
@@ -309,7 +312,7 @@ def evaluate(arm: LiftArm) -> dict:
 
     reg = _make_regularizer(arm.regularizer)
     penalty, _stats = reg.penalty(critic, real, fake, step=1)
-    ref_pen = GradientPenalty(
+    ref_pen = make_gradient_penalty(
         arm="b_cap", coeff=1.0, kappa=1.0, norm="l2",
     ).penalty(critic, real, fake, step=1)[0]
     probe = _kappa_probe(type(reg))

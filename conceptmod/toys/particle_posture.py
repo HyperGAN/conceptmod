@@ -32,6 +32,8 @@ and arrives later. Shorter runs stop mid-travel.
 """
 from __future__ import annotations
 
+from conceptmod.particle_api import make_gan_loss, make_gradient_penalty
+
 import argparse
 import math
 from dataclasses import dataclass, replace
@@ -39,7 +41,8 @@ from dataclasses import dataclass, replace
 import torch
 from torch import nn
 
-from particlegan import GANLoss, GradientPenalty, ParticlePrior, ParticleRegularizer
+from particlegan.grad_regularizers import GradientPenalty
+from particlegan import GANLoss, ParticlePrior, ParticleRegularizer
 
 
 FAMILY = "particle_prior_posture"
@@ -161,7 +164,7 @@ class MLPCritic(nn.Module):
 
 
 def make_penalty(cfg: Posture) -> GradientPenalty:
-    return GradientPenalty(
+    return make_gradient_penalty(
         arm=cfg.reg_arm,
         coeff=cfg.reg_coeff,
         kappa=cfg.reg_kappa,
@@ -278,7 +281,7 @@ def fit_posture(cfg: Posture, *, log=None, bcap_faithful: bool | None = None) ->
     """Short CPU fit. Prints progress so the run can be tailed."""
     if bcap_faithful is None:
         bcap_faithful = bcap_kappa_is_explicit(
-            lambda kappa: GradientPenalty(arm="b_cap", coeff=1.0, kappa=float(kappa), norm="l2")
+            lambda kappa: make_gradient_penalty(arm="b_cap", coeff=1.0, kappa=float(kappa), norm="l2")
         )
     torch.manual_seed(cfg.seed)
     target = torch.tensor(TARGET)
@@ -292,7 +295,7 @@ def fit_posture(cfg: Posture, *, log=None, bcap_faithful: bool | None = None) ->
             generator=torch.Generator().manual_seed(cfg.seed),
         )
     critic = MLPCritic()
-    adv = GANLoss(loss_type=cfg.loss_type, mode=cfg.gan_mode)
+    adv = make_gan_loss(loss_type=cfg.loss_type, mode=cfg.gan_mode)
     penalty = make_penalty(cfg)
     groups = [{"params": [residual], "lr": cfg.lr}]
     if prior is not None:
@@ -403,7 +406,7 @@ def fit_posture(cfg: Posture, *, log=None, bcap_faithful: bool | None = None) ->
 def run_family(names: list[str] | None = None, *, log=None) -> list[dict]:
     torch.set_num_threads(1)
     faithful = bcap_kappa_is_explicit(
-        lambda kappa: GradientPenalty(arm="b_cap", coeff=1.0, kappa=float(kappa), norm="l2")
+        lambda kappa: make_gradient_penalty(arm="b_cap", coeff=1.0, kappa=float(kappa), norm="l2")
     )
     selected = ARMS if not names else tuple(fn for fn in ARMS if fn().name in set(names))
     if names and len(selected) != len(set(names)):

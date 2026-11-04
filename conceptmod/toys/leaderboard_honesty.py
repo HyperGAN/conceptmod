@@ -32,13 +32,15 @@ Tail the log with::
 
 from __future__ import annotations
 
+from conceptmod.particle_api import make_gan_loss, make_gradient_penalty
+
 from dataclasses import dataclass
 
 import torch
 import torch.nn as nn
 
 from particlegan.gan_loss import GANLoss
-from particlegan.grad_regularizers import GradRegularizer
+from particlegan.grad_regularizers import GradientPenalty as GradRegularizer
 
 TOY_ID = "two_pole_cloud"
 TOY_STEPS = 80
@@ -152,7 +154,7 @@ class ThinnedBCap:
         self.requested_kappa = float(kappa)
         self.kappa = float(THINNED_HARDCODED_KAPPA)
         self.norm = norm
-        self._inner = GradRegularizer(
+        self._inner = make_gradient_penalty(
             arm="b_cap",
             coeff=self.coeff,
             kappa=self.kappa,
@@ -207,7 +209,7 @@ def make_regularizer(spec: dict):
     """Real GradRegularizer, or the κ-hardcoded stub when the arm says so."""
     impl = spec["reg_impl"]
     if impl == "grad_regularizer":
-        return GradRegularizer(
+        return make_gradient_penalty(
             arm=spec["reg_arm"],
             coeff=spec["reg_coeff"],
             kappa=spec["reg_kappa"],
@@ -272,7 +274,7 @@ def run_cell(arm: Arm, *, steps: int = TOY_STEPS, seed: int = TOY_SEED, order: i
     particles = nn.Parameter(torch.zeros(spec["n_particles"], 1))
     opt_d = torch.optim.Adam(critic.parameters(), lr=TOY_LR, betas=TOY_BETAS)
     opt_p = torch.optim.Adam([particles], lr=TOY_LR, betas=TOY_BETAS)
-    gan = GANLoss(loss_type=spec["loss_type"], mode=spec["gan_mode"])
+    gan = make_gan_loss(loss_type=spec["loss_type"], mode=spec["gan_mode"])
     regularizer = make_regularizer(spec)
     real = real_batch(spec["n_particles"])
     stranger = torch.linspace(-3.0, 3.0, spec["n_particles"]).unsqueeze(1)

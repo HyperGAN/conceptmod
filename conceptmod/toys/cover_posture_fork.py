@@ -31,10 +31,13 @@ A PASS here is a CPU toy. It is not a Music or Anima GPU transfer.
 
 from __future__ import annotations
 
+from conceptmod.particle_api import make_gan_loss, make_gradient_penalty
+
 import json
 from dataclasses import replace
 
-from particlegan import GANLoss, GradientPenalty
+from particlegan.grad_regularizers import GradientPenalty
+from particlegan import GANLoss
 
 from conceptmod.toys.cover_leftover import LOCKED_COVER
 from conceptmod.toys.locked_shared_floor import (
@@ -159,7 +162,7 @@ def score_claimed_posture(
             f"n_particles: cloud {obs.n_particles} != locked_shared {LOCKED.n_particles}"
         )
 
-    rp = GANLoss("logistic", "rp")
+    rp = make_gan_loss("logistic", "rp")
     d_want = rp.d_loss(obs.d_real, obs.d_fake)
     spread_want = rp.d_loss(obs.spread_real, obs.spread_fake)
     adv_err = max(
@@ -171,7 +174,7 @@ def score_claimed_posture(
     g_music = _generator_target(obs, MUSIC_COVER, rp)
     g_err = abs(float(obs.g_total.detach()) - float(g_claimed.detach()))
     alias_gap = abs(float(g_demo.detach()) - float(g_music.detach()))
-    cap_want = GradientPenalty(
+    cap_want = make_gradient_penalty(
         arm="b_cap", coeff=1.0, kappa=1.0, norm="l2",
     ).penalty(obs.critic_snap, obs.real, obs.fake)[0]
     cap_err = abs(float(obs.penalty.detach()) - float(cap_want.detach()))

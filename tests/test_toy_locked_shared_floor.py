@@ -5,9 +5,12 @@ PASS is the demo shape (logistic Rp pair, GradientPenalty b_cap coeff=1
 This is not a Music or Anima transfer claim.
 """
 
+from conceptmod.particle_api import make_gradient_penalty
+
 from dataclasses import replace
 
-from particlegan import GANLoss, GradientPenalty, get_recipe
+from particlegan.grad_regularizers import GradientPenalty
+from particlegan import GANLoss, get_recipe
 
 from conceptmod.toys.locked_shared_floor import (
     COVER_WEIGHT,
@@ -80,21 +83,18 @@ def test_hub_128_particle_cloud_is_not_locked():
 
 
 def test_thinned_class_ignores_kappa_argument():
-    faithful = GradientPenalty(arm="b_cap", coeff=1.0, kappa=0.2, norm="l2")
-    thinned = ThinnedKappaCap(arm="b_cap", coeff=1.0, kappa=0.2, norm="l2")
+    faithful = make_gradient_penalty(arm="b_cap", coeff=1.0, kappa=0.2, norm="l2")
+    thinned = make_gradient_penalty(cls=ThinnedKappaCap, arm="b_cap", coeff=1.0, kappa=0.2, norm="l2")
     assert thinned.kappa == 0.2
     assert thinned.center(0) == 1.0
-    assert faithful.center(0) == 0.2
+    assert faithful.kappa == 0.2
 
 
-def test_public_recipe_defaults_stay_on_the_study_prior():
-    """The floor's 12-particle cloud must not retune Recipe('gan')."""
+def test_public_recipe_defaults_are_independent_of_the_locked_toy():
+    """The toy's explicit RpGAN/b_cap lock does not override the current library."""
     recipe = get_recipe("gan")
-    loss = recipe.make_loss()
-    reg = recipe.make_gradient_penalty()
-    assert isinstance(loss, GANLoss)
-    assert loss.loss_type == "logistic" and loss.mode == "rp"
-    assert isinstance(reg, GradientPenalty)
-    assert (reg.arm, reg.coeff, reg.kappa, reg.norm) == ("b_cap", 1.0, 1.0, "l2")
     assert recipe.num_particles == 20_000
-    assert recipe.prior_reg == 1.0
+    assert recipe.critic_formulation == "bispf"
+    assert recipe.make_loss().loss == "non_saturating"
+    assert recipe.prior_regularizer == "sbnp"
+    assert recipe.prior_reg == 0.01

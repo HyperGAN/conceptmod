@@ -10,7 +10,7 @@ from __future__ import annotations
 import pytest
 import torch
 
-from particlegan.grad_regularizers import GradRegularizer
+from particlegan.grad_regularizers import GradientPenalty as GradRegularizer
 from conceptmod.toys.leaderboard_honesty import (
     GRAD_MED_MAX,
     LOCKED_SHARED,
@@ -151,8 +151,12 @@ def test_locked_regularizer_is_the_real_b_cap():
     assert reg.coeff == pytest.approx(1.0)
     assert reg.kappa == pytest.approx(1.0)
     assert reg.norm == "l2"
-    norms = torch.tensor([0.5, 1.0, 2.0])
-    assert torch.allclose(reg._phi(norms, center=1.0), torch.relu(norms - 1).pow(2))
+    critic = torch.nn.Linear(1, 1, bias=False)
+    with torch.no_grad():
+        critic.weight.fill_(2.0)
+    inputs = torch.zeros(3, 1)
+    # Public penalty on ||grad||=2 gives (2-1)^2, with both half terms.
+    assert float(reg(critic, inputs, inputs).detach()) == pytest.approx(1.0)
     stub = make_regularizer({**LOCKED_SHARED, "reg_impl": "thinned_hardcoded_kappa"})
     assert type(stub) is not GradRegularizer
     assert stub.requested_kappa == pytest.approx(1.0)

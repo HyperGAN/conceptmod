@@ -8,12 +8,14 @@ without the lift correction fails. Stranger pairing, FM-on, and a
 CPU only. Not a Music or Anima transfer.
 """
 
+from conceptmod.particle_api import make_gradient_penalty
+
 import math
 
 import pytest
 import torch
 
-from particlegan import GradientPenalty
+from particlegan.grad_regularizers import GradientPenalty
 
 from conceptmod.toys.field_lift import (
     CONTENT,
@@ -125,11 +127,11 @@ def test_stranger_fm_and_thinned_kappa_fail_with_the_lift_held(board):
 
 
 def test_thinned_center_ignores_kappa():
-    faithful = GradientPenalty(arm="b_cap", coeff=1.0, kappa=0.2, norm="l2")
-    thinned = ThinnedKappaCap(arm="b_cap", coeff=1.0, kappa=0.2, norm="l2")
+    faithful = make_gradient_penalty(arm="b_cap", coeff=1.0, kappa=0.2, norm="l2")
+    thinned = make_gradient_penalty(cls=ThinnedKappaCap, arm="b_cap", coeff=1.0, kappa=0.2, norm="l2")
     assert thinned.kappa == 0.2
     assert thinned.center(0) == 1.0
-    assert faithful.center(0) == 0.2
+    assert faithful.kappa == 0.2
 
 
 def test_board_log_names_the_pass_and_the_fails(capsys):

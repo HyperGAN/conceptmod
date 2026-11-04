@@ -1,9 +1,11 @@
 """CPU gate: tiny particle posture passes, Hub-128 and a dropped L2 anchor fail."""
+
+from conceptmod.particle_api import make_gradient_penalty
 from dataclasses import replace
 
 import pytest
 
-from particlegan import GradientPenalty
+from particlegan.grad_regularizers import GradientPenalty
 
 from conceptmod.toys.particle_posture import (
     CLOUD_MS_MAX,
@@ -106,10 +108,10 @@ def test_covers_stay_on_their_rows(family):
 
 def test_hardcoded_kappa_is_not_the_particlegan_penalty():
     def honest(kappa):
-        return GradientPenalty(arm="b_cap", coeff=1.0, kappa=float(kappa), norm="l2")
+        return make_gradient_penalty(arm="b_cap", coeff=1.0, kappa=float(kappa), norm="l2")
 
     def thinned(kappa):
-        return GradientPenalty(arm="b_cap", coeff=1.0, kappa=1.0, norm="l2")
+        return make_gradient_penalty(arm="b_cap", coeff=1.0, kappa=1.0, norm="l2")
 
     assert bcap_kappa_is_explicit(honest)
     assert bcap_kappa_is_explicit(thinned) is False

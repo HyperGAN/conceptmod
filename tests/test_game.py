@@ -20,7 +20,7 @@ from conceptmod.game import (
 )
 from conceptmod.toys.locked_shared_floor import feature_match as floor_feature_match
 from particlegan.gan_loss import GANLoss
-from particlegan.grad_regularizers import GradRegularizer
+from particlegan.grad_regularizers import GradientPenalty as GradRegularizer
 
 
 def test_feature_match_is_the_floor_helper():

@@ -2,7 +2,13 @@
 
 **HyperGAN/conceptmod is the home for these gates.** ParticleGAN is
 core primitives only. Install the PyPI package (`pip install particlegan`,
-`particlegan>=0.5.0` in `pyproject.toml` and `requirements.txt`). Toys call
+`particlegan>=0.9.4,<0.10` in `pyproject.toml` and `requirements.txt`). The
+fixed L2 `GradientPenalty` is imported from `particlegan.grad_regularizers`;
+legacy `GradRegularizer` names below refer to that upstream class.
+`conceptmod.particle_api` translates historical loss/configuration names without
+copying the loss or penalty formulas. These locked toys intentionally retain
+RpGAN / `b_cap`; the distinct [modern particle-LoRA API](particle-lora.md) uses
+the current official recipe. Toys call
 that package for `GANLoss` / RpGAN, `GradRegularizer` / `b_cap`
 (`GradientPenalty`), and `ParticlePrior`. Those modules are not copied into
 conceptmod. The only local geometry is the leftover / cover / teacher field

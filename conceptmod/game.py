@@ -20,6 +20,8 @@ Not a multi-player language. The stanza keys that work are listed in
 
 from __future__ import annotations
 
+from conceptmod.particle_api import make_gan_loss, make_gradient_penalty
+
 import copy
 import math
 from dataclasses import dataclass
@@ -28,7 +30,7 @@ import torch
 from torch import nn
 
 from particlegan.gan_loss import GANLoss
-from particlegan.grad_regularizers import GradRegularizer
+from particlegan.grad_regularizers import GradientPenalty as GradRegularizer
 
 from conceptmod import dsl, ops
 from conceptmod.analysis_2d import (
@@ -360,11 +362,11 @@ class Game:
         self.backend = TwoAxisBackend(seed=self.seed)
         self._z, self._t = _probe_zt(self.backend, self.seed)
         self.critic = PlaneCritic()
-        self.gan = GANLoss(
+        self.gan = make_gan_loss(
             loss_type=self.stamp["loss_type"],
             mode=self.stamp["gan_mode"],
         )
-        self.regularizer = GradRegularizer(
+        self.regularizer = make_gradient_penalty(
             arm=self.stamp["reg_arm"],
             coeff=float(self.stamp["reg_coeff"]),
             kappa=self.kappa,
@@ -626,7 +628,7 @@ class Game:
         if not math.isfinite(taken.penalty):
             bad.append("b_cap penalty is not finite")
 
-        reference = GANLoss(loss_type=live["loss_type"], mode=live["gan_mode"])
+        reference = make_gan_loss(loss_type=live["loss_type"], mode=live["gan_mode"])
         want_real, want_fake = self._align(taken.d_real, taken.d_fake)
         d_want = reference.d_loss(want_real, want_fake)
         d_err = abs(float(d_want.detach()) - taken.d_loss)
@@ -638,7 +640,7 @@ class Game:
         if g_err > 1e-5:
             bad.append(f"g: abs err {g_err:.3e} vs RpGAN logistic g_loss")
 
-        reg = GradRegularizer(
+        reg = make_gradient_penalty(
             arm=self.regularizer.arm,
             coeff=float(self.regularizer.coeff),
             kappa=float(self.regularizer.kappa),

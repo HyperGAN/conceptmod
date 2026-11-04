@@ -6,6 +6,8 @@ CPU only. Run and tail::
     python -m pytest -s tests/test_toy_mode_hold.py
 """
 
+from conceptmod.particle_api import make_gan_loss, make_gradient_penalty
+
 import torch
 
 from conceptmod.toys.mode_hold import (
@@ -20,7 +22,8 @@ from conceptmod.toys.mode_hold import (
     train_mode_hold,
     verdict,
 )
-from particlegan import GANLoss, GradientPenalty
+from particlegan.grad_regularizers import GradientPenalty
+from particlegan import GANLoss
 
 
 def test_locked_card_is_rpgan_b_cap_shape():
@@ -38,8 +41,8 @@ def test_locked_card_is_rpgan_b_cap_shape():
     assert recipe.cover_weight == 1.5  # demo pin, not Music 1.0
     assert recipe.n_particles == 12
     assert recipe.particle_l2 == 0.02
-    loss = GANLoss(loss_type=recipe.loss_type, mode=recipe.gan_mode)
-    regularizer = GradientPenalty(
+    loss = make_gan_loss(loss_type=recipe.loss_type, mode=recipe.gan_mode)
+    regularizer = make_gradient_penalty(
         arm=recipe.reg_arm,
         coeff=recipe.reg_coeff,
         kappa=recipe.reg_kappa,
@@ -70,10 +73,10 @@ def test_thinned_kappa_stub_disagrees_with_grad_regularizer():
     real = torch.zeros(4, 2)
     real[:, 0] = 1.0
     # ||grad|| = 0.5 < 1, so a hardcoded cap is silent and an explicit kappa=0.2 is not.
-    host = GradientPenalty(arm="b_cap", coeff=1.0, kappa=0.2, norm="l2")
+    host = make_gradient_penalty(arm="b_cap", coeff=1.0, kappa=0.2, norm="l2")
     penalty = float(host(critic, real, real).detach())
     assert penalty > 0.0
-    locked = GradientPenalty(arm="b_cap", coeff=1.0, kappa=1.0, norm="l2")
+    locked = make_gradient_penalty(arm="b_cap", coeff=1.0, kappa=1.0, norm="l2")
     assert float(locked(critic, real, real).detach()) == 0.0
 
 

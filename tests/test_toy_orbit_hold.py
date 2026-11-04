@@ -8,13 +8,15 @@ reverted. This module is the copy that remains. The penalty still comes from
 ``particlegan.grad_regularizers.GradRegularizer``.
 """
 
+from conceptmod.particle_api import make_gradient_penalty
+
 import inspect
 import math
 
 import pytest
 import torch
 
-from particlegan.grad_regularizers import GradRegularizer
+from particlegan.grad_regularizers import GradientPenalty as GradRegularizer
 import conceptmod.toys.orbit_hold as orbit_hold
 from conceptmod.toys.orbit_hold import (
     DIRECTION_COS_MIN,
@@ -34,7 +36,7 @@ def test_family_does_not_import_particlegan_orbit_hold():
     """A ParticleGAN revert of #27 must not delete this gate."""
     source = inspect.getsource(orbit_hold)
     assert "particlegan.orbit_hold" not in source
-    assert "from particlegan.grad_regularizers import GradRegularizer" in source
+    assert "from particlegan.grad_regularizers import GradientPenalty as GradRegularizer" in source
     assert orbit_hold.locked_recipe is not None
     assert orbit_hold.GradRegularizer is GradRegularizer
 
@@ -114,7 +116,7 @@ def test_stranger_fm_hinge_and_thin_bcap_fail():
     assert thin.radius_pass
     # Hardcoded center 0 on ||grad|| = 3: phi = 9, pen = (1/2)*(9+9).
     assert thin.bcap == pytest.approx(9.0, abs=1e-9)
-    reference = GradRegularizer("b_cap", coeff=1.0, kappa=1.0, norm="l2")
+    reference = make_gradient_penalty("b_cap", coeff=1.0, kappa=1.0, norm="l2")
     assert type(reference).mro()[0] is GradRegularizer
 
 

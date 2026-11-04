@@ -6,11 +6,13 @@ Music cover 1.0 is a different posture. A forced mlp swap is refused.
 This is not a Music or Anima transfer claim.
 """
 
+from conceptmod.particle_api import make_gradient_penalty
+
 from dataclasses import replace
 
 import pytest
 
-from particlegan.grad_regularizers import GradRegularizer
+from particlegan.grad_regularizers import GradientPenalty as GradRegularizer
 
 from conceptmod.toys.keep_critic import (
     DEMO_COVER,
@@ -34,7 +36,7 @@ def test_locked_shared_passes_with_frozen_host_critic():
     assert score["g_abs_err"] < 1e-5
     assert score["cap_abs_err"] < 1e-5
     assert score["kappa_probe_abs_err"] < 1e-5
-    assert score["reg_class"] == "GradRegularizer"
+    assert score["reg_class"] == "GradientPenalty"
     assert score["fm_weight"] == 0.0
     assert score["cover_weight"] == DEMO_COVER
     assert score["cover_posture"] == "demo"
@@ -112,11 +114,11 @@ def test_forced_mlp_swap_is_refused():
 
 
 def test_thinned_class_ignores_kappa_argument():
-    faithful = GradRegularizer(arm="b_cap", coeff=1.0, kappa=0.2, norm="l2")
-    thinned = ThinnedKappaCap(arm="b_cap", coeff=1.0, kappa=0.2, norm="l2")
+    faithful = make_gradient_penalty(arm="b_cap", coeff=1.0, kappa=0.2, norm="l2")
+    thinned = make_gradient_penalty(cls=ThinnedKappaCap, arm="b_cap", coeff=1.0, kappa=0.2, norm="l2")
     assert thinned.kappa == 0.2
     assert thinned.center(0) == 1.0
-    assert faithful.center(0) == 0.2
+    assert faithful.kappa == 0.2
 
 
 def test_board_locked_first_and_drifts_fail():

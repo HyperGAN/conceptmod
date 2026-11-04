@@ -60,7 +60,7 @@ def test_annotate_output_dir_reads_run_json(tmp_path: Path):
     img = Image.open(tmp_path / "grid.png")
     assert img.info.get(_CHROME_KEY) == "1"
     assert img.height > 60
-    assert "Erase" in img.info.get("conceptmod_note", "")
+    assert 'Neutralize "monochrome"' in img.info.get("conceptmod_note", "")
 
 
 def test_fruit_is_the_control_prompt():

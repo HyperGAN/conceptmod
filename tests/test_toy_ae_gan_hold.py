@@ -3,6 +3,8 @@
 Winning arm PASSes. AE-only FAILs because RpGAN and b_cap never ran.
 Stranger pairing, FM-on under b_cap, and a kappa-hardcoded thin cap are refused.
 """
+
+from conceptmod.particle_api import make_gradient_penalty
 import pytest
 import torch
 from torch import nn
@@ -25,7 +27,7 @@ from conceptmod.toys.ae_gan_hold import (
     stranger_config,
     train,
 )
-from particlegan.grad_regularizers import GradRegularizer
+from particlegan.grad_regularizers import GradientPenalty as GradRegularizer
 
 
 _BOARD = {}
@@ -48,8 +50,9 @@ def test_locked_shape_is_rpgan_bcap_fm_off_demo_cover():
     assert cfg.n_particles != 128
     recipe = make_recipe(cfg)
     loss = recipe.make_loss()
-    assert (loss.loss_type, loss.mode) == ("logistic", "rp")
-    reg = recipe.make_gradient_penalty(norm=cfg.reg_norm, target_anneal=cfg.target_anneal)
+    assert loss.loss == "relativistic"
+    reg = make_gradient_penalty(arm=recipe.reg_arm, coeff=recipe.reg_coeff, kappa=recipe.reg_kappa,
+                                norm=cfg.reg_norm, lazy_k=recipe.reg_every, target_anneal=cfg.target_anneal)
     assert regularizer_mismatches(reg) == []
     assert reg.arm == "b_cap" and reg.coeff == 1.0 and reg.kappa == 1.0 and reg.norm == "l2"
 
@@ -85,7 +88,7 @@ def test_adv_ablations_are_refused(cfg):
 
 def test_thinned_bcap_stub_is_not_the_champion():
     assert regularizer_mismatches(ThinnedBCap())
-    thin = GradRegularizer(arm="b_cap", coeff=1.0, kappa=0.1, norm="l2", lazy_k=1)
+    thin = make_gradient_penalty(arm="b_cap", coeff=1.0, kappa=0.1, norm="l2", lazy_k=1)
     assert regularizer_mismatches(thin)
     assert any("kappa" in reason for reason in regularizer_mismatches(thin))
 

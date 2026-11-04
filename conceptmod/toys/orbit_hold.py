@@ -30,6 +30,8 @@ Tail the family with ``python -m conceptmod.toys.orbit_hold``.
 
 from __future__ import annotations
 
+from conceptmod.particle_api import make_gan_loss, make_gradient_penalty
+
 import math
 from dataclasses import dataclass
 
@@ -37,7 +39,7 @@ import torch
 from torch import nn
 
 from particlegan.gan_loss import GANLoss
-from particlegan.grad_regularizers import GradRegularizer
+from particlegan.grad_regularizers import GradientPenalty as GradRegularizer
 
 # Behavioral gates. The residual's extra speed is O((omega * dt)^2), so at the
 # pinned step the held orbit stays above the heading floor. One ablated Euler
@@ -185,10 +187,15 @@ class HardcodedKappaBCap(GradRegularizer):
     """
 
     def __init__(self) -> None:
-        super().__init__("b_cap", coeff=1.0, kappa=1.0, norm="l2")
+        super().__init__(arm="b_cap", coeff=1.0, kappa=1.0)
 
-    def center(self, step: int) -> float:
+    def center(self, step: int = 0) -> float:
         return 0.0
+
+    def penalty(self, D, x_real, x_fake, step=1, collect_stats=True, **kwargs):
+        return make_gradient_penalty(
+            arm=self.arm, coeff=self.coeff, kappa=self.center(step), lazy_k=self.lazy_k,
+        ).penalty(D, x_real, x_fake, step, collect_stats=collect_stats, **kwargs)
 
 
 def locked_recipe(**overrides) -> OrbitRecipe:
@@ -255,7 +262,7 @@ def _frozen_critic() -> nn.Linear:
 
 def _audit_bcap(regularizer, critic: nn.Module, real: torch.Tensor, fake: torch.Tensor) -> tuple[float, tuple[str, ...]]:
     """Run the real b_cap and refuse a stub whose value, center, or graph disagrees."""
-    reference = GradRegularizer("b_cap", coeff=1.0, kappa=1.0, norm="l2", lazy_k=1, target_anneal="none")
+    reference = make_gradient_penalty("b_cap", coeff=1.0, kappa=1.0, norm="l2", lazy_k=1, target_anneal="none")
     ref_pen, ref_stats = reference.penalty(critic, real, fake, step=1)
     reasons = []
     try:
@@ -309,7 +316,7 @@ def evaluate(recipe: OrbitRecipe, regularizer=None) -> OrbitReport:
     # logistic value barely moves, which is why radius is its own gate.
     real = held.detach()
     fake = fake.detach()
-    loss = GANLoss(loss_type=recipe.loss_type, mode=recipe.gan_mode)
+    loss = make_gan_loss(loss_type=recipe.loss_type, mode=recipe.gan_mode)
     real_logits, fake_logits = _paired_logits(critic, real, fake, recipe.pairing)
     d_loss = float(loss.d_loss(real_logits, fake_logits).detach())
     fm_raw = (fake_logits - real_logits).pow(2).mean()
@@ -317,7 +324,7 @@ def evaluate(recipe: OrbitRecipe, regularizer=None) -> OrbitReport:
 
     reg = regularizer
     if reg is None:
-        reg = GradRegularizer(
+        reg = make_gradient_penalty(
             recipe.reg_arm,
             coeff=recipe.reg_coeff,
             kappa=recipe.reg_kappa,

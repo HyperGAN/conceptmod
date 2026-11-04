@@ -25,6 +25,8 @@ Tail the board with ``python -m conceptmod.toys.keep_critic``.
 
 from __future__ import annotations
 
+from conceptmod.particle_api import make_gan_loss, make_gradient_penalty
+
 import copy
 import json
 from dataclasses import dataclass, replace
@@ -34,7 +36,7 @@ import torch.nn.functional as F
 from torch import nn
 
 from particlegan.gan_loss import GANLoss
-from particlegan.grad_regularizers import GradRegularizer
+from particlegan.grad_regularizers import GradientPenalty as GradRegularizer
 from particlegan.particle_prior import ParticlePrior
 
 
@@ -123,10 +125,13 @@ class ThinnedKappaCap(GradRegularizer):
     At locked κ=1 the step penalty still matches. A κ=0.2 probe does not.
     """
 
-    def center(self, step: int) -> float:
-        if self.arm in ("b_cap", "g_interp_cap"):
-            return 1.0
-        return super().center(step)
+    def center(self, step: int = 0) -> float:
+        return 1.0
+
+    def penalty(self, D, x_real, x_fake, step=1, collect_stats=True, **kwargs):
+        return make_gradient_penalty(
+            arm=self.arm, coeff=self.coeff, kappa=self.center(step), lazy_k=self.lazy_k,
+        ).penalty(D, x_real, x_fake, step, collect_stats=collect_stats, **kwargs)
 
 
 def cover_mse(offsets: torch.Tensor) -> torch.Tensor:
@@ -144,7 +149,7 @@ def make_regularizer(cfg: KeepCritic, *, kind: str = "faithful") -> GradRegulari
     cls = GradRegularizer if kind == "faithful" else ThinnedKappaCap
     if kind not in ("faithful", "thinned"):
         raise ValueError(f"unknown regularizer kind {kind!r}")
-    return cls(
+    return make_gradient_penalty(cls=cls,
         arm=cfg.reg_arm,
         coeff=cfg.reg_coeff,
         kappa=cfg.reg_kappa,
@@ -230,14 +235,14 @@ def _kappa_probe(reg_cls: type) -> tuple[float, str | None]:
         critic.weight.copy_(torch.tensor([[0.4, 0.0]]))
     batch = torch.zeros(4, 2)
     try:
-        probed = reg_cls(
+        probed = make_gradient_penalty(cls=reg_cls,
             arm="b_cap", coeff=1.0, kappa=0.2, norm="l2",
             lazy_k=1, target_anneal="none",
         )
         got = probed.penalty(critic, batch, batch)[0]
     except Exception as exc:
         return float("inf"), f"kappa probe refused {reg_cls.__name__}: {exc}"
-    faithful = GradRegularizer(
+    faithful = make_gradient_penalty(
         arm="b_cap", coeff=1.0, kappa=0.2, norm="l2",
     ).penalty(critic, batch, batch)[0]
     err = abs(float(got.detach()) - float(faithful.detach()))
@@ -277,7 +282,7 @@ def score_keep(obs: KeepObs) -> dict:
             f"requires_grad={obs.params_require_grad}"
         )
 
-    rp = GANLoss("logistic", "rp")
+    rp = make_gan_loss("logistic", "rp")
     d_want = rp.d_loss(obs.d_real, obs.d_fake)
     spread_want = rp.d_loss(obs.spread_real, obs.spread_fake)
     g_want = (
@@ -285,7 +290,7 @@ def score_keep(obs: KeepObs) -> dict:
         + PARTICLE_L2 * obs.parts.pow(2).mean()
         + DEMO_COVER * cover_mse(obs.offsets)
     )
-    cap_want = GradRegularizer(
+    cap_want = make_gradient_penalty(
         arm="b_cap", coeff=1.0, kappa=1.0, norm="l2",
     ).penalty(obs.critic_snap, obs.real, obs.fake)[0]
     data_adv_err = abs(float(obs.d_adv.detach()) - float(d_want.detach()))
@@ -322,7 +327,7 @@ def score_keep(obs: KeepObs) -> dict:
         "gan_mode": obs.cfg.gan_mode,
         "loss_type": obs.cfg.loss_type,
         "n_particles": obs.n_particles,
-        "reg_class": "GradRegularizer" if obs.reg_cls is GradRegularizer else obs.reg_cls.__name__,
+        "reg_class": obs.reg_cls.__name__,
         "critic_arch": HOST_ARCH if isinstance(obs.critic_snap, HostCritic) else type(obs.critic_snap).__name__,
         "critic_frozen": actually_frozen,
         "critic_weight_delta": obs.weight_delta,
@@ -355,7 +360,7 @@ def run_keep(
     weight_start = _flat_weights(critic).clone()
     generator = ToyGenerator()
     prior = ParticlePrior(num_particles=cfg.n_particles, z_dim=cfg.z_dim, init_std=0.05)
-    gan = GANLoss(loss_type=cfg.loss_type, mode=cfg.gan_mode)
+    gan = make_gan_loss(loss_type=cfg.loss_type, mode=cfg.gan_mode)
     reg = make_regularizer(cfg, kind=regularizer)
     opt_g = torch.optim.Adam(
         list(generator.parameters()) + list(prior.parameters()),

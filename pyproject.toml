@@ -4,8 +4,8 @@ version = "2.0.0"
 description = "Finetuning with words: a DSL for concept editing of flow-matching diffusion models"
 requires-python = ">=3.11"
 dependencies = [
-    # PyPI (`pip install particlegan`). RpGAN, GradRegularizer/b_cap, ParticlePrior.
-    "particlegan>=0.5.0",
+    # PyPI: current GANTrainer + learned prior, and historical RpGAN/b_cap primitives.
+    "particlegan>=0.9.4,<0.10",
     "torch>=2.8",
     "torchvision",
     "diffusers @ git+https://github.com/huggingface/diffusers.git",

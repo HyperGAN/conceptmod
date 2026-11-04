@@ -35,13 +35,16 @@ This is a CPU toy. A PASS here is not a Music or Anima transfer result.
 
 from __future__ import annotations
 
+from conceptmod.particle_api import make_gan_loss, make_gradient_penalty
+
 import math
 from dataclasses import dataclass, fields, replace
 
 import torch
 
 from conceptmod.toys.mlp import SimpleMLPDiscriminator, SimpleMLPGenerator
-from particlegan import GANLoss, GradientPenalty, ParticlePrior, ParticleRegularizer
+from particlegan.grad_regularizers import GradientPenalty
+from particlegan import GANLoss, ParticlePrior, ParticleRegularizer
 
 
 N_MODES = 8
@@ -206,8 +209,8 @@ def train_mode_hold(
     # Host critic shape from the 100-Gaussians toy. Fourier width is the
     # sharp-D stress, not an architecture swap.
     critic = SimpleMLPDiscriminator(2, HIDDEN, N_HIDDEN, FOURIER)
-    gan = GANLoss(loss_type=recipe.loss_type, mode=recipe.gan_mode)
-    regularizer = GradientPenalty(
+    gan = make_gan_loss(loss_type=recipe.loss_type, mode=recipe.gan_mode)
+    regularizer = make_gradient_penalty(
         arm=recipe.reg_arm,
         coeff=recipe.reg_coeff,
         kappa=recipe.reg_kappa,

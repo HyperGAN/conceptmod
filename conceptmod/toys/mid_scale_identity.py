@@ -55,6 +55,8 @@ A CPU PASS is not a Music or Anima GPU transfer.
 
 from __future__ import annotations
 
+from conceptmod.particle_api import make_gan_loss, make_gradient_penalty
+
 import math
 from dataclasses import dataclass
 
@@ -62,7 +64,8 @@ import torch
 import torch.nn.functional as F
 from torch import nn
 
-from particlegan import GANLoss, GradientPenalty
+from particlegan.grad_regularizers import GradientPenalty
+from particlegan import GANLoss
 
 from conceptmod.toys.cover_leftover import (
     LOCKED_COVER,
@@ -505,8 +508,8 @@ def _fit(
     targets = {scale: teacher.train_target(train_arm, scale) for scale in EVAL_SCALES}
     cloud = torch.stack([targets[scale] for scale in EVAL_SCALES], dim=0)
     critic = ScaleCritic(student.odd.numel(), cloud, hidden=CRITIC_HIDDEN)
-    gan = GANLoss(loss_type=FORMULATION["loss_type"], mode=FORMULATION["gan_mode"])
-    reg = GradientPenalty(
+    gan = make_gan_loss(loss_type=FORMULATION["loss_type"], mode=FORMULATION["gan_mode"])
+    reg = make_gradient_penalty(
         arm=FORMULATION["reg_arm"],
         coeff=FORMULATION["reg_coeff"],
         kappa=FORMULATION["reg_kappa"],

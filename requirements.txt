@@ -1,6 +1,6 @@
-# PyPI. conceptmod calls this package for RpGAN (GANLoss), GradRegularizer
-# / b_cap (GradientPenalty), and ParticlePrior. Do not vendor those modules.
-particlegan>=0.5.0
+# PyPI. The modern particle-LoRA path uses the official GANTrainer and prior.
+# Historical toys use upstream GANLoss and fixed GradientPenalty; no vendored formulas.
+particlegan>=0.9.4,<0.10
 torch>=2.8
 torchvision
 diffusers @ git+https://github.com/huggingface/diffusers.git

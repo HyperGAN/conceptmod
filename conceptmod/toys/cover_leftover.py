@@ -23,6 +23,8 @@ is refused.
 
 from __future__ import annotations
 
+from conceptmod.particle_api import make_gan_loss, make_gradient_penalty
+
 import math
 from dataclasses import dataclass
 
@@ -30,7 +32,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from particlegan import GANLoss, GradientPenalty, ParticlePrior, ParticleRegularizer
+from particlegan.grad_regularizers import GradientPenalty
+from particlegan import GANLoss, ParticlePrior, ParticleRegularizer
 
 
 # Demo cover, not Music pole_weight=1.0. See module docstring.
@@ -430,8 +433,8 @@ def fit_cover_leftover(recipe: CoverRecipe, *, log=None, field: LeftoverField | 
         hidden=recipe.knob("critic_hidden"),
         seed=recipe.seed,
     )
-    gan = GANLoss(loss_type=recipe.knob("loss_type"), mode=recipe.knob("gan_mode"))
-    penalty = GradientPenalty(
+    gan = make_gan_loss(loss_type=recipe.knob("loss_type"), mode=recipe.knob("gan_mode"))
+    penalty = make_gradient_penalty(
         arm=recipe.knob("reg_arm"),
         coeff=recipe.knob("reg_coeff"),
         kappa=recipe.knob("reg_kappa"),

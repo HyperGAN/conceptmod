@@ -41,6 +41,8 @@ A CPU PASS is not a Music or Anima transfer result.
 
 from __future__ import annotations
 
+from conceptmod.particle_api import make_gan_loss, make_gradient_penalty
+
 import math
 from dataclasses import dataclass
 
@@ -48,7 +50,8 @@ import torch
 import torch.nn.functional as F
 from torch import nn
 
-from particlegan import GANLoss, GradientPenalty
+from particlegan.grad_regularizers import GradientPenalty
+from particlegan import GANLoss
 
 
 # Unipolar board thresholds (FORMULATION_LEADERBOARD_UNIPOLAR).
@@ -313,8 +316,8 @@ def _fit_rpgan(
 ) -> tuple[list[dict], GradientPenalty]:
     """One D update then one G update, averaged over scales ``{0, +1}``."""
     _refuse_unless_locked_adv(recipe)
-    gan = GANLoss(loss_type=recipe.loss_type, mode=recipe.gan_mode)
-    reg = GradientPenalty(
+    gan = make_gan_loss(loss_type=recipe.loss_type, mode=recipe.gan_mode)
+    reg = make_gradient_penalty(
         arm=recipe.reg_arm,
         coeff=recipe.reg_coeff,
         kappa=recipe.reg_kappa,

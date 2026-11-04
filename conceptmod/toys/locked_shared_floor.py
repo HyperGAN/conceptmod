@@ -27,6 +27,8 @@ not retune it. The critic is caller-owned and unscored.
 
 from __future__ import annotations
 
+from conceptmod.particle_api import make_gan_loss, make_gradient_penalty
+
 import copy
 import json
 from dataclasses import dataclass, replace
@@ -35,7 +37,8 @@ import torch
 import torch.nn.functional as F
 from torch import nn
 
-from particlegan import GANLoss, GradientPenalty, ParticlePrior
+from particlegan.grad_regularizers import GradientPenalty
+from particlegan import GANLoss, ParticlePrior
 
 
 # Demo locked_shared cloud. Not the Hub 128-particle gmix, not Recipe's 20k.
@@ -86,10 +89,13 @@ class ThinnedKappaCap(GradientPenalty):
     faithful module.
     """
 
-    def center(self, step: int) -> float:
-        if self.arm in ("b_cap", "g_interp_cap"):
-            return 1.0
-        return super().center(step)
+    def center(self, step: int = 0) -> float:
+        return 1.0
+
+    def penalty(self, D, x_real, x_fake, step=1, collect_stats=True, **kwargs):
+        return make_gradient_penalty(
+            arm=self.arm, coeff=self.coeff, kappa=self.center(step), lazy_k=self.lazy_k,
+        ).penalty(D, x_real, x_fake, step, collect_stats=collect_stats, **kwargs)
 
 
 class ToyCritic(nn.Module):
@@ -139,7 +145,7 @@ def make_regularizer(cfg: LockedSharedFloor, *, kind: str = "faithful") -> Gradi
     cls = GradientPenalty if kind == "faithful" else ThinnedKappaCap
     if kind not in ("faithful", "thinned"):
         raise ValueError(f"unknown regularizer kind {kind!r}")
-    return cls(
+    return make_gradient_penalty(cls=cls,
         arm=cfg.reg_arm,
         coeff=cfg.reg_coeff,
         kappa=cfg.reg_kappa,
@@ -206,14 +212,14 @@ def _kappa_probe(reg_cls: type) -> tuple[float, str | None]:
         critic.weight.copy_(torch.tensor([[0.4, 0.0]]))
     batch = torch.zeros(4, 2)
     try:
-        probed = reg_cls(
+        probed = make_gradient_penalty(cls=reg_cls,
             arm="b_cap", coeff=1.0, kappa=0.2, norm="l2",
             lazy_k=1, target_anneal="none",
         )
         got = probed.penalty(critic, batch, batch)[0]
     except Exception as exc:
         return float("inf"), f"kappa probe refused {reg_cls.__name__}: {exc}"
-    faithful = GradientPenalty(
+    faithful = make_gradient_penalty(
         arm="b_cap", coeff=1.0, kappa=0.2, norm="l2",
     ).penalty(critic, batch, batch)[0]
     err = abs(float(got.detach()) - float(faithful.detach()))
@@ -239,7 +245,7 @@ def score_floor(obs: FloorObs) -> dict:
             f"n_particles: cloud {obs.n_particles} != claimed {obs.cfg.n_particles}"
         )
 
-    rp = GANLoss("logistic", "rp")
+    rp = make_gan_loss("logistic", "rp")
     d_want = rp.d_loss(obs.d_real, obs.d_fake)
     spread_want = rp.d_loss(obs.spread_real, obs.spread_fake)
     g_want = (
@@ -247,7 +253,7 @@ def score_floor(obs: FloorObs) -> dict:
         + PARTICLE_L2 * obs.parts.pow(2).mean()
         + COVER_WEIGHT * cover_mse(obs.offsets)
     )
-    cap_want = GradientPenalty(
+    cap_want = make_gradient_penalty(
         arm="b_cap", coeff=1.0, kappa=1.0, norm="l2",
     ).penalty(obs.critic_snap, obs.real, obs.fake)[0]
     data_adv_err = abs(float(obs.d_adv.detach()) - float(d_want.detach()))
@@ -301,7 +307,7 @@ def run_floor(
     critic = ToyCritic()
     generator = ToyGenerator()
     prior = ParticlePrior(num_particles=cfg.n_particles, z_dim=cfg.z_dim, init_std=0.05)
-    gan = GANLoss(loss_type=cfg.loss_type, mode=cfg.gan_mode)
+    gan = make_gan_loss(loss_type=cfg.loss_type, mode=cfg.gan_mode)
     reg = make_regularizer(cfg, kind=regularizer)
     opt_d = torch.optim.Adam(critic.parameters(), lr=cfg.lr, betas=(0.0, 0.99))
     opt_g = torch.optim.Adam(

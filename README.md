@@ -21,7 +21,14 @@ Stable Diffusion) targeting current flow-matching DiT models via
 
 Supra2-IMG (`--backend supra`) is the Hub DiT testbed: frozen Flan-T5-Base, SD-VAE-FT-MSE, 256², Euler `t = i/K`. Weights stay on the Hub. CPU tests use `model_id=dummy` (no download). See [docs/supra-backend.md](docs/supra-backend.md).
 
-The `cpu` backend is a tiny in-repo DiT for the pytest cycle (`tests/test_cpu_sample.py`, `scripts/smoke_cpu.py`) so `red=blue` trains without a GPU or Hub weights. A 2-D CPU suite (`scripts/analyze_2d.py`, [docs/2d-analysis.md](docs/2d-analysis.md)) scores write / ESD / GEM / EA / `++` on orthogonal color vs pattern axes. Phrase-DSL jobs (what is already a recipe vs a missing op) are in [docs/dsl.md](docs/dsl.md). Formulation toys for the locked_shared RpGAN + `b_cap` shape live in `conceptmod/toys/` ([docs/formulation-toys.md](docs/formulation-toys.md)). That package is the formulation source of truth: 2-D analysis, DSL scoring, and erase/keep geometry call it (`locked_adv_defaults`, the cover/leftover helpers, `claim_pass`) instead of restating the recipe. The published `particlegan` package supplies `GANLoss` and `GradRegularizer` only; the gates do not live in ParticleGAN.
+The `cpu` backend is a tiny in-repo DiT for the pytest cycle (`tests/test_cpu_sample.py`, `scripts/smoke_cpu.py`) so `red=blue` trains without a GPU or Hub weights. A 2-D CPU suite (`scripts/analyze_2d.py`, [docs/2d-analysis.md](docs/2d-analysis.md)) scores write / ESD / GEM / EA / `++` on orthogonal color vs pattern axes. Phrase-DSL jobs (what is already a recipe vs a missing op) are in [docs/dsl.md](docs/dsl.md). Formulation toys for the locked_shared RpGAN + `b_cap` shape live in `conceptmod/toys/` ([docs/formulation-toys.md](docs/formulation-toys.md)). That package is the formulation source of truth: 2-D analysis, DSL scoring, and erase/keep geometry call it (`locked_adv_defaults`, the cover/leftover helpers, `claim_pass`) instead of restating the recipe. The published `particlegan` package supplies `GANLoss` and the fixed `GradientPenalty` primitive; the gates do not live in ParticleGAN.
+
+ParticleGAN **0.9.4** is supported. The historical `locked_shared` toys remain
+paired-logistic / fixed-`b_cap` tests. The separate
+[`ParticleLoRAGenerator` API](docs/particle-lora.md) routes a real learned particle
+prior through low-rank branches on a caller-supplied frozen model and trains
+with the complete current official recipe. Its tests establish CPU tensor
+integration, not pretrained-image training or new published controls.
 
 SDXL is conceptmod 1.x (UNet + CLIP), not this stack. Krea Turbo is the 8-step distilled sibling. Official advice is still train LoRAs on Raw and run them on Turbo; a local ComfyUI / Kitchen NVFP4 file (``--model-id models/kreaturboft_nvfp4.safetensors``) dequants to bf16 so the same LoRA trainer can run on Turbo itself.
 
@@ -47,7 +54,7 @@ row = match.score()                  # one CPU step on the 2-D fixture
 assert row["verdict"] == "PASS"      # RpGAN logistic + b_cap, FM off, κ=1
 ```
 
-`PASS` means that step used `GANLoss` and `GradRegularizer` from the
+`PASS` means that step used `GANLoss` and `GradientPenalty` from the
 `locked_adv_defaults()` stamp. It is a CPU toy. It is not a 2-D
 geometric verdict, and it is not a Music or Anima GPU transfer.
 Stranger pairing, FM-on, and a thinned kappa are refused when the game

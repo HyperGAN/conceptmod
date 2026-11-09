@@ -1,11 +1,11 @@
 """Training commits must leave no partial updates or consumed autograd graphs."""
 
-import json
-
 import pytest
 import torch
 
-from conceptmod import metrics, model_train, ops
+from conceptmod import model_train, ops
+from conceptmod.plan import compile_phrase
+from conceptmod.training import TrainingConfig, TrainingSession
 
 
 class ScalarBackend:
@@ -44,7 +44,7 @@ def expected_sgd_weight(updates, lr=0.1):
 def train(backend, monkeypatch, **kwargs):
     # SGD makes an incorrect final-group gradient scale observable in weights;
     # Adam's normalization otherwise nearly hides this regression.
-    monkeypatch.setattr(model_train.torch.optim, "AdamW", torch.optim.SGD)
+    monkeypatch.setattr(torch.optim, "AdamW", torch.optim.SGD)
     return model_train.train_model(
         backend, "source#target", lr=0.1, log_every=0, **kwargs)
 
@@ -55,7 +55,7 @@ def test_final_partial_group_is_committed_with_actual_group_mean(monkeypatch):
 
     history = train(backend, monkeypatch, iterations=3, accumulation_steps=2)
 
-    assert len(history) == 3
+    assert len(history) == 2
     assert backend.weight.item() == pytest.approx(expected_sgd_weight(2))
     assert backend.weight.grad is None
 
@@ -69,27 +69,25 @@ def test_budget_smaller_than_accumulation_still_commits(monkeypatch):
     assert backend.weight.grad is None
 
 
-def test_early_stop_only_observes_committed_updates(monkeypatch, tmp_path):
+def test_early_stop_only_observes_committed_updates(monkeypatch):
     backend = ScalarBackend()
     seen = []
+    monkeypatch.setattr(torch.optim, "AdamW", torch.optim.SGD)
 
-    def evaluate(*args, **kwargs):
+    def observe(active, report):
         assert backend.weight.grad is None
         seen.append(backend.weight.item())
-        return metrics.EditReport(0.0, None, None, done=True)
+        assert report.microsteps == 3
+        assert report.optimizer_steps == 1
 
-    monkeypatch.setattr(model_train.metrics, "eval_phrase", evaluate)
-    path = tmp_path / "metrics.jsonl"
-    history = train(
-        backend, monkeypatch, iterations=7, accumulation_steps=3,
-        eval_every=1, min_steps=0, patience=1, metrics_path=str(path))
+    active = TrainingSession(backend, compile_phrase("source#target"),
+                             TrainingConfig(iterations=7, accumulation_steps=3, lr=0.1),
+                             observers=[observe])
+    active.run(stop_when=lambda report: report.optimizer_steps == 1)
 
-    assert len(history) == 3
+    assert active.completed_microsteps == 3
     assert seen == pytest.approx([expected_sgd_weight(1)])
     assert backend.weight.grad is None
-    report = json.loads(path.read_text())
-    assert report["step"] == 2
-    assert report["optimizer_step"] == 1
 
 
 def test_empty_budget_clears_stale_gradients_and_preserves_mixed_modes(monkeypatch):
@@ -107,8 +105,8 @@ def test_empty_budget_clears_stale_gradients_and_preserves_mixed_modes(monkeypat
     assert not backend.transformer[0].training
 
 
-@pytest.mark.parametrize("failure", ["backward", "evaluation", "sampling"])
-def test_exceptions_clear_gradients_and_restore_modes(monkeypatch, tmp_path, failure):
+@pytest.mark.parametrize("failure", ["backward", "observer", "policy"])
+def test_exceptions_clear_gradients_and_restore_modes(monkeypatch, failure):
     backend = ScalarBackend()
     backend.transformer.eval()
     backend.transformer[0].train()
@@ -118,7 +116,6 @@ def test_exceptions_clear_gradients_and_restore_modes(monkeypatch, tmp_path, fai
 
     kwargs = {"iterations": 2, "accumulation_steps": 2}
     if failure == "backward":
-        # Fail after one microstep has produced pending gradients.
         original = model_train.ops.rule_loss
         calls = 0
 
@@ -130,12 +127,10 @@ def test_exceptions_clear_gradients_and_restore_modes(monkeypatch, tmp_path, fai
             return original(*args)
 
         monkeypatch.setattr(model_train.ops, "rule_loss", loss)
-    elif failure == "evaluation":
-        monkeypatch.setattr(model_train.metrics, "eval_phrase", fail)
-        kwargs["eval_every"] = 1
+    elif failure == "observer":
+        kwargs["observers"] = [fail]
     else:
-        monkeypatch.setattr(backend, "generate", fail, raising=False)
-        kwargs.update(sample_prompt="source", sample_dir=str(tmp_path), sample_every=1)
+        kwargs["stop_when"] = fail
 
     with pytest.raises(RuntimeError, match="injected failure"):
         train(backend, monkeypatch, **kwargs)
@@ -150,11 +145,7 @@ def test_exceptions_clear_gradients_and_restore_modes(monkeypatch, tmp_path, fai
     ({"iterations": 1.5}, "iterations"),
     ({"accumulation_steps": 0}, "accumulation_steps"),
     ({"accumulation_steps": True}, "accumulation_steps"),
-    ({"sample_every": 0}, "sample_every"),
-    ({"eval_every": -1}, "eval_every"),
     ({"log_every": -1}, "log_every"),
-    ({"min_steps": -1}, "min_steps"),
-    ({"patience": 0}, "patience"),
     ({"lr": float("nan")}, "lr"),
     ({"op_defaults": ops.OpDefaults(sample_steps=0)}, "sample_steps"),
 ])

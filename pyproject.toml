@@ -16,7 +16,10 @@ dependencies = ["torch>=2.8,<3", "particlegan==0.9.4"]
 [project.optional-dependencies]
 serialization = ["safetensors>=0.6,<1"]
 presentation = ["pillow>=13.0.0,<14"]
-test = ["pytest>=8", "build>=1.2", "peft>=0.17,<1", "safetensors>=0.6,<1", "pillow>=13.0.0,<14", "matplotlib"]
+test = [
+    "pytest>=8", "build>=1.2", "setuptools>=77", "wheel",
+    "peft>=0.17,<1", "safetensors>=0.6,<1", "pillow>=13.0.0,<14", "matplotlib",
+]
 
 [project.urls]
 Source = "https://github.com/HyperGAN/conceptmod"

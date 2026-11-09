@@ -57,9 +57,9 @@ def test_complete_backend_roundtrip(stage, tmp_path):
     source.save_trained(str(path))
     manifest = read_edit_bundle(path)
     assert manifest["components"]["transformer"]["adapters"]["default"]["rank"] == 3
-    # Existing transformer-only PEFT consumers can still read the root files.
-    assert (path / "adapter_config.json").is_file()
-    assert (path / "adapter_model.safetensors").is_file()
+    assert (path / "transformer" / "adapter_config.json").is_file()
+    assert (path / "transformer" / "adapter_model.safetensors").is_file()
+    assert not (path / "adapter_config.json").exists()
 
     restored = CpuBackend(device="cpu", lora_rank=3, seed=17)
     if stage != "model":
@@ -135,7 +135,7 @@ def test_full_weights_keep_precision_and_buffers(tmp_path):
     save_edit_bundle(path, {"transformer": source}, metadata={"base": "test"})
     from safetensors.torch import load_file
 
-    saved = load_file(str(path / "transformer.safetensors"))
+    saved = load_file(str(path / "transformer" / "weights.safetensors"))
     assert saved["weight"].dtype == torch.float64
     assert saved["counter"].dtype == torch.int64
     restored = torch.nn.Linear(3, 2, dtype=torch.float64)
@@ -191,3 +191,102 @@ def test_manifest_paths_cannot_escape_bundle(tmp_path):
     with pytest.raises(ValueError, match="escapes"):
         source.load_trained(str(path))
 
+
+
+def test_named_transformer_adapter_cannot_collide_with_encoder_component(tmp_path):
+    from peft import LoraConfig, get_peft_model, get_peft_model_state_dict
+
+    def adapter(name):
+        model = torch.nn.Sequential(torch.nn.Linear(2, 2, bias=False))
+        return get_peft_model(model, LoraConfig(r=1, lora_alpha=1, target_modules=["0"]),
+                              adapter_name=name)
+
+    transformer, encoder = adapter("text_encoder"), adapter("default")
+    for module, value in ((transformer, 1.0), (encoder, 2.0)):
+        for parameter in module.parameters():
+            if parameter.requires_grad:
+                parameter.data.fill_(value)
+    path = tmp_path / "bundle"
+    manifest = save_edit_bundle(path, {"transformer": transformer, "text_encoder": encoder})
+    assert manifest["components"]["transformer"]["adapters"]["text_encoder"]["path"] == "transformer/text_encoder"
+    assert manifest["components"]["text_encoder"]["adapters"]["default"]["path"] == "text_encoder"
+    restored, restored_encoder = adapter("text_encoder"), adapter("default")
+    load_edit_bundle(path, {"transformer": restored, "text_encoder": restored_encoder})
+    for source, actual, name in ((transformer, restored, "text_encoder"),
+                                 (encoder, restored_encoder, "default")):
+        expected = get_peft_model_state_dict(source, adapter_name=name)
+        loaded = get_peft_model_state_dict(actual, adapter_name=name)
+        assert all(torch.equal(value, loaded[key]) for key, value in expected.items())
+
+
+def test_symlinked_adapter_config_cannot_escape_bundle(tmp_path):
+    source = _trained("model")
+    path = tmp_path / "edit"
+    source.save_trained(path)
+    config = path / "transformer" / "adapter_config.json"
+    outside = tmp_path / "outside.json"
+    config.replace(outside)
+    config.symlink_to(outside)
+    with pytest.raises(ValueError, match="escapes"):
+        source.load_trained(path)
+
+
+@pytest.mark.parametrize("corruption", ["dtype", "nan", "inf"])
+def test_numeric_preflight_rejects_later_component_before_loading_any_weights(corruption, tmp_path):
+    from safetensors.torch import load_file, save_file
+
+    source = {"transformer": torch.nn.Linear(2, 2), "text_encoder": torch.nn.Linear(2, 2)}
+    path = tmp_path / "bundle"
+    save_edit_bundle(path, source)
+    weights = path / "text_encoder" / "weights.safetensors"
+    state = load_file(str(weights))
+    if corruption == "dtype":
+        state["weight"] = state["weight"].double()
+    else:
+        state["weight"][0, 0] = float(corruption)
+    save_file(state, str(weights))
+    destination = {"transformer": torch.nn.Linear(2, 2), "text_encoder": torch.nn.Linear(2, 2)}
+    before = {name: _state(module) for name, module in destination.items()}
+    with pytest.raises(ValueError, match="dtypes|non-finite"):
+        load_edit_bundle(path, destination)
+    for name, module in destination.items():
+        assert all(torch.equal(value, module.state_dict()[key]) for key, value in before[name].items())
+
+
+def test_provider_load_hook_failure_rolls_back_all_component_weights(tmp_path):
+    class Rejecting(torch.nn.Linear):
+        def _load_from_state_dict(self, *args, **kwargs):
+            # Simulate a provider hook failing after it already changed weights.
+            super()._load_from_state_dict(*args, **kwargs)
+            raise RuntimeError("provider rejected partially applied weights")
+
+    source = {"transformer": torch.nn.Linear(2, 2), "text_encoder": torch.nn.Linear(2, 2)}
+    path = tmp_path / "bundle"
+    save_edit_bundle(path, source)
+    destination = {"transformer": torch.nn.Linear(2, 2), "text_encoder": Rejecting(2, 2)}
+    before = {name: _state(module) for name, module in destination.items()}
+    with pytest.raises(RuntimeError, match="provider rejected"):
+        load_edit_bundle(path, destination)
+    for name, module in destination.items():
+        assert all(torch.equal(value, module.state_dict()[key]) for key, value in before[name].items())
+
+
+def test_rollback_failure_does_not_replace_primary_provider_error(tmp_path):
+    class BrokenRollback(torch.nn.Linear):
+        broken = False
+
+        def _load_from_state_dict(self, *args, **kwargs):
+            self.broken = True
+            raise RuntimeError("primary provider error")
+
+        def state_dict(self, *args, **kwargs):
+            if self.broken:
+                raise RuntimeError("cleanup state unavailable")
+            return super().state_dict(*args, **kwargs)
+
+    path = tmp_path / "bundle"
+    save_edit_bundle(path, {"transformer": torch.nn.Linear(2, 2)})
+    with pytest.raises(RuntimeError, match="primary provider error") as raised:
+        load_edit_bundle(path, {"transformer": BrokenRollback(2, 2)})
+    assert any("rollback failed" in note and "cleanup state unavailable" in note
+               for note in raised.value.__notes__)

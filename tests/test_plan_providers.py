@@ -82,3 +82,20 @@ def test_views_apply_the_same_role_to_all_operations():
         assert view.predict_v("a", None, None) is expected
         assert view.render("a", None, 1, 1) is expected
         assert view.generate("a", 1) is expected
+
+
+@pytest.mark.parametrize("phrase", [
+    "cat~dog:0.1:guidnace=99",
+    "cat~dog:0.1:guidance=nan",
+    "cat~dog:0.1:",
+    "cat=dog | :guidance=nan",
+    "cat=dog | :0.2",
+])
+def test_compiler_rejects_parts_the_parser_would_otherwise_discard(phrase):
+    with pytest.raises(dsl.DSLError):
+        compile_phrase(phrase)
+
+
+def test_negative_replace_macro_follows_exact_signed_algebra():
+    plan = compile_phrase("cat~dog:-0.35")
+    assert [rule.alpha for rule in plan.rules] == [-0.7, -1.4, 0.35]

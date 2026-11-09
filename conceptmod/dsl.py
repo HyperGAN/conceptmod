@@ -111,11 +111,13 @@ def _expand_replace(rule_str: str) -> list[str]:
     ``process_rule``: exaggerate b, write b into a, decorrelate b from a."""
     prefix, rest = rule_str.split("~", 1)
     target, *opts = rest.split(":")
+    if len(opts) > 1:
+        raise DSLError("replace macro accepts only one optional alpha coefficient")
     lambda_value = float(opts[0]) if opts else DEFAULT_REPLACE_LAMBDA
     return [
         f"{target}++:{2 * lambda_value}",
         f"{prefix}={target}:{4 * lambda_value}",
-        f"{target}%{prefix}:-{lambda_value}",
+        f"{target}%{prefix}:{-lambda_value}",
     ]
 
 
@@ -174,7 +176,7 @@ def parse_rule(rule_str: str) -> Rule | None:
     if not concept and not option_parts:
         return None
     if not concept:
-        return None
+        raise DSLError(f"options need a rule before ':': {raw!r}")
     rule = _parse_concept(concept, raw)
     return _parse_options(option_parts, rule)
 

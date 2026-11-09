@@ -46,8 +46,8 @@ def save_edit_bundle(path: str | Path, components: Mapping[str, nn.Module],
                      *, metadata: dict | None = None) -> dict:
     """Save all edited components to a new or empty directory.
 
-    Transformer PEFT files remain at the bundle root for existing adapter
-    consumers. Other components get named subdirectories. Write to a sibling
+    Every component owns a separate directory, including the transformer.
+    Adapter names cannot collide with other components. Write to a sibling
     temporary directory first so a failed export cannot publish a partial edit.
     """
     path = Path(path)
@@ -66,8 +66,9 @@ def save_edit_bundle(path: str | Path, components: Mapping[str, nn.Module],
         for name, module in components.items():
             adapter_names = _adapter_names(module)
             if adapter_names:
-                relative = "." if name == "transformer" else name
+                relative = name
                 target = root / relative
+                target.mkdir()
                 module.save_pretrained(str(target), safe_serialization=True)
                 adapters = {}
                 for adapter in adapter_names:
@@ -80,7 +81,8 @@ def save_edit_bundle(path: str | Path, components: Mapping[str, nn.Module],
                 entry = {"kind": "peft", "path": relative, "adapters": adapters,
                          "active_adapters": list(module.active_adapters)}
             else:
-                relative = f"{name}.safetensors"
+                relative = f"{name}/weights.safetensors"
+                (root / name).mkdir()
                 save_transformer_weights(module, root / relative)
                 entry = {"kind": "state_dict", "path": relative}
             manifest["components"][name] = entry
@@ -131,6 +133,12 @@ def _validate_state(name: str, saved: dict, expected: dict) -> None:
     bad = [key for key in expected if saved[key].shape != expected[key].shape]
     if bad:
         raise ValueError(f"{name}: incompatible weight shapes: {bad}")
+    bad = [key for key in expected if saved[key].dtype != expected[key].dtype]
+    if bad:
+        raise ValueError(f"{name}: incompatible weight dtypes: {bad}")
+    bad = [key for key, value in saved.items() if not torch.isfinite(value).all()]
+    if bad:
+        raise ValueError(f"{name}: non-finite weights: {bad}")
 
 
 def load_edit_bundle(path: str | Path, components: Mapping[str, nn.Module],
@@ -162,9 +170,9 @@ def load_edit_bundle(path: str | Path, components: Mapping[str, nn.Module],
             if entry["active_adapters"] != list(module.active_adapters):
                 raise ValueError(f"{name}: saved and initialized active adapters differ")
             for adapter, info in adapters.items():
-                folder = _inside(root, info["path"])
+                config_path = _inside(root, info["path"] + "/adapter_config.json")
                 config = PeftConfig.from_peft_type(
-                    **json.loads((folder / "adapter_config.json").read_text())
+                    **json.loads(config_path.read_text())
                 ).to_dict()
                 actual = module.peft_config[adapter].to_dict()
                 if _normalized_config(config) != _normalized_config(actual):
@@ -172,20 +180,48 @@ def load_edit_bundle(path: str | Path, components: Mapping[str, nn.Module],
                 state = load_file(str(_inside(root, info["path"] + "/adapter_model.safetensors")))
                 expected = get_peft_model_state_dict(module, adapter_name=adapter)
                 _validate_state(f"{name}.{adapter}", state, expected)
-                pending.append((module, adapter, state))
+                pending.append((module, adapter, state, expected))
         elif entry["kind"] == "state_dict":
             if _adapter_names(module):
                 raise ValueError(f"{name}: full weights require an unwrapped module")
             state = load_file(str(_inside(root, entry["path"])))
-            _validate_state(name, state, module.state_dict())
-            pending.append((module, None, state))
+            expected = module.state_dict()
+            _validate_state(name, state, expected)
+            pending.append((module, None, state, expected))
         else:
             raise ValueError(f"{name}: unsupported component kind {entry['kind']!r}")
-    for module, adapter, state in pending:
-        if adapter is None:
-            module.load_state_dict(state, strict=True)
-        else:
-            from peft import set_peft_model_state_dict
+    # Snapshot the live tensors that a load can change. PEFT state normally
+    # aliases its underlying adapter tensors, so frozen multi-billion-parameter
+    # hosts do not need a second copy. Unusual serializers that compute new
+    # tensors fall back to a full snapshot. Keep rollback copies off the GPU.
+    targets = {}
+    for module, adapter, state, expected in pending:
+        live = module.state_dict()
+        def storage_key(value):
+            return (value.device, value.untyped_storage().data_ptr())
+        expected_storage = {storage_key(value) for value in expected.values()}
+        live_storage = {storage_key(value) for value in live.values()}
+        keys = (live.keys() if adapter is None or not expected_storage <= live_storage else
+                [key for key, value in live.items() if storage_key(value) in expected_storage])
+        targets.setdefault(module, {}).update({key: live[key].detach().cpu().clone() for key in keys})
+    try:
+        for module, adapter, state, expected in pending:
+            if adapter is None:
+                module.load_state_dict(state, strict=True)
+            else:
+                from peft import set_peft_model_state_dict
 
-            set_peft_model_state_dict(module, state, adapter_name=adapter)
+                set_peft_model_state_dict(module, state, adapter_name=adapter)
+    except BaseException as error:
+        # Restore through tensor copies, so a failing provider load hook cannot
+        # prevent rollback by raising a second time. Preserve the primary error.
+        with torch.no_grad():
+            for module, previous in targets.items():
+                try:
+                    current = module.state_dict()
+                    for key, value in previous.items():
+                        current[key].copy_(value)
+                except BaseException as cleanup_error:
+                    error.add_note(f"bundle rollback failed: {cleanup_error!r}")
+        raise
     return manifest

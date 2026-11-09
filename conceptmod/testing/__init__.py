@@ -7,6 +7,6 @@ def fixture_registry() -> BackendRegistry:
     """PEFT is optional; only constructing the fixture imports it."""
     return BackendRegistry([
         BackendProvider(name, "conceptmod.testing.peft_backend:CpuBackend",
-                        "conceptmod[peft-test]", BackendCapabilities())
+                        "conceptmod[test]", BackendCapabilities())
         for name in ("cpu", "dummy")
     ], discover=False)

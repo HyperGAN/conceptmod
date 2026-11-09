@@ -1,6 +1,7 @@
 [build-system]
 requires = ["setuptools>=77", "wheel"]
-build-backend = "setuptools.build_meta"
+build-backend = "_build_backend"
+backend-path = ["."]
 
 [project]
 name = "conceptmod"
@@ -15,15 +16,22 @@ dependencies = ["torch>=2.8,<3", "particlegan==0.9.4"]
 [project.optional-dependencies]
 serialization = ["safetensors>=0.6,<1"]
 presentation = ["pillow>=13.0.0,<14"]
-research = ["matplotlib"]
-peft-test = ["peft>=0.17,<1", "safetensors>=0.6,<1", "pillow>=13.0.0,<14"]
-test = ["pytest>=8", "peft>=0.17,<1", "safetensors>=0.6,<1", "pillow>=13.0.0,<14", "matplotlib"]
+test = [
+    "pytest>=8", "build>=1.2", "setuptools>=77", "wheel",
+    "peft>=0.17,<1", "safetensors>=0.6,<1", "pillow>=13.0.0,<14", "matplotlib",
+]
+
+[project.urls]
+Source = "https://github.com/HyperGAN/conceptmod"
+Documentation = "https://github.com/HyperGAN/conceptmod/blob/main/docs/api.md"
+Issues = "https://github.com/HyperGAN/conceptmod/issues"
 
 [project.scripts]
 conceptmod = "conceptmod.cli:main"
 
-[tool.setuptools.packages.find]
-include = ["conceptmod*"]
+[tool.setuptools]
+packages = ["conceptmod", "conceptmod.backends"]
+include-package-data = false
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

@@ -24,7 +24,8 @@ accumulation are part of a training checkpoint instead.
 Initialize a backend with the same base model, settings and adapter
 configuration, then load the bundle. Attach encoder LoRA with its saved rank
 before loading if the bundle lists a `text_encoder` component. For example,
-the download-free CPU fixture roundtrip is:
+the download-free CPU fixture roundtrip below runs from the source checkout
+with `.[test]` installed. The fixture is not part of the released core wheel:
 
 ```python
 from conceptmod.artifacts import read_edit_bundle

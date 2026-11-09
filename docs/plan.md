@@ -269,3 +269,34 @@ Hosted product acceptance runs: [SANA](https://github.com/HyperGAN/sana-conceptm
 [Supra](https://github.com/HyperGAN/supra-conceptmod/actions/runs/42558725104),
 [converters](https://github.com/HyperGAN/conceptmod-converters/actions/runs/42559065348).
 Core checks use the [Core contracts workflow](https://github.com/HyperGAN/conceptmod/actions/workflows/tests.yml).
+
+## Versioned package follow-up
+
+The owner requested a merged, installable package using particle-sliders as the
+template. The comparison uses current public `particle-sliders` main
+`ec5566323d46a04145e9ecfa02bf9ad55843be5e` (core 0.14.1). The remaining packaging
+gap was that the initial Conceptmod wheel included research and test fixtures.
+The release now uses the same curated-module and strict-editable pattern:
+19 production modules, no research, test fixture, pretrained model or converter.
+Unreviewed source additions and stale build outputs cannot enter the wheel.
+
+[Distribution details and comparison](distribution.md) explain both the matching
+ownership boundaries and the distinct numerical APIs/dependency cohorts. The
+source archive retains research and its tests; installing it still builds only
+the reviewed core. The release has a wheel, source distribution and checksums
+at [v3.0.0](https://github.com/HyperGAN/conceptmod/releases/tag/v3.0.0).
+
+The stricter installed wheel passed all eight product suites again: **153
+passed, 7 optional skips**, including real Supra model and encoder updates and
+bit-identical safe-checkpoint continuation. No product imports the excluded
+namespaces; all product heads remain unchanged. Core CI additionally checks
+strict editable imports, the built wheel, outside-checkout runtime tests and
+package metadata. No real model/LR work is replayed for this package change.
+
+Release qualification: **532 passed, 2 xfailed** in the full clean-environment
+source suite; **121 passed** against the installed wheel from `/tmp`; strict
+editable and wheel isolation checks passed. Both artifacts passed `twine check`.
+Rebuilding from the source archive reproduces the exact 19 runtime modules.
+The extra source test verifies exclusion of both unreviewed files and stale
+build outputs. The two pre-existing research verdicts retain their documented
+platform-dependent scope.

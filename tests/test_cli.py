@@ -24,7 +24,7 @@ def test_bad_plan_does_not_call_the_model_factory(monkeypatch):
 
 
 def test_cli_executes_and_exports_a_real_cpu_edit(tmp_path, capsys):
-    pytest.importorskip("peft", reason="the explicit CPU adapter fixture requires conceptmod[peft-test]")
+    pytest.importorskip("peft", reason="the source-only CPU adapter fixture requires .[test]")
     pytest.importorskip("safetensors", reason="the fixture exports safetensors edit components")
     config = tmp_path / "config.json"
     config.write_text(json.dumps({"backend": {"device": "cpu", "lora_rank": 2},

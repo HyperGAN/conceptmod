@@ -18,7 +18,7 @@ stages and rendering operations are available.
 ## Install and choose a product
 
 ```bash
-pip install 'git+https://github.com/HyperGAN/conceptmod.git'
+pip install https://github.com/HyperGAN/conceptmod/releases/download/v3.0.0/conceptmod-3.0.0-py3-none-any.whl
 pip install 'git+https://github.com/HyperGAN/anima-conceptmod.git'
 conceptmod backends
 conceptmod validate --backend anima --phrase 'human=robot'
@@ -74,13 +74,14 @@ exact continuation. Weights are raw current weights; weight EMA is disabled.
 
 - [DSL catalogue](docs/dsl/README.md) and [2-D analysis](docs/2d-analysis.md).
 - [Formulation toys](docs/formulation-toys.md) under `conceptmod.research.toys`,
-  isolated from core runtime imports.
+  available in the source checkout and excluded from the installed core.
 - [Particle LoRA tensor integration](docs/particle-lora.md), using the official
   ParticleGAN trainer and optimizer formulas.
 - [Model-format converters](https://github.com/HyperGAN/conceptmod-converters).
 - [Historical 2.x model proofs](https://github.com/HyperGAN/conceptmod/tree/70f0cb2632190388eb4028ef80066558259494fc/outputs),
   retained as historical evidence rather than new-model qualification.
 - [Implementation plan and verification record](docs/plan.md).
+- [Distribution boundary and particle-sliders comparison](docs/distribution.md).
 
 For intended-effect comparisons, rank the equal-case mean of matched finished
 output intensity ON minus OFF. Surrogate velocity error, preservation and toy
@@ -93,6 +94,8 @@ pip install -e '.[test]'
 python -m pytest -q
 ```
 
-Tests use CPU fixtures, not pretrained models or model downloads. Product tests
-live with their implementations. The optional PEFT fixture is explicitly under
-`conceptmod.testing`; it is not a discovered model product.
+The command above runs the full source suite, including research. Tests use CPU
+fixtures, not pretrained models or model downloads. Product tests live with
+their implementations. Research and `conceptmod.testing` are source-only and
+are excluded from both wheels and strict editable installs. See
+[distribution checks](docs/distribution.md) for installed-package validation.

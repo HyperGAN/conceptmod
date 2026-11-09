@@ -1,4 +1,5 @@
-include LICENSE README.md requirements.txt train.py
+include LICENSE README.md requirements.txt train.py setup.py _build_backend.py _core_build.py
+recursive-include conceptmod *.py
 recursive-include docs *.md
 recursive-include scripts *.py
 recursive-include examples *.py *.json *.toml

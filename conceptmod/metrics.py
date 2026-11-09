@@ -9,6 +9,7 @@ effect, preservation quality, or a scientific formulation PASS.
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 import math
@@ -74,22 +75,29 @@ class ProbeSet:
 
 @contextmanager
 def _evaluating(backend):
-    # Runtime backends expose their trainable/frozen nn.Modules directly.
-    # A backend that is itself a module is also supported. Preserve mixed
-    # child modes rather than recursively restoring only the root's flag.
-    roots = [backend] if isinstance(backend, torch.nn.Module) else []
-    roots.extend(value for value in getattr(backend, "__dict__", {}).values()
-                 if isinstance(value, torch.nn.Module))
-    modes = {}
-    for root in roots:
-        for module in root.modules():
-            modes.setdefault(module, module.training)
+    declared = getattr(backend, "training_modules", None)
+    if callable(declared):
+        modules = declared()
+        if (not isinstance(modules, Mapping) or not modules
+                or not all(isinstance(name, str) and name and isinstance(module, torch.nn.Module)
+                           for name, module in modules.items())):
+            raise TypeError("training_modules() must declare a nonempty mapping of named PyTorch modules")
+        roots = list(modules.values())
+    else:
+        # Small research fixtures may directly expose modules without owning a
+        # production runtime. Do not guess pipeline-specific attribute names.
+        roots = [backend] if isinstance(backend, torch.nn.Module) else []
+        roots.extend(value for value in getattr(backend, "__dict__", {}).values()
+                     if isinstance(value, torch.nn.Module))
+    roots = list({id(root): root for root in roots}.values())
+    modes = {id(module): (module, module.training)
+             for root in roots for module in root.modules()}
     try:
         for root in roots:
             root.eval()
         yield
     finally:
-        for module, training in modes.items():
+        for module, training in modes.values():
             module.training = training
 
 

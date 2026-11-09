@@ -134,3 +134,85 @@ def test_probe_set_owns_detached_tensors_and_rejects_empty_samples():
         metrics.ProbeSet(())
     with pytest.raises(TypeError, match="explicitly captured"):
         metrics.eval_phrase(MockBackend(), "cat=dog", probes=[])
+
+
+class _DeclaredNestedBackend(MockBackend):
+    def __init__(self):
+        from types import SimpleNamespace
+
+        super().__init__()
+
+        class CountingEncoder(torch.nn.Sequential):
+            transitions = 0
+
+            def train(self, mode=True):
+                self.transitions += 1
+                return super().train(mode)
+
+        encoder = CountingEncoder(torch.nn.Dropout(.5), torch.nn.Dropout(.25))
+        encoder[1].eval()
+        self.pipe = SimpleNamespace(encoder=encoder)
+
+    def training_modules(self):
+        return {"encoder": self.pipe.encoder, "same_encoder": self.pipe.encoder}
+
+    def modes(self):
+        return tuple(module.training for module in self.pipe.encoder.modules())
+
+    def assert_evaluating(self):
+        assert not any(self.modes())
+        value = torch.ones(1, 16)
+        assert torch.equal(self.pipe.encoder(value), value)
+
+    def partial_denoise(self, *args):
+        self.assert_evaluating()
+        return super().partial_denoise(*args)
+
+    def predict_v(self, *args, **kwargs):
+        self.assert_evaluating()
+        return super().predict_v(*args, **kwargs)
+
+
+def test_declared_nested_modules_are_evaluated_deduplicated_and_restored():
+    backend = _DeclaredNestedBackend()
+    modes = backend.modes()
+    random_state = torch.get_rng_state().clone()
+    probes = metrics.capture_probes(backend)
+    assert backend.modes() == modes
+    report = metrics.eval_phrase(backend, "cat=dog", probes=probes)
+    assert report.swap_ratio == pytest.approx(1.0)
+    assert backend.modes() == modes
+    assert backend.pipe.encoder.transitions == 2
+    assert torch.equal(torch.get_rng_state(), random_state)
+
+
+@pytest.mark.parametrize("operation", ["capture", "evaluate"])
+def test_declared_nested_modes_restore_when_observation_fails(monkeypatch, operation):
+    backend = _DeclaredNestedBackend()
+    modes = backend.modes()
+    random_state = torch.get_rng_state().clone()
+
+    def fail(*args, **kwargs):
+        backend.assert_evaluating()
+        raise RuntimeError("nested observation failed")
+
+    monkeypatch.setattr(backend, "partial_denoise" if operation == "capture" else "predict_v", fail)
+    probes = metrics.ProbeSet(((torch.zeros(1, *backend.latent_shape), torch.tensor(2.)),))
+    with pytest.raises(RuntimeError, match="nested observation failed"):
+        if operation == "capture":
+            metrics.capture_probes(backend)
+        else:
+            metrics.eval_phrase(backend, "cat=dog", probes=probes)
+    assert backend.modes() == modes
+    assert torch.equal(torch.get_rng_state(), random_state)
+
+
+@pytest.mark.parametrize("declaration", [{}, {"encoder": object()}, {"": torch.nn.Dropout()}])
+def test_invalid_declared_runtime_modules_fail_before_sampling(monkeypatch, declaration):
+    backend = _DeclaredNestedBackend()
+    modes = backend.modes()
+    monkeypatch.setattr(backend, "training_modules", lambda: declaration)
+    with pytest.raises(TypeError, match="training_modules"):
+        metrics.capture_probes(backend)
+    assert backend.partial_calls == 0
+    assert backend.modes() == modes

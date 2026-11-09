@@ -363,8 +363,6 @@ def run_sample_problem(
         train_method="lora",
         seed=seed,
         op_defaults=cfg,
-        log_every=0,
-        sample_prompt=None,
     )
     cosine_after = write_alignment_cosine(backend, seed=seed)
     return SampleResult(

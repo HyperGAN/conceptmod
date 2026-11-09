@@ -52,8 +52,8 @@ def test_spec_splits_dsl_from_formulation_toys():
     assert "Music" in text
 
 
-def test_readme_teaches_parse_then_game():
+def test_readme_teaches_validated_plan_and_explicit_training():
     readme = (ROOT / "README.md").read_text()
-    assert "loss_game" in readme
-    assert "parse_phrase" in readme
+    assert "compile_phrase" in readme
+    assert "TrainingSession" in readme
     assert "docs/dsl/README.md" in readme

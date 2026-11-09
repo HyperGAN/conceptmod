@@ -46,7 +46,7 @@ def train(backend, monkeypatch, **kwargs):
     # Adam's normalization otherwise nearly hides this regression.
     monkeypatch.setattr(torch.optim, "AdamW", torch.optim.SGD)
     return model_train.train_model(
-        backend, "source#target", lr=0.1, log_every=0, **kwargs)
+        backend, "source#target", lr=0.1, **kwargs)
 
 
 def test_final_partial_group_is_committed_with_actual_group_mean(monkeypatch):
@@ -145,7 +145,6 @@ def test_exceptions_clear_gradients_and_restore_modes(monkeypatch, failure):
     ({"iterations": 1.5}, "iterations"),
     ({"accumulation_steps": 0}, "accumulation_steps"),
     ({"accumulation_steps": True}, "accumulation_steps"),
-    ({"log_every": -1}, "log_every"),
     ({"lr": float("nan")}, "lr"),
     ({"op_defaults": ops.OpDefaults(sample_steps=0)}, "sample_steps"),
 ])

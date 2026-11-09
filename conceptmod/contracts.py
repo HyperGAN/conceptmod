@@ -6,6 +6,7 @@ their optional inference libraries. Runtime implementations live in products.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from contextlib import contextmanager
 from typing import Any, Protocol, runtime_checkable
 
 
@@ -63,19 +64,43 @@ class ModelView:
     backend: Any
     frozen: bool
 
+    @contextmanager
+    def _reference_context(self):
+        if not self.frozen:
+            yield
+            return
+        import torch
+
+        declared = getattr(self.backend, "training_modules", None)
+        roots = list(declared().values()) if callable(declared) else []
+        modes = {id(module): (module, module.training)
+                 for root in roots for module in root.modules()}
+        try:
+            for root in roots:
+                root.eval()
+            with torch.no_grad():
+                yield
+        finally:
+            for module, training in modes.values():
+                module.training = training
+
     def encode_text(self, prompt: str):
-        return self.backend.encode_text(prompt, frozen=self.frozen)
+        with self._reference_context():
+            return self.backend.encode_text(prompt, frozen=self.frozen)
 
     def predict_v(self, prompt, z, timestep):
-        return self.backend.predict_v(prompt, z, timestep, frozen=self.frozen)
+        with self._reference_context():
+            return self.backend.predict_v(prompt, z, timestep, frozen=self.frozen)
 
     def render(self, prompt, generator, num_steps, guidance, *, grad_steps=0):
-        return self.backend.render(prompt, generator, num_steps, guidance,
-                                   grad_steps=grad_steps, frozen=self.frozen)
+        with self._reference_context():
+            return self.backend.render(prompt, generator, num_steps, guidance,
+                                       grad_steps=grad_steps, frozen=self.frozen)
 
     def generate(self, prompt, seed, num_steps=None, guidance=None):
-        return self.backend.generate(prompt, seed, num_steps, guidance,
-                                     frozen=self.frozen)
+        with self._reference_context():
+            return self.backend.generate(prompt, seed, num_steps, guidance,
+                                         frozen=self.frozen)
 
 
 def model_views(backend) -> tuple[ModelView, ModelView]:

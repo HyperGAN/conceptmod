@@ -257,7 +257,7 @@ def _label_mse(bar: Image.Image, text: str) -> float:
     trial = Image.new("RGB", (bar.width, max(bar.height, _LABEL_H + 4)), (80, 80, 80))
     label(trial, text)
     crop = trial.crop((0, 0, bar.width, bar.height))
-    pa, pb = list(bar.getdata()), list(crop.getdata())
+    pa, pb = list(bar.get_flattened_data()), list(crop.get_flattened_data())
     if not pa:
         return 1e9
     acc = 0.0

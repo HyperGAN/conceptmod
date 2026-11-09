@@ -182,9 +182,9 @@ class EncoderObjective:
 
 
 def train_encoder(backend, phrase, iterations=400, lr=1e-4, rank=8, seed=0,
-                  strength=1.0, curriculum_split=20, log_every=0, *,
+                  strength=1.0, curriculum_split=20, *,
                   accumulation_steps=1, observers=(), stop_when=None):
-    """Compatibility entry point using a strict encoder plan and session.
+    """Execute a strict encoder plan using the session API.
 
     Logging and evaluation belong to explicitly supplied observers. Unsupported
     rules fail during compilation, before an encoder adapter is attached.
@@ -192,8 +192,6 @@ def train_encoder(backend, phrase, iterations=400, lr=1e-4, rank=8, seed=0,
     from conceptmod.plan import EditPlan, compile_phrase
     from conceptmod.training import TrainingConfig, TrainingSession
 
-    if log_every != 0:
-        raise ValueError("log_every moved to explicit training observers")
     plan = phrase if isinstance(phrase, EditPlan) else compile_phrase(
         phrase, stage="encoder", capabilities=getattr(backend, "capabilities", None))
     if plan.stage != "encoder":

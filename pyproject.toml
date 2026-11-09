@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=68", "wheel"]
+requires = ["setuptools>=77", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -8,8 +8,9 @@ version = "3.0.0"
 description = "Model-independent concept editing plans, execution and artifacts"
 readme = "README.md"
 requires-python = ">=3.11"
-license = {file = "LICENSE"}
-dependencies = ["torch>=2.8,<3", "particlegan>=0.9.4,<0.10"]
+license = "MIT"
+license-files = ["LICENSE"]
+dependencies = ["torch>=2.8,<3", "particlegan==0.9.4"]
 
 [project.optional-dependencies]
 serialization = ["safetensors>=0.6,<1"]
@@ -17,7 +18,6 @@ presentation = ["pillow>=13.0.0,<14"]
 research = ["matplotlib"]
 peft-test = ["peft>=0.17,<1", "safetensors>=0.6,<1", "pillow>=13.0.0,<14"]
 test = ["pytest>=8", "peft>=0.17,<1", "safetensors>=0.6,<1", "pillow>=13.0.0,<14", "matplotlib"]
-dev = ["conceptmod[test]"]
 
 [project.scripts]
 conceptmod = "conceptmod.cli:main"

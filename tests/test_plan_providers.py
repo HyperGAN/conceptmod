@@ -84,6 +84,27 @@ def test_views_apply_the_same_role_to_all_operations():
         assert view.generate("a", 1) is expected
 
 
+def test_original_view_evals_reference_and_restores_modes_after_failure():
+    import torch
+    class Backend:
+        def __init__(self):
+            self.transformer = torch.nn.Sequential(torch.nn.Dropout(0.9))
+        def training_modules(self): return {"transformer": self.transformer}
+        def predict_v(self, prompt, z, timestep, frozen):
+            assert not self.transformer.training
+            assert not torch.is_grad_enabled()
+            if prompt == "fail": raise RuntimeError("reference failed")
+            return self.transformer(z)
+    backend = Backend()
+    original, _ = model_views(backend)
+    x = torch.ones(4)
+    assert torch.equal(original.predict_v("ok", x, None), x)
+    assert backend.transformer.training
+    with pytest.raises(RuntimeError, match="reference failed"):
+        original.predict_v("fail", x, None)
+    assert backend.transformer.training
+
+
 @pytest.mark.parametrize("phrase", [
     "cat~dog:0.1:guidnace=99",
     "cat~dog:0.1:guidance=nan",

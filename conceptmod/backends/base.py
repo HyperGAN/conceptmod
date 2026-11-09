@@ -148,6 +148,23 @@ class Backend(abc.ABC):
                 modules[name] = module
         return modules
 
+    def training_identity(self) -> dict:
+        """Declare behavior which a checkpoint cannot change by loading tensors.
+
+        Products add any non-module behavior settings to artifact_metadata or
+        override this method. A state dict alone cannot describe arbitrary
+        Python control flow, tokenizer conventions or stochastic policies.
+        """
+        return {
+            "backend_class": f"{type(self).__module__}.{type(self).__qualname__}",
+            "metadata": self.artifact_metadata(),
+            "module_graph": {
+                root_name: [(name, f"{type(module).__module__}.{type(module).__qualname__}",
+                             module.extra_repr()) for name, module in root.named_modules()]
+                for root_name, root in self.training_modules().items()
+            },
+        }
+
     @property
     def original_view(self):
         from conceptmod.contracts import ModelView

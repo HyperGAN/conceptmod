@@ -225,7 +225,7 @@ Do not call scaffolding, pending repositories, or unmerged work complete.
   exposed a PEFT str-Enum identity issue, fixed in every product by normalizing
   metadata to plain primitives, without weakening `weights_only=True` loading.
 
-Verified product commits (publication follows the core merge):
+Published, verified product commits:
 
 | Repository | Passed / optional skips | Commit |
 | --- | --- | --- |
@@ -236,8 +236,36 @@ Verified product commits (publication follows the core merge):
 | [qwen-image-conceptmod](https://github.com/HyperGAN/qwen-image-conceptmod) | 13 / 0 | [4bf5f95](https://github.com/HyperGAN/qwen-image-conceptmod/commit/4bf5f95ce056bb7b951c8dc25a669eaedb98a9e2) |
 | [flux2-klein-conceptmod](https://github.com/HyperGAN/flux2-klein-conceptmod) | 15 / 0 | [e0a3db5](https://github.com/HyperGAN/flux2-klein-conceptmod/commit/e0a3db5fb2ab0b1ea31b8606e36f30b3b7cca4a9) |
 | [supra-conceptmod](https://github.com/HyperGAN/supra-conceptmod) | 28 / 0 | [43ae82f](https://github.com/HyperGAN/supra-conceptmod/commit/43ae82fddaef529ea735601f283f010a1e184ff9) |
-| [conceptmod-converters](https://github.com/HyperGAN/conceptmod-converters) | 40 / 6 | [d032e4f](https://github.com/HyperGAN/conceptmod-converters/commit/d032e4f43abfd8c57cc722411051462587fe7581) |
+| [conceptmod-converters](https://github.com/HyperGAN/conceptmod-converters) | 40 / 6 | [4ed1878](https://github.com/HyperGAN/conceptmod-converters/commit/4ed187844a40c56b05b9afcdf47fc045ad2775fd) |
 
-Architecture [PR #39](https://github.com/HyperGAN/conceptmod/pull/39) is the final
-integration after the separately merged correctness fixes. Remote merge and
-publication receipts follow below when verified.
+Architecture [PR #39](https://github.com/HyperGAN/conceptmod/pull/39) merged as
+`1399a7aa5b360d5c7b5d214ea34e558d796ccc65`, after the separately merged
+correctness fixes. All eight product repositories have their verified commits
+on public `main` branches.
+
+Final hosted checks exposed two portability issues and one missing dependency:
+
+- Single-row and batched float32 matrix multiplication need not produce identical
+  rounding on every CPU. Particle LoRA tests now compute their frozen reference
+  with exactly the eventual batch shape. Output, weights and buffers retain
+  bit-exact assertions. All 12 particle tests pass under normal, portable and
+  AVX2 dispatch configurations (36 passes).
+- The historical shared-trajectory scientific assertion passes on one hosted CPU
+  and fails in the local environment. Both existing research diagnostics now
+  report XFAIL or XPASS across hosts rather than treating a reproduced PASS as
+  an integration failure. All scientific assertions and thresholds remain;
+  runtime exceptions still fail. The local full-suite evidence above remains
+  valid for that environment, not a universal scientific claim.
+- The independent converter clean install revealed that safetensors I/O needs
+  NumPy. The converter now declares it directly; its installed-wheel suite still
+  passes 40 tests with six optional skips and has no dependency on core.
+
+Hosted product acceptance runs: [SANA](https://github.com/HyperGAN/sana-conceptmod/actions/runs/42558711102),
+[Z-Image](https://github.com/HyperGAN/zimage-conceptmod/actions/runs/42558713092),
+[Anima](https://github.com/HyperGAN/anima-conceptmod/actions/runs/42558715743),
+[Krea 2](https://github.com/HyperGAN/krea2-conceptmod/actions/runs/42558718374),
+[Qwen-Image](https://github.com/HyperGAN/qwen-image-conceptmod/actions/runs/42558721459),
+[FLUX.2 Klein](https://github.com/HyperGAN/flux2-klein-conceptmod/actions/runs/42558723272),
+[Supra](https://github.com/HyperGAN/supra-conceptmod/actions/runs/42558725104),
+[converters](https://github.com/HyperGAN/conceptmod-converters/actions/runs/42559065348).
+Core checks use the [Core contracts workflow](https://github.com/HyperGAN/conceptmod/actions/workflows/tests.yml).

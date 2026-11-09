@@ -22,7 +22,7 @@ from conceptmod.analysis_2d import (
     run_method,
     run_suite,
 )
-from conceptmod.backends import BACKENDS
+from conceptmod.providers import BackendRegistry
 
 
 def _zt(backend, seed=0):
@@ -33,8 +33,8 @@ def _zt(backend, seed=0):
     return z, torch.tensor(2.0)
 
 
-def test_backends_tuple_unchanged():
-    assert BACKENDS == ("sana", "zimage", "anima", "krea", "qwen", "cpu", "klein", "supra")
+def test_research_does_not_require_pretrained_products():
+    assert BackendRegistry(discover=False).names() == ()
 
 
 def test_prompt_axes_are_gated():

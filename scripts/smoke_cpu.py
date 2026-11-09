@@ -18,7 +18,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from conceptmod.backends.cpu import (
+from conceptmod.testing.peft_backend import (
     COSINE_THRESHOLD,
     SAMPLE_LR,
     SAMPLE_PHRASE,

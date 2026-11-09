@@ -4,8 +4,9 @@ from __future__ import annotations
 
 import torch
 
-from conceptmod.backends import BACKENDS, load_backend
-from conceptmod.backends.cpu import (
+from conceptmod.backends import load_backend
+from conceptmod.testing import fixture_registry
+from conceptmod.testing.peft_backend import (
     COSINE_THRESHOLD,
     SAMPLE_DST,
     SAMPLE_PHRASE,
@@ -19,15 +20,15 @@ from conceptmod.backends.cpu import (
 
 
 def test_cpu_is_registered():
-    assert "cpu" in BACKENDS
-    backend = load_backend("cpu", device="cpu", lora_rank=4, seed=0)
+    assert "cpu" in fixture_registry().names()
+    backend = load_backend("cpu", registry=fixture_registry(), device="cpu", lora_rank=4, seed=0)
     assert isinstance(backend, CpuBackend)
     assert backend.device == "cpu"
     assert backend.latent_shape == (4, 8, 8)
 
 
 def test_dummy_alias_loads_cpu_backend():
-    backend = load_backend("dummy", device="cpu", lora_rank=4, seed=0)
+    backend = load_backend("dummy", registry=fixture_registry(), device="cpu", lora_rank=4, seed=0)
     assert isinstance(backend, CpuBackend)
 
 

@@ -1,25 +1,26 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "conceptmod"
-version = "2.0.0"
-description = "Finetuning with words: a DSL for concept editing of flow-matching diffusion models"
+version = "3.0.0"
+description = "Model-independent concept editing plans, execution and artifacts"
+readme = "README.md"
 requires-python = ">=3.11"
-dependencies = [
-    # PyPI: current GANTrainer + learned prior, and historical RpGAN/b_cap primitives.
-    "particlegan>=0.9.4,<0.10",
-    "torch>=2.8",
-    "torchvision",
-    "diffusers @ git+https://github.com/huggingface/diffusers.git",
-    "transformers>=4.57",
-    "peft>=0.17",
-    "accelerate",
-    "safetensors",
-    "datasets",
-    "sentencepiece",
-    "pillow>=13.0.0",
-]
+license = {file = "LICENSE"}
+dependencies = ["torch>=2.8,<3", "particlegan>=0.9.4,<0.10"]
 
 [project.optional-dependencies]
-dev = ["pytest", "matplotlib"]
+serialization = ["safetensors>=0.6,<1"]
+presentation = ["pillow>=13.0.0,<14"]
+research = ["matplotlib"]
+peft-test = ["peft>=0.17,<1", "safetensors>=0.6,<1", "pillow>=13.0.0,<14"]
+test = ["pytest>=8", "peft>=0.17,<1", "safetensors>=0.6,<1", "pillow>=13.0.0,<14", "matplotlib"]
+dev = ["conceptmod[test]"]
+
+[project.scripts]
+conceptmod = "conceptmod.cli:main"
 
 [tool.setuptools.packages.find]
 include = ["conceptmod*"]

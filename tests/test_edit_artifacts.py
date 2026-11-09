@@ -15,7 +15,7 @@ from conceptmod.artifacts import (
     read_edit_bundle,
     save_edit_bundle,
 )
-from conceptmod.backends.cpu import CpuBackend
+from conceptmod.testing.peft_backend import CpuBackend
 
 
 def _trained(stage):
@@ -191,22 +191,3 @@ def test_manifest_paths_cannot_escape_bundle(tmp_path):
     with pytest.raises(ValueError, match="escapes"):
         source.load_trained(str(path))
 
-
-@pytest.mark.parametrize("name,cls", [
-    ("sana", "SanaBackend"), ("zimage", "ZImageBackend"),
-    ("anima", "AnimaBackend"), ("krea", "KreaBackend"),
-    ("qwen", "QwenBackend"), ("klein", "KleinBackend"),
-    ("supra", "SupraBackend"),
-])
-def test_all_backends_declare_their_edited_encoder(name, cls):
-    backend_cls = getattr(importlib.import_module(f"conceptmod.backends.{name}"), cls)
-    backend = object.__new__(backend_cls)
-    backend.transformer = torch.nn.Linear(1, 1)
-    encoder = torch.nn.Linear(1, 1)
-    backend.text_encoder = encoder
-    backend.pipe = SimpleNamespace(text_encoder=encoder)
-    backend.encoder_lora = False
-    assert backend.edit_components() == {"transformer": backend.transformer}
-    backend.encoder_lora = True
-    assert backend.edit_components() == {"transformer": backend.transformer,
-                                         "text_encoder": encoder}

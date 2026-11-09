@@ -169,43 +169,24 @@ def test_require_cuda_rejects_cpu():
         require_cuda("cpu")
 
 
-def test_unknown_backend_rejected():
-    from conceptmod.backends import BACKENDS, load_backend
+def test_backend_registry_has_no_bundled_pretrained_products():
+    from conceptmod.backends import installed_backends, load_backend
+    from conceptmod.providers import BackendRegistry
 
-    assert BACKENDS == ("sana", "zimage", "anima", "krea", "qwen", "cpu", "klein", "supra")
-    with pytest.raises(ValueError, match="unknown backend"):
-        load_backend("nope", device="cpu")
-    with pytest.raises(ValueError, match="1.x"):
-        load_backend("sdxl", device="cpu")
+    registry = BackendRegistry(discover=False)
+    assert installed_backends(registry=registry) == ()
+    with pytest.raises(LookupError, match="not installed"):
+        load_backend("missing", device="cpu", registry=registry)
 
 
-def test_backends_share_the_same_protocol():
-    """Adding a model must not fork the trainer contract."""
-    from conceptmod.backends.cpu import CpuBackend
-    from conceptmod.backends.qwen import QwenBackend
-    from conceptmod.backends.supra import SupraBackend
+def test_fixture_exposes_the_runtime_protocol():
+    from conceptmod.testing.peft_backend import CpuBackend
+    from conceptmod.contracts import VelocityBackend, TrainableEncoder, DifferentiableRenderer
 
-    required = (
-        "encode_text", "encode_text_grad", "predict_v", "partial_denoise",
-        "render", "generate", "trainable_parameters", "save_trained",
-        "training_defaults", "attach_encoder_lora",
-    )
-    classes = [CpuBackend, QwenBackend, SupraBackend]
-    for mod_name, cls_name in (
-        ("conceptmod.backends.sana", "SanaBackend"),
-        ("conceptmod.backends.zimage", "ZImageBackend"),
-        ("conceptmod.backends.anima", "AnimaBackend"),
-        ("conceptmod.backends.krea", "KreaBackend"),
-    ):
-        try:
-            import importlib
-            classes.append(getattr(importlib.import_module(mod_name), cls_name))
-        except ModuleNotFoundError as exc:
-            if "diffusers" not in str(exc):
-                raise
-    for cls in classes:
-        for name in required:
-            assert callable(getattr(cls, name)), f"{cls.__name__}.{name}"
+    backend = CpuBackend(device="cpu", lora_rank=2)
+    assert isinstance(backend, VelocityBackend)
+    assert isinstance(backend, TrainableEncoder)
+    assert isinstance(backend, DifferentiableRenderer)
 
 
 def test_encoder_pool_flattens_layered_embeds():

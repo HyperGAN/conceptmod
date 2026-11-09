@@ -1,13 +1,2 @@
-# PyPI. The modern particle-LoRA path uses the official GANTrainer and prior.
-# Historical toys use upstream GANLoss and fixed GradientPenalty; no vendored formulas.
-particlegan>=0.9.4,<0.10
-torch>=2.8
-torchvision
-diffusers @ git+https://github.com/huggingface/diffusers.git
-transformers>=4.57
-peft>=0.17
-accelerate
-safetensors
-datasets
-sentencepiece
-pillow>=13.0.0
+# Core only. Install model products separately; see docs/providers.md.
+-e .

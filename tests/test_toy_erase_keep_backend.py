@@ -11,7 +11,8 @@ import pytest
 import torch
 
 from conceptmod.backends import load_backend
-from conceptmod.backends.cpu import CpuBackend
+from conceptmod.testing import fixture_registry
+from conceptmod.testing.peft_backend import CpuBackend
 from conceptmod.toys.erase_keep_backend import (
     ARMS,
     COVER_ZERO_SCALE,
@@ -72,7 +73,7 @@ def test_locked_cpu_invokes_live_erase_geometry(monkeypatch):
     monkeypatch.setattr(erase, "faithful_guard_e", guard)
     monkeypatch.setattr(erase, "leftover_bipolar", bipolar)
 
-    backend = load_backend("cpu", device="cpu", lora_rank=4, seed=0)
+    backend = load_backend("cpu", registry=fixture_registry(), device="cpu", lora_rank=4, seed=0)
     assert isinstance(backend, CpuBackend)
     seen = {"n": 0}
     real_v = backend.predict_v

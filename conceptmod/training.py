@@ -156,6 +156,28 @@ def _finite_modules(backend):
 
 
 @contextmanager
+def _selected_gradients(backend, params):
+    """Freeze unselected weights while retaining gradients through their inputs.
+
+    Providers may leave pretrained decoder, encoder or shared host parameters
+    grad-enabled. They do not belong to this optimizer, so their existing
+    gradients must remain untouched. Deduplicate aliases before recording flags.
+    """
+    selected = {id(param) for param in params}
+    flags = {}
+    for root in _modules(backend).values():
+        for param in root.parameters():
+            flags.setdefault(id(param), (param, param.requires_grad))
+    try:
+        for identity, (param, _) in flags.items():
+            param.requires_grad_(identity in selected)
+        yield
+    finally:
+        for param, requires_grad in flags.values():
+            param.requires_grad_(requires_grad)
+
+
+@contextmanager
 def _preserve_modes(backend, *, train_params=()):
     roots = _modules(backend)
     modes = [(module, module.training) for root in roots.values() for module in root.modules()]
@@ -354,7 +376,8 @@ class TrainingSession:
         losses: dict[str, float] = {}
         total_loss = 0.0
         try:
-            with self._isolated_rng(), _preserve_modes(self.backend, train_params=self.params):
+            with (self._isolated_rng(), _preserve_modes(self.backend, train_params=self.params),
+                  _selected_gradients(self.backend, self.params)):
                 self.optimizer.zero_grad(set_to_none=True)
                 for _ in range(count):
                     values = (self._model_microstep() if self._objective is None

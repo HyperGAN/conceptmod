@@ -611,3 +611,109 @@ def test_optimizer_moments_are_bound_to_parameter_names_not_only_shapes():
     with pytest.raises(ValueError, match="optimizer_parameters"):
         second.load_state_dict(first.state_dict())
     assert_tree_equal(second.state_dict(), before)
+
+
+@pytest.mark.parametrize("fail_backward", [False, True])
+def test_pixel_gradient_flows_through_frozen_unselected_modules_without_touching_their_grads(fail_backward):
+    class AdaptedHost(torch.nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.base = torch.nn.Linear(2, 2)
+            self.adapter = torch.nn.Linear(2, 2, bias=False)
+            with torch.no_grad():
+                self.base.weight.copy_(torch.eye(2) * .5)
+                self.base.bias.zero_()
+                self.adapter.weight.copy_(torch.eye(2) * .1)
+
+        def forward(self, value):
+            return self.base(value) + self.adapter(value)
+
+    class FailBackward(torch.autograd.Function):
+        @staticmethod
+        def forward(ctx, value):
+            return value
+
+        @staticmethod
+        def backward(ctx, gradient):
+            raise RuntimeError("pixel backward failed")
+
+    class PixelBackend(TinyBackend):
+        def __init__(self):
+            super().__init__()
+            self.transformer = AdaptedHost()
+            self.frozen = copy.deepcopy(self.transformer).requires_grad_(False).eval()
+            self.vae = torch.nn.Linear(2, 2)
+            self.vae.bias.requires_grad_(False)  # preserve mixed entry flags
+            with torch.no_grad():
+                self.vae.weight.copy_(torch.eye(2) * 2)
+                self.vae.bias.fill_(.05)
+            self.observed = 0
+
+        def training_modules(self):
+            return {**super().training_modules(), "vae": self.vae, "vae_alias": self.vae}
+
+        def trainable_parameters(self, method):
+            return self.transformer.adapter.parameters()
+
+        def assert_flags(self):
+            assert all(param.requires_grad for param in self.transformer.adapter.parameters())
+            assert not any(param.requires_grad for param in self.transformer.base.parameters())
+            assert not any(param.requires_grad for param in self.text_encoder.parameters())
+            assert not any(param.requires_grad for param in self.vae.parameters())
+            self.observed += 1
+
+        def predict_v(self, prompt, z, timestep, frozen):
+            self.assert_flags()
+            features = z + self.text_encoder(self._tokens(prompt).reshape(1, 2))
+            return (self.frozen if frozen else self.transformer)(features)
+
+        def render(self, prompt, generator, num_steps, guidance, grad_steps=0, frozen=False):
+            self.assert_flags()
+            noise = torch.randn(1, 2, generator=generator)
+            features = noise + self.text_encoder(self._tokens(prompt).reshape(1, 2))
+            latent = (self.frozen if frozen else self.transformer)(features)
+            pixels = self.vae(latent)
+            return FailBackward.apply(pixels) if fail_backward and not frozen else pixels
+
+    backend = PixelBackend()
+    selected = set(backend.transformer.adapter.parameters())
+    parameters = {id(param): param for root in backend.training_modules().values()
+                  for param in root.parameters()}
+    flags = {identity: param.requires_grad for identity, param in parameters.items()}
+    unselected = [param for param in parameters.values() if param not in selected]
+    for index, param in enumerate(unselected):
+        if index % 2 == 0:
+            param.grad = torch.full_like(param, 17 + index)
+    gradients = {id(param): (param.grad, None if param.grad is None else param.grad.clone())
+                 for param in unselected}
+    weights = {id(param): param.detach().clone() for param in unselected}
+    active = session(backend, phrase="red^blue", config=TrainingConfig(
+        iterations=1, lr=.01, op_defaults=ops.OpDefaults(pixel_anchor_weight=0)))
+    observed_gradients = []
+    original_step = active.optimizer.step
+
+    def step():
+        observed_gradients.extend(param.grad.detach().clone() for param in active.params)
+        return original_step()
+
+    active.optimizer.step = step
+    if fail_backward:
+        with pytest.raises(RuntimeError, match="pixel backward failed"):
+            active.step()
+        assert active.status == "failed" and active.completed_updates == 0
+        assert observed_gradients == []
+    else:
+        before = backend.transformer.adapter.weight.detach().clone()
+        active.step()
+        assert active.completed_updates == 1
+        assert any(bool(gradient.abs().sum() > 0) for gradient in observed_gradients)
+        assert not torch.equal(backend.transformer.adapter.weight, before)
+    assert backend.observed > 0
+    assert all(param.requires_grad == flags[identity] for identity, param in parameters.items())
+    for param in unselected:
+        gradient, value = gradients[id(param)]
+        assert param.grad is gradient
+        if value is not None:
+            assert torch.equal(param.grad, value)
+        assert torch.equal(param, weights[id(param)])
+    assert all(param.grad is None for param in active.params)

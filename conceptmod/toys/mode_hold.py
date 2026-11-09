@@ -1,4 +1,4 @@
-"""CPU ring: locked_shared RpGAN + b_cap holds modes; cap-off collapses.
+"""CPU ring: measure mode coverage under locked_shared RpGAN + b_cap.
 
 Reviewed against particle-sliders (HyperGAN) before this gate existed:
 
@@ -30,6 +30,10 @@ Locked shape used here (formulation, not a new adv recipe):
 ``b_cap`` off (``f_none``) is the intentional drift. It is refused unless the
 caller passes an explicit drift report, and the diversity gate then FAILs.
 
+Current execution evaluates raw-current generator and particle-bank weights,
+with ``ema_decay=None``. Historical tables used weight EMA (0.995); they do
+not establish the outcome of this distinct raw-current protocol.
+
 This is a CPU toy. A PASS here is not a Music or Anima transfer result.
 """
 
@@ -59,7 +63,7 @@ LR = 2.0e-3
 EVAL_N = 4096
 LOG_EVERY = 400
 
-# Diversity veto. Locked clears it; cap-off stays under the collapse ceiling.
+# Historical diagnostic thresholds; execution reports the actual outcome.
 PASS_MODES = 7
 PASS_HQ = 0.90
 COLLAPSE_MODES = 2
@@ -84,9 +88,13 @@ class ModeHoldRecipe:
     vicreg_weight: float = 0.05
     beta1: float = 0.0
     beta2: float = 0.99
-    ema: float = 0.995
+    ema_decay: float | None = None
     d_lr_mult: float = 1.0
     steps: int = 1200
+
+    def __post_init__(self):
+        if self.ema_decay is not None:
+            raise ValueError("weight EMA is forbidden; use ema_decay=None")
 
     def replace(self, **overrides):
         return replace(self, **overrides)
@@ -227,8 +235,6 @@ def train_mode_hold(
         lr=LR * recipe.d_lr_mult,
         betas=(recipe.beta1, recipe.beta2),
     )
-    ema_g = [p.detach().clone() for p in generator.parameters()]
-    ema_z = prior.z.detach().clone()
     if not formulation_mismatches(recipe):
         arm = "locked"
     elif recipe.gan_mode != "rp":
@@ -241,20 +247,13 @@ def train_mode_hold(
         arm = "drift"
 
     def snapshot(step: int) -> dict:
-        saved_g = [p.detach().clone() for p in generator.parameters()]
-        saved_z = prior.z.detach().clone()
         with torch.no_grad():
-            for param, ema in zip(generator.parameters(), ema_g):
-                param.copy_(ema)
-            prior.z.copy_(ema_z)
             eval_stream = torch.Generator().manual_seed(seed + 9)
             latent, _ = prior.sample(EVAL_N, generator=eval_stream)
             row = diversity(generator(latent), means)
-        with torch.no_grad():
-            for param, saved in zip(generator.parameters(), saved_g):
-                param.copy_(saved)
-            prior.z.copy_(saved_z)
-        row.update(step=step, arm=arm, seed=seed, fm_weight=recipe.fm_weight, reg_arm=recipe.reg_arm)
+        row.update(step=step, arm=arm, seed=seed, fm_weight=recipe.fm_weight,
+                   reg_arm=recipe.reg_arm, protocol="raw-current-no-weight-ema-v1",
+                   weight_source="raw_current", ema_decay=None)
         return row
 
     for step in range(recipe.steps):
@@ -284,10 +283,6 @@ def train_mode_hold(
         opt_g.zero_grad()
         g_loss.backward()
         opt_g.step()
-        with torch.no_grad():
-            for ema, param in zip(ema_g, generator.parameters()):
-                ema.mul_(recipe.ema).add_(param, alpha=1.0 - recipe.ema)
-            ema_z.mul_(recipe.ema).add_(prior.z, alpha=1.0 - recipe.ema)
         done = step + 1
         if log and (done % LOG_EVERY == 0 or done == recipe.steps):
             row = snapshot(done)

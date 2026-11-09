@@ -12,8 +12,17 @@ the current official recipe. Toys call
 that package for `GANLoss` / RpGAN, `GradRegularizer` / `b_cap`
 (`GradientPenalty`), and `ParticlePrior`. Those modules are not copied into
 conceptmod. The only local geometry is the leftover / cover / teacher field
-in `conceptmod/toys/cover_leftover.py` (and the per-toy fixtures around it).
+in `conceptmod/geometry.py` (and the per-toy fixtures around it); research
+exports alias those definitions lazily.
 Toy code is not forked back into ParticleGAN.
+
+**Current runtime uses raw-current weights only.** Cover/leftover and mode-hold
+now declare `ema_decay=None` and report protocol
+`raw-current-no-weight-ema-v1`. Their historical tables below used weight EMA
+(0.995) and remain archived evidence for that earlier protocol. They do not
+prove raw-current outcomes. No thresholds, optimizer scalar statistics, or
+historical measurements were changed to make this migration pass. See
+[explicit observation](observation.md).
 
 The nine Wave-1 families were first opened on
 [255BITS/ParticleGAN](https://github.com/255BITS/ParticleGAN) by mistake.
@@ -195,6 +204,8 @@ overrides to n=12 and lazy=1.
 
 ### Cover / leftover / faithful teacher
 
+Historical weight-EMA protocol (0.995); current execution reports raw weights.
+
 | arm | cover | teacher | u_kept | leak | gate |
 |---|---:|---|---:|---:|---|
 | locked | 1.5 | faithful_guard_e | 0.936 | 0.000 | **PASS** |
@@ -248,7 +259,8 @@ An empty negative list raises `HonestyError`. Cover alone would crown the thinne
 | locked | none | 8/8 | 1.000 | 7.48 | **PASS** |
 | b_cap off | `f_none`, coeff 0 | 1/8 | 0.090 | 1.00 | FAIL |
 
-1200 steps, EMA, 4096 samples. Stranger pairing, FM-on, and a κ-hardcoded stub are refused unless the drift is named. The stub is not trained.
+Historical run: 1200 steps, weight EMA 0.995, 4096 samples. Current execution
+uses raw generator and particle-bank weights and reports its actual verdict. Stranger pairing, FM-on, and a κ-hardcoded stub are refused unless the drift is named. The stub is not trained.
 
 ### Late-collapse selection (export the earlier good checkpoint)
 

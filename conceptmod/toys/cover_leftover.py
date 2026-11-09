@@ -11,6 +11,10 @@ particle-sliders ``locked_baseline_defaults``). Music's pole analogue is
 1.0; this toy does not use that value and a PASS here is not a Music or
 Anima transfer claim.
 
+Current execution uses raw-current residual weights, ``ema_decay=None``.
+Published historical cover results used weight EMA (0.995); those records
+remain historical evidence and do not qualify this raw-current protocol.
+
 Teacher is ``faithful_guard_e``: subtract leftover ê from the odd part
 only while the blend guard still prefers the caption to the midpoint.
 Raw ``faithful`` poles are the teacher-drift arm (ê is copied).
@@ -73,7 +77,7 @@ FORMULATION = {
     "particle_jitter": 0.01,
     "span_frac": 0.40,
     "end_margin": 0.60,
-    "ema": 0.995,
+    "ema_decay": None,
     "delay": 80,
     "min_lr_ratio": 0.05,
     "critic_hidden": 64,
@@ -95,6 +99,8 @@ def reject_unlocked(overrides: dict, *, arm: str = "locked") -> None:
         raise ValueError(f"unknown arm {arm!r} (expected one of {sorted(ARMS)})")
     allowed = set(ARMS[arm]) | {"steps", "seed"}
     for key, value in overrides.items():
+        if key in ("ema", "ema_decay") and value is not None:
+            raise ValueError("weight EMA is forbidden; use ema_decay=None")
         if key in ("steps", "seed"):
             continue
         if key not in FORMULATION:
@@ -187,20 +193,6 @@ class _FourierCritic(nn.Module):
         proj = x @ self.bank.T
         rand = torch.cat([torch.sin(proj), torch.cos(proj)], dim=-1)
         return self.net(torch.cat([order1, order2, rand], dim=-1)).squeeze(-1)
-
-
-class _EMA:
-    def __init__(self, params: list[torch.Tensor], decay: float) -> None:
-        self.decay = float(decay)
-        self.shadow = [p.detach().clone() for p in params]
-
-    def update(self, params: list[torch.Tensor]) -> None:
-        for shadow, param in zip(self.shadow, params):
-            shadow.mul_(self.decay).add_(param.detach(), alpha=1.0 - self.decay)
-
-    def copy_to(self, params: list[torch.Tensor]) -> None:
-        for shadow, param in zip(self.shadow, params):
-            param.data.copy_(shadow)
 
 
 def score_geometry(
@@ -299,7 +291,9 @@ def _log(handle, message: str) -> None:
 
 
 def fit_cover_leftover(recipe: CoverRecipe, *, log=None, field: LeftoverField | None = None) -> dict:
-    """Train one arm. Returns the EMA residual score plus recipe pins."""
+    """Train and score raw-current residual weights; never average weights."""
+    if recipe.knob("ema_decay") is not None:
+        raise ValueError("weight EMA is forbidden; use ema_decay=None")
     field = field or LeftoverField()
     torch.manual_seed(recipe.seed)
     dim = field.dim
@@ -335,7 +329,6 @@ def fit_cover_leftover(recipe: CoverRecipe, *, log=None, field: LeftoverField | 
         betas=betas,
     )
     opt_d = torch.optim.Adam(critic.parameters(), lr=lr, betas=betas)
-    ema = _EMA(list(residual.parameters()), decay=float(recipe.knob("ema")))
     poles_p, poles_m, neu = teacher_poles(field, recipe.knob("teacher"))
     half = max(1, int(recipe.knob("batch")) // 2)
     jitter = float(recipe.knob("particle_jitter"))
@@ -405,7 +398,6 @@ def fit_cover_leftover(recipe: CoverRecipe, *, log=None, field: LeftoverField | 
         opt_g.zero_grad()
         g_loss.backward()
         opt_g.step()
-        ema.update(list(residual.parameters()))
 
         if step == 0 or (step + 1) % 50 == 0 or step + 1 == recipe.steps:
             live = score_geometry(residual, field, poles_p, poles_m, neu)
@@ -428,11 +420,13 @@ def fit_cover_leftover(recipe: CoverRecipe, *, log=None, field: LeftoverField | 
                 ),
             )
 
-    ema.copy_to(list(residual.parameters()))
     scored = score_geometry(residual, field, poles_p, poles_m, neu)
     with torch.no_grad():
         particle_rms = float(torch.cat([prior_p.z, prior_m.z], dim=0).pow(2).mean().sqrt())
     row = {
+        "protocol": "raw-current-no-weight-ema-v1",
+        "weight_source": "raw_current",
+        "ema_decay": None,
         "arm": recipe.arm,
         "steps": recipe.steps,
         "seed": recipe.seed,

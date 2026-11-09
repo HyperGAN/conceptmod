@@ -1,7 +1,7 @@
 from dataclasses import FrozenInstanceError, replace
 import json
 import sys
-from types import ModuleType
+from types import ModuleType, SimpleNamespace
 
 import pytest
 
@@ -47,13 +47,28 @@ def test_explicit_registry_is_lazy_and_rejects_ambiguous_providers(monkeypatch):
     assert registry.resolve("fixture") is descriptor
     assert "conceptmod_test_factory" not in sys.modules
     module = ModuleType("conceptmod_test_factory")
-    module.create = lambda **options: options
+    module.create = lambda **options: SimpleNamespace(**options)
     monkeypatch.setitem(sys.modules, module.__name__, module)
-    assert registry.load("fixture", device="cpu") == {"device": "cpu"}
+    loaded = registry.load("fixture", device="cpu")
+    assert loaded.device == "cpu"
+    assert loaded.capabilities == descriptor.capabilities
     with pytest.raises(ValueError, match="duplicate"):
         registry.register(descriptor)
     with pytest.raises(LookupError, match="not installed"):
         registry.load("missing")
+
+
+def test_provider_caps_follow_runtime_to_session_preflight(monkeypatch):
+    from conceptmod.contracts import VELOCITY_OPERATORS
+    descriptor = BackendProvider("fixture", "caps_test:create", "fixture-conceptmod",
+                                 BackendCapabilities(operators=VELOCITY_OPERATORS,
+                                                     differentiable_render=False))
+    module = ModuleType("caps_test")
+    module.create = lambda: SimpleNamespace()
+    monkeypatch.setitem(sys.modules, module.__name__, module)
+    backend = descriptor.create()
+    with pytest.raises(dsl.DSLError, match="not supported"):
+        compile_phrase("red^blue", capabilities=backend.capabilities)
 
 
 def test_views_apply_the_same_role_to_all_operations():

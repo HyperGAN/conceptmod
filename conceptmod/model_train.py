@@ -7,7 +7,7 @@ from conceptmod.training import TrainingConfig, TrainingSession
 
 
 def train_model(backend, phrase: str | EditPlan, iterations: int = 500,
-                lr: float = 1e-5, train_method: str = "xattn",
+                lr: float = 1e-5, train_method: str | None = None,
                 accumulation_steps: int = 1, seed: int = 0,
                 op_defaults: ops.OpDefaults | None = None, *,
                 prompt_source=None, observers=(), stop_when=None):

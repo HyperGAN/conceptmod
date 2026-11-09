@@ -213,7 +213,7 @@ def test_explicit_prompt_source_and_wrapper_have_no_downloads(monkeypatch):
     history = train_model(backend, "cat++", iterations=3, accumulation_steps=2,
                           prompt_source=["a city", "a room"])
     assert len(history) == 2
-    with pytest.raises(TypeError, match="observers/policy"):
+    with pytest.raises(TypeError, match="sample_dir"):
         train_model(backend, "cat=dog", sample_dir="samples")
 
 
@@ -440,7 +440,7 @@ def test_only_selected_roots_train_and_originals_evaluate_then_entry_modes_resto
     original = backend.predict_v
 
     def predict(*args, **kwargs):
-        assert backend.transformer.training
+        assert backend.transformer.training is not kwargs["frozen"]
         assert not backend.text_encoder.training
         assert not backend.frozen.training
         return original(*args, **kwargs)

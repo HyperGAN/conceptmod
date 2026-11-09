@@ -39,7 +39,7 @@ class TrainingConfig:
     iterations: int = 500
     accumulation_steps: int = 1
     lr: float = 1e-5
-    train_method: str = "xattn"
+    train_method: str | None = None
     seed: int = 0
     max_grad_norm: float = 1.0
     op_defaults: ops.OpDefaults = field(default_factory=ops.OpDefaults)
@@ -48,8 +48,9 @@ class TrainingConfig:
     curriculum_split: int = 20
 
     def __post_init__(self):
-        if not isinstance(self.train_method, str) or not self.train_method.strip():
-            raise ValueError("train_method must be a nonempty string")
+        if self.train_method is not None and (
+                not isinstance(self.train_method, str) or not self.train_method.strip()):
+            raise ValueError("train_method must be None or a nonempty string")
         for name, minimum in (("iterations", 0), ("accumulation_steps", 1),
                               ("seed", 0), ("encoder_rank", 1),
                               ("curriculum_split", 1)):

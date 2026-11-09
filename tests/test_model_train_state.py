@@ -18,6 +18,15 @@ class ScalarBackend:
         self.partial_calls = 0
         self.predict_calls = []
 
+    def training_modules(self):
+        return {"transformer": self.transformer}
+
+    def training_identity(self):
+        return {"fixture": "scalar-source-target-v1"}
+
+    def invalidate_caches(self):
+        pass
+
     def trainable_parameters(self, method):
         self.transformer.train()
         return self.transformer.parameters()

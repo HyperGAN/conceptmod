@@ -81,12 +81,12 @@ def main(argv=None, *, registry: BackendRegistry | None = None):
         if destination.exists():
             raise FileExistsError(f"output already exists: {destination}")
         backend = descriptor.create(**request.get("backend", {}))
-        # Dynamic product defaults (e.g. distilled variants) belong to the
-        # instantiated product; explicit user options always win.
-        runtime_defaults = backend.training_defaults()
-        config = TrainingConfig(**training, op_defaults=OpDefaults(
-            **{**runtime_defaults, **dict(descriptor.training_defaults), **overrides}))
         try:
+            # Dynamic product defaults (e.g. distilled variants) belong to the
+            # instantiated product; explicit user options always win.
+            runtime_defaults = backend.training_defaults()
+            config = TrainingConfig(**training, op_defaults=OpDefaults(
+                **{**runtime_defaults, **dict(descriptor.training_defaults), **overrides}))
             with TrainingSession(backend, plan, config, prompt_source=prompts) as session:
                 if args.resume:
                     session.load_checkpoint(args.resume)

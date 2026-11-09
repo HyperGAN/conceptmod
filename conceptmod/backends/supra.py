@@ -836,5 +836,8 @@ class SupraBackend(Backend):
             print(f"supra backend is LoRA-only; ignoring train_method={train_method!r}")
         return params
 
-    def save_trained(self, path: str) -> None:
-        self.transformer.save_pretrained(path)
+    def edit_components(self):
+        components = super().edit_components()
+        if self.encoder_lora:
+            components["text_encoder"] = self.text_encoder
+        return components

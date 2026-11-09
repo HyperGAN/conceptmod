@@ -132,6 +132,8 @@ class CpuBackend(Backend):
                  resolution: int | None = None, lora_rank: int | None = None,
                  seed: int = SAMPLE_SEED):
         del model_id, resolution  # no hub id / pixel resolution
+        self.model_id = "conceptmod/cpu-fixture-v1"
+        self.base_seed = seed
         self.device = resolve_device(device)
         if lora_rank is None:
             lora_rank = DEFAULT_LORA_RANK
@@ -293,8 +295,11 @@ class CpuBackend(Backend):
             print(f"cpu backend is LoRA-only; ignoring train_method={train_method!r}")
         return params
 
-    def save_trained(self, path: str) -> None:
-        self.transformer.save_pretrained(path)
+    def edit_components(self):
+        components = super().edit_components()
+        if self.encoder_lora:
+            components["text_encoder"] = self.text_encoder
+        return components
 
 
 def write_alignment_cosine(backend, src: str = SAMPLE_SRC, dst: str = SAMPLE_DST,

@@ -333,5 +333,8 @@ class KleinBackend(Backend):
             print(f"klein backend is LoRA-only; ignoring train_method={train_method!r}")
         return params
 
-    def save_trained(self, path: str):
-        self.transformer.save_pretrained(path)
+    def edit_components(self):
+        components = super().edit_components()
+        if self.encoder_lora:
+            components["text_encoder"] = self.pipe.text_encoder
+        return components

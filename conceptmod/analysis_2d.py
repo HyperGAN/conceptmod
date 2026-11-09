@@ -319,7 +319,7 @@ def train_one(
                 else:
                     loss = rule.alpha * ops.rule_loss(rule, ctx)
                 loss.backward()
-                ctx._v = {k: v for k, v in ctx._v.items() if not k[3]}
+                ctx.clear_grad_cache()
             torch.nn.utils.clip_grad_norm_(backend.trainable_parameters(), 1.0)
             opt.step()
             opt.zero_grad(set_to_none=True)

@@ -22,6 +22,7 @@ class SanaBackend(Backend):
                  resolution: int = 512, lora_rank: int | None = None):
         self.device = str(require_cuda(device))
         self.resolution = resolution
+        self.model_id = model_id
         self.pipe = SanaPipeline.from_pretrained(model_id, torch_dtype=torch.bfloat16)
         pin_modules(self.pipe, self.device)
         self.pipe.set_progress_bar_config(disable=True)
@@ -226,12 +227,8 @@ class SanaBackend(Backend):
         assert params, f"train_method {train_method!r} selected no parameters"
         return params
 
-    def save_trained(self, path: str):
-        if self.lora_rank is not None:
-            self.transformer.save_pretrained(path)
-        else:
-            from safetensors.torch import save_file
-
-            sd = {k: v.detach().to(torch.bfloat16).contiguous().cpu()
-                  for k, v in self.transformer.state_dict().items()}
-            save_file(sd, path)
+    def edit_components(self):
+        components = super().edit_components()
+        if self.encoder_lora:
+            components["text_encoder"] = self.pipe.text_encoder
+        return components

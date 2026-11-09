@@ -57,6 +57,7 @@ class QwenBackend(Backend):
                  generate_steps: int = 50, generate_guidance: float = 4.0):
         self.device = str(require_cuda(device))
         self.resolution = resolution
+        self.model_id = model_id
         self.generate_steps = generate_steps
         self.generate_guidance = generate_guidance
         self.pipe = _load_pipeline(model_id)
@@ -298,5 +299,8 @@ class QwenBackend(Backend):
             print(f"qwen backend is LoRA-only; ignoring train_method={train_method!r}")
         return params
 
-    def save_trained(self, path: str):
-        self.transformer.save_pretrained(path)
+    def edit_components(self):
+        components = super().edit_components()
+        if self.encoder_lora:
+            components["text_encoder"] = self.pipe.text_encoder
+        return components

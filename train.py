@@ -154,9 +154,8 @@ def main():
         verify("grid.png")
 
     if args.save_model:
-        ext = "" if args.lora else "transformer.safetensors"
-        backend.save_trained(os.path.join(args.out, ext or "lora"))
-        print("saved trained weights")
+        backend.save_trained(os.path.join(args.out, "edit"))
+        print("saved complete edit bundle")
 
     print(f"done in {time.time() - t0:.0f}s")
 

@@ -1,9 +1,12 @@
 """Full upstream-recipe smoke checks; no pretrained-model quality claims."""
 from copy import deepcopy
+from concurrent.futures import ThreadPoolExecutor
+from threading import Barrier
 
 import pytest
 import torch
 from torch import nn
+from torch.utils.checkpoint import checkpoint
 
 from particlegan import GANTrainer, ParticlePrior
 from particlegan.bispf import BISPFCriticPenalty, SBNPPriorRegularizer
@@ -34,6 +37,9 @@ def test_official_recipe_updates_lora_and_real_prior_keeps_base_frozen():
     assert trainer.prior.z.shape == (128, 4)
     assert trainer.recipe.name == "bispf_optimized"
     assert trainer.recipe.optimizer_family == "dualnorm"
+    assert trainer.recipe.ema_decay == 0.0
+    assert trainer.recipe.serve_average == 0.0
+    assert getattr(trainer.opt_d, "ema_critic", None) is None
     assert trainer.recipe.make_loss().loss == "non_saturating"
     assert isinstance(trainer.penalty, BISPFCriticPenalty)
     assert isinstance(trainer.prior_regularizer, SBNPPriorRegularizer)
@@ -104,3 +110,113 @@ def test_trainer_never_reactivates_frozen_dropout_or_running_statistics():
     # a registered adapter parameter or leak into its checkpoint.
     assert torch.equal(generator(trainer.prior.z, strength=0), base.expand(16, -1))
     assert not any("_codes" in name for name in generator.state_dict())
+
+
+class _CheckpointBlock(nn.Sequential):
+    def __init__(self):
+        super().__init__(nn.Linear(3, 8), nn.Tanh(), nn.Linear(8, 2))
+        self.calls = []
+
+    def forward(self, value):
+        self.calls.append(torch.is_grad_enabled())
+        return super().forward(value)
+
+
+class _CheckpointHost(nn.Module):
+    def __init__(self, use_reentrant, use_closure=False):
+        super().__init__()
+        self.block = _CheckpointBlock()
+        self.alias = self.block
+        self.use_reentrant = use_reentrant
+        self.use_closure = use_closure
+        self.barrier = None
+        self.fail = []
+        self.nest = []
+
+    def forward(self, value):
+        assert self.block is self.alias
+        assert not self.training and not self.block.training
+        if self.barrier is not None:
+            self.barrier.wait(timeout=10)
+        if self.fail:
+            self.fail.pop()
+            raise RuntimeError("intentional host failure")
+        if self.nest:
+            self.nest.pop()()
+        if self.use_reentrant is None:
+            return self.block(value)
+        function = (lambda data: self.block(data)) if self.use_closure else self.block
+        return checkpoint(function, value, use_reentrant=self.use_reentrant)
+
+
+def checkpoint_setup(use_reentrant, use_closure=False):
+    torch.manual_seed(23)
+    host = _CheckpointHost(use_reentrant, use_closure).requires_grad_(False)
+    generator = ParticleLoRAGenerator(host, ("block.0", "block.2"), torch.ones(1, 3), rank=4)
+    for layer in generator.adapters:
+        nn.init.normal_(layer.up.weight, std=.2)
+    return generator
+
+
+@pytest.mark.parametrize("use_reentrant", [False, True])
+@pytest.mark.parametrize("use_closure", [False, True])
+def test_checkpoint_recomputation_preserves_routing_and_gradients(use_reentrant, use_closure):
+    generator = checkpoint_setup(use_reentrant, use_closure)
+    eager = checkpoint_setup(None)
+    codes = torch.randn(4, 4, requires_grad=True)
+    eager_codes = codes.detach().clone().requires_grad_(True)
+    expected = eager(eager_codes, strength=.7)
+    actual = generator(codes, strength=.7)
+    torch.testing.assert_close(actual, expected, rtol=0, atol=0)
+    assert len(generator.host.block.calls) == 1
+    actual.square().sum().backward()
+    expected.square().sum().backward()
+    assert len(generator.host.block.calls) == 2  # real backward recomputation
+    torch.testing.assert_close(codes.grad, eager_codes.grad, rtol=0, atol=0)
+    for (name, parameter), (_, reference) in zip(generator.named_parameters(), eager.named_parameters()):
+        if parameter.requires_grad:
+            assert parameter.grad is not None, name
+            torch.testing.assert_close(parameter.grad, reference.grad, rtol=0, atol=0)
+        else:
+            assert parameter.grad is None
+    assert not generator.context.requires_grad and generator.context.grad is None
+    assert not any("codes" in name for name in generator.state_dict())
+    assert all(not hasattr(layer, "_codes") for layer in generator.adapters)
+
+
+@pytest.mark.parametrize("use_reentrant", [False, True])
+def test_pending_forwards_nested_calls_and_failures_have_independent_routing(use_reentrant):
+    generator = checkpoint_setup(use_reentrant)
+    eager = checkpoint_setup(None)
+    first = torch.randn(2, 4, requires_grad=True)
+    second = torch.randn(3, 4, requires_grad=True)
+    # Invoke the same generator inside its host, with a different batch and
+    # strength. The nested graph must not replace the outer invocation's codes.
+    nested = []
+    generator.host.nest.append(lambda: nested.append(generator(second, strength=-.4)))
+    outer = generator(first, strength=.8)
+    generator.host.fail.append(True)
+    with pytest.raises(RuntimeError, match="intentional host failure"):
+        generator(torch.zeros(1, 4))
+    after = generator(second, strength=.3)
+    torch.testing.assert_close(outer, eager(first, strength=.8), rtol=0, atol=0)
+    torch.testing.assert_close(nested[0], eager(second, strength=-.4), rtol=0, atol=0)
+    torch.testing.assert_close(after, eager(second, strength=.3), rtol=0, atol=0)
+    (after.sum() + outer.sum() + nested[0].sum()).backward()
+    assert first.grad is not None and second.grad is not None
+
+
+@pytest.mark.parametrize("use_reentrant", [False, True])
+def test_concurrent_forward_contexts_are_independent(use_reentrant):
+    generator = checkpoint_setup(use_reentrant)
+    eager = checkpoint_setup(None)
+    generator.host.barrier = Barrier(2)
+    first, second = torch.randn(2, 4), torch.randn(3, 4)
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        first_call = pool.submit(generator, first, strength=.8)
+        second_call = pool.submit(generator, second, strength=-.4)
+        first_output, second_output = first_call.result(), second_call.result()
+    torch.testing.assert_close(first_output, eager(first, strength=.8), rtol=0, atol=0)
+    torch.testing.assert_close(second_output, eager(second, strength=-.4), rtol=0, atol=0)
+    (first_output.sum() + second_output.sum()).backward()
+    assert all(layer.up.weight.grad is not None for layer in generator.adapters)

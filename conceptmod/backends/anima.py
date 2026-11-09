@@ -34,6 +34,7 @@ class AnimaBackend(Backend):
                  generate_steps: int = 40, generate_guidance: float = 4.0):
         self.device = str(require_cuda(device))
         self.resolution = resolution
+        self.model_id = model_id
         self.generate_steps = generate_steps
         self.generate_guidance = generate_guidance
         self.default_negative = DEFAULT_NEGATIVE
@@ -246,15 +247,18 @@ class AnimaBackend(Backend):
 
     @torch.no_grad()
     def generate(self, prompt, seed, num_steps=None, guidance=None, frozen=False):
-        from contextlib import nullcontext
+        from contextlib import ExitStack
 
         num_steps = num_steps or self.generate_steps
         guidance = self.generate_guidance if guidance is None else guidance
         if hasattr(self.pipe, "guider") and self.pipe.guider is not None:
             self.pipe.guider.guidance_scale = guidance
         g = torch.Generator(device=self.device).manual_seed(seed)
-        ctx = self.transformer.disable_adapter() if frozen else nullcontext()
-        with ctx:
+        with ExitStack() as reference:
+            if frozen:
+                reference.enter_context(self.transformer.disable_adapter())
+                if self.encoder_lora:
+                    reference.enter_context(self.pipe.text_encoder.disable_adapter())
             images = self.pipe(
                 prompt=prompt,
                 negative_prompt=self.default_negative,
@@ -278,5 +282,8 @@ class AnimaBackend(Backend):
             print(f"anima backend is LoRA-only; ignoring train_method={train_method!r}")
         return params
 
-    def save_trained(self, path: str):
-        self.transformer.save_pretrained(path)
+    def edit_components(self):
+        components = super().edit_components()
+        if self.encoder_lora:
+            components["text_encoder"] = self.pipe.text_encoder
+        return components

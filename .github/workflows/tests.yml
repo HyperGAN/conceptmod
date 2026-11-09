@@ -15,15 +15,26 @@ jobs:
           python-version: "3.11"
           cache: pip
       - run: python -m pip install torch==2.14.1 --index-url https://download.pytorch.org/whl/cpu
-      - run: python -m pip install -e '.[test]' build
+      - run: python -m pip install -e '.[test]' build twine
+      - name: Check strict editable boundary
+        run: python scripts/check_distribution.py --installed
       - run: python -m pytest -q
       - run: python -m build
-      - name: Check wheel contents
+      - run: python -m twine check dist/*
+      - name: Check wheel and installed runtime
         run: |
-          python - <<'PY'
-          import glob, zipfile
-          with zipfile.ZipFile(glob.glob('dist/*.whl')[0]) as wheel:
-              backends = {name for name in wheel.namelist() if name.startswith('conceptmod/backends/')}
-              assert backends == {'conceptmod/backends/__init__.py', 'conceptmod/backends/base.py'}, backends
-              assert not any(name.startswith('conceptmod/convert') for name in wheel.namelist())
-          PY
+          python scripts/check_distribution.py --wheel dist/conceptmod-3.0.0-py3-none-any.whl
+          python -m pip install --force-reinstall --no-deps dist/conceptmod-3.0.0-py3-none-any.whl
+          python scripts/check_distribution.py --installed
+      - name: Test installed core outside checkout
+        run: |
+          source_root="$PWD"
+          cd /tmp
+          python -m pytest -q --import-mode=importlib \
+            "$source_root/tests/test_training_session.py" \
+            "$source_root/tests/test_model_train_state.py" \
+            "$source_root/tests/test_plan_providers.py" \
+            "$source_root/tests/test_particle_lora.py" \
+            "$source_root/tests/test_particle_api.py" \
+            "$source_root/tests/test_metrics.py" \
+            "$source_root/tests/test_core_isolation.py"

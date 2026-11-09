@@ -1,10 +1,10 @@
 # Model products and providers
 
 Conceptmod core contains no pretrained architectures, model identifiers or model
-loaders. Each product is an independent package/repository. Install core from
-this repository and then install the product you want. Until the 3.x package is
-published, install the core Git source first, rather than resolving a 2.x PyPI
-release for a 3.x product.
+loaders. Each product is an independent package/repository. Install the
+[versioned core package](https://github.com/HyperGAN/conceptmod/releases/tag/v3.0.0)
+first, then install the product you want. A pinned source install from
+`git+https://github.com/HyperGAN/conceptmod.git@v3.0.0` is also supported.
 
 | Provider ID | Product repository / distribution |
 | --- | --- |
@@ -62,6 +62,6 @@ walking source directories or imports a product to find an observer. Runtime
 construction has an explicit owner; independent sessions need independent model
 instances.
 
-The PEFT CPU fixture is under `conceptmod.testing.peft_backend` and requires
-`conceptmod[peft-test]`. It is available only through explicit
-`conceptmod.testing.fixture_registry()` and is not installed as a model product.
+The source-only PEFT fixture is under `conceptmod.testing.peft_backend` and uses
+the checkout's `.[test]` dependencies. Its explicit `fixture_registry()` is for
+repository tests; neither the fixture nor research is installed with core.

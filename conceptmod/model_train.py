@@ -1,177 +1,30 @@
-"""Stage 2: finetune the diffusion transformer with DSL losses."""
-
+"""Convenience execution of one explicit model TrainingSession."""
 from __future__ import annotations
 
-import math
-import random
-
-import torch
-from tqdm import tqdm
-
-from conceptmod import dsl, metrics, ops
+from conceptmod import ops
+from conceptmod.plan import EditPlan, compile_phrase
+from conceptmod.training import TrainingConfig, TrainingSession
 
 
-def load_random_prompts():
-    from datasets import load_dataset
+def train_model(backend, phrase: str | EditPlan, iterations: int = 500,
+                lr: float = 1e-5, train_method: str | None = None,
+                accumulation_steps: int = 1, seed: int = 0,
+                op_defaults: ops.OpDefaults | None = None, *,
+                prompt_source=None, observers=(), stop_when=None):
+    """Run a model plan and return one mean loss per committed update.
 
-    ds = load_dataset("Gustavosta/Stable-Diffusion-Prompts", split="train")
-    return ds["Prompt"]
-
-
-def train_model(
-    backend,
-    phrase: str,
-    iterations: int = 500,
-    lr: float = 1e-5,
-    train_method: str = "xattn",
-    accumulation_steps: int = 1,
-    seed: int = 0,
-    op_defaults: ops.OpDefaults | None = None,
-    sample_prompt: str | None = None,
-    sample_every: int = 100,
-    sample_dir: str | None = None,
-    log_every: int = 25,
-    eval_every: int = 0,
-    swap_stop: float = 0.35,
-    hold_max: float = 0.25,
-    min_steps: int = 75,
-    patience: int = 2,
-    metrics_path: str | None = None,
-):
-    """Train for ``iterations`` microsteps, committing every accumulation group.
-
-    A final short group is averaged over its actual size. Evaluation and early
-    stopping observe committed updates only; an evaluation due during a group
-    runs at its next commit. Restore the caller's model modes on every exit.
+    Random-prompt plans require an injected prompt_source. Samples, diagnostic
+    files and stopping metrics moved to explicit observers and stop_when policy;
+    Use TrainingSession directly for progress counters and resumable checkpoints.
     """
-    for name, value, minimum in (
-        ("iterations", iterations, 0),
-        ("accumulation_steps", accumulation_steps, 1),
-        ("sample_every", sample_every, 1),
-        ("log_every", log_every, 0),
-        ("eval_every", eval_every, 0),
-        ("min_steps", min_steps, 0),
-        ("patience", patience, 1),
-    ):
-        if isinstance(value, bool) or not isinstance(value, int) or value < minimum:
-            raise ValueError(f"{name} must be an integer >= {minimum}, got {value!r}")
-    if not math.isfinite(lr) or lr < 0:
-        raise ValueError(f"lr must be finite and nonnegative, got {lr!r}")
-    cfg = op_defaults or ops.OpDefaults()
-    if (isinstance(cfg.sample_steps, bool) or not isinstance(cfg.sample_steps, int)
-            or cfg.sample_steps < 1):
-        raise ValueError("sample_steps must be a positive integer")
-    rules = dsl.parse_phrase(phrase)
-    for r in rules:
-        if r.op == dsl.REWARD:
-            raise NotImplementedError(
-                "the ';' (ImageReward) op is not implemented in conceptmod 2.x")
-
-    random_prompts = None
-    if any(r.needs_random_prompt or r.op == dsl.EXAGGERATE for r in rules):
-        random_prompts = load_random_prompts()
-    has_exaggerate = any(r.op == dsl.EXAGGERATE for r in rules)
-
-    training_modes = [(module, module.training)
-                      for module in backend.transformer.modules()]
-    opt = None
-    try:
-        params = list(backend.trainable_parameters(train_method))
-        n_params = sum(p.numel() for p in params)
-        print(f"training {len(params)} tensors / {n_params/1e6:.1f}M params "
-              f"({train_method}), phrase: {phrase!r}")
-        opt = torch.optim.AdamW(params, lr=lr)
-        opt.zero_grad(set_to_none=True)
-        rng = random.Random(seed)
-
-        history = []
-        streak = 0
-        pending = 0
-        optimizer_steps = 0
-        next_eval = 0
-        pbar = tqdm(range(iterations))
-        for i in pbar:
-            step_rules = dsl.materialize(
-                rules, rng.choice(random_prompts) if random_prompts else None)
-            stop_index = rng.randrange(0, cfg.sample_steps)
-            step_seed = rng.randrange(2**31)
-            probe = None
-            if has_exaggerate and rng.random() < cfg.probe_p:
-                probe = dsl.sanitize_prompt(rng.choice(random_prompts))[:200]
-            ctx = ops.StepContext(backend, stop_index, step_seed, cfg, probe=probe)
-
-            losses = {}
-            for rule in step_rules:
-                loss = rule.alpha * ops.rule_loss(rule, ctx)
-                losses[rule.raw] = loss.item()
-                # One rule at a time so a 12B composite does not keep four
-                # graphs alive. Sum of backwards == backward of the sum.
-                (loss / accumulation_steps).backward()
-                ctx.clear_grad_cache()
-            pending += 1
-            committed = pending == accumulation_steps or i + 1 == iterations
-            if committed:
-                # Each backward was divided by accumulation_steps. A short final
-                # group must instead average over the microsteps actually present.
-                if pending != accumulation_steps:
-                    scale = accumulation_steps / pending
-                    for param in params:
-                        if param.grad is not None:
-                            param.grad.mul_(scale)
-                torch.nn.utils.clip_grad_norm_(params, max_norm=1.0)
-                opt.step()
-                opt.zero_grad(set_to_none=True)
-                pending = 0
-                optimizer_steps += 1
-
-            history.append(sum(losses.values()))
-            postfix = {"loss": f"{history[-1]:.4f}"}
-            if eval_every and committed and i >= next_eval:
-                next_eval = (i // eval_every + 1) * eval_every
-                report = metrics.eval_phrase(
-                    backend, phrase, cfg,
-                    swap_stop=swap_stop, hold_max=hold_max)
-                postfix["swap"] = (
-                    f"{report.swap_ratio:.3f}" if report.swap_ratio is not None else "—")
-                tqdm.write(f"step {i}: {report.summary()}")
-                if metrics_path:
-                    import json
-                    import os
-
-                    os.makedirs(os.path.dirname(metrics_path) or ".", exist_ok=True)
-                    with open(metrics_path, "a") as f:
-                        rec = {"step": i, "optimizer_step": optimizer_steps,
-                               "swap_ratio": report.swap_ratio,
-                               "hold": report.hold, "remain": report.remain,
-                               "done": report.done,
-                               "scores": [s.__dict__ for s in report.scores]}
-                        f.write(json.dumps(rec) + "\n")
-                if report.done and (i + 1) >= min_steps:
-                    streak += 1
-                    if streak >= patience:
-                        tqdm.write(
-                            f"early stop at step {i}: {report.summary()} "
-                            f"(swap<{swap_stop}, hold<{hold_max}, patience={patience})")
-                        pbar.set_postfix(postfix)
-                        break
-                else:
-                    streak = 0
-            pbar.set_postfix(postfix)
-            if log_every and i % log_every == 0:
-                parts = " ".join(f"[{k}]={v:.4f}" for k, v in losses.items())
-                tqdm.write(f"step {i}: {parts}")
-
-            if sample_prompt and sample_dir and (i + 1) % sample_every == 0:
-                import os
-
-                os.makedirs(sample_dir, exist_ok=True)
-                img = backend.generate(sample_prompt, seed=42)
-                img.save(f"{sample_dir}/{i + 1:05d}.png")
-
-        return history
-    finally:
-        if opt is not None:
-            opt.zero_grad(set_to_none=True)
-        # Restoring each module preserves mixed train/eval submodule modes.
-        for module, was_training in training_modes:
-            module.training = was_training
+    plan = phrase if isinstance(phrase, EditPlan) else compile_phrase(
+        phrase, stage="model", capabilities=getattr(backend, "capabilities", None))
+    if plan.stage != "model":
+        raise ValueError("train_model requires a model EditPlan")
+    config = TrainingConfig(iterations=iterations, lr=lr, train_method=train_method,
+                            accumulation_steps=accumulation_steps, seed=seed,
+                            op_defaults=op_defaults or ops.OpDefaults())
+    with TrainingSession(backend, plan, config, prompt_source=prompt_source,
+                         observers=observers) as session:
+        session.run(stop_when=stop_when)
+        return [report.loss for report in session.reports]

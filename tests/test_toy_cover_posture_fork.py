@@ -9,8 +9,8 @@ from dataclasses import replace
 
 import pytest
 
-from conceptmod.toys.cover_leftover import LOCKED_COVER
-from conceptmod.toys.cover_posture_fork import (
+from conceptmod.research.toys.cover_leftover import LOCKED_COVER
+from conceptmod.research.toys.cover_posture_fork import (
     DEMO_CLAIM,
     DEMO_COVER,
     MUSIC_CLAIM,
@@ -21,8 +21,8 @@ from conceptmod.toys.cover_posture_fork import (
     run_board,
     score_claimed_posture,
 )
-from conceptmod.toys.locked_shared_floor import LOCKED, run_floor, score_floor
-from conceptmod.toys.particle_posture import MUSIC_COVER as POSTURE_MUSIC_COVER
+from conceptmod.research.toys.locked_shared_floor import LOCKED, run_floor, score_floor
+from conceptmod.research.toys.particle_posture import MUSIC_COVER as POSTURE_MUSIC_COVER
 
 
 @pytest.fixture(scope="module")

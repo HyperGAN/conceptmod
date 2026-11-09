@@ -14,7 +14,7 @@ import pytest
 import torch
 from torch import nn
 
-from conceptmod.toys.path_suffix_lora import (
+from conceptmod.research.toys.path_suffix_lora import (
     BARE_LEAF_GRAD,
     GRAD_ABS_MIN,
     LOCKED_LEAF_GRAD,

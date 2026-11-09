@@ -5,7 +5,7 @@ CPU only. One seed (the leaderboard seed). Not a Music/Anima transfer claim.
 import pytest
 import torch
 
-from conceptmod.toys import unipolar as uni
+from conceptmod.research.toys import unipolar as uni
 
 
 @pytest.fixture(autouse=True)

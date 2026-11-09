@@ -10,12 +10,12 @@ from __future__ import annotations
 
 import pytest
 
-import conceptmod.analysis_2d as analysis_2d
-import conceptmod.analysis_dsl as analysis_dsl
-from conceptmod.analysis_2d import DEFAULT_LR, DEFAULT_SEED, DEFAULT_STEPS
-from conceptmod.game import GameError, LockedClaimError, loss_game
-from conceptmod.toys import locked_adv_defaults
-from conceptmod.toys.dsl_game_geometry import (
+import conceptmod.research.analysis_2d as analysis_2d
+import conceptmod.research.analysis_dsl as analysis_dsl
+from conceptmod.research.analysis_2d import DEFAULT_LR, DEFAULT_SEED, DEFAULT_STEPS
+from conceptmod.research.game import GameError, LockedClaimError, loss_game
+from conceptmod.research.toys import locked_adv_defaults
+from conceptmod.research.toys.dsl_game_geometry import (
     HonestyError,
     arms,
     claim_board,
@@ -25,7 +25,7 @@ from conceptmod.toys.dsl_game_geometry import (
     run_board,
     score_geometry,
 )
-from conceptmod.toys.leaderboard_honesty import HonestyError as HonestyErrorExported
+from conceptmod.research.toys.leaderboard_honesty import HonestyError as HonestyErrorExported
 
 
 PASS_ARMS = (
@@ -280,7 +280,7 @@ def test_a_mismatch_arm_marked_pass_refuses_the_family(board):
 
 
 def test_runner_is_exported():
-    from conceptmod import toys
+    from conceptmod.research import toys
 
     assert toys.run_dsl_game_board is run_board
     assert toys.dsl_game_geometry.run_board is run_board

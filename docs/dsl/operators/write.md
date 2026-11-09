@@ -21,7 +21,7 @@ The target `b` is required. A bare `=` raises `DSLError`. `=b` and
 ## Velocity target
 
 In `b`'s sampling context. When `a` is non-empty the GPU trainer wraps
-`a` and `b` in one shared template from `WRITE_TEMPLATES`. The 2-D
+`a` and `b` in one shared template from `OpDefaults.write_templates`. The 2-D
 fixture and `loss_game` pin that list to `"{}"`.
 
 ```text

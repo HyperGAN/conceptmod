@@ -7,9 +7,11 @@ geometric verdict from docs/dsl.md and not a Music or Anima transfer.
 from __future__ import annotations
 
 import pytest
+import torch
 
-from conceptmod import dsl, ops, toys
-from conceptmod.game import (
+from conceptmod import dsl, ops
+from conceptmod.research import toys
+from conceptmod.research.game import (
     NOT_A_TRANSFER,
     GameError,
     LockedClaimError,
@@ -18,7 +20,7 @@ from conceptmod.game import (
     loss_game,
     parse_game,
 )
-from conceptmod.toys.locked_shared_floor import feature_match as floor_feature_match
+from conceptmod.research.toys.locked_shared_floor import feature_match as floor_feature_match
 from particlegan.gan_loss import GANLoss
 from particlegan.grad_regularizers import GradientPenalty as GradRegularizer
 
@@ -61,7 +63,7 @@ def test_loss_game_one_step_passes_locked_shared():
     names = [player.name for player in match.players()]
     assert names == ["student", "critic"]
 
-    row = match.score()
+    row = match.step_and_score()
     assert row["verdict"] == "PASS"
     assert row["mismatches"] == []
     assert row["claim"] == "locked"
@@ -118,7 +120,7 @@ def test_game_string_matches_loss_game():
     from_call = loss_game("red++")
     assert [rule.op for rule in from_string.rules] == [dsl.EXAGGERATE]
     assert from_string.stamp == from_call.stamp
-    row = from_string.score()
+    row = from_string.step_and_score()
     assert row["verdict"] == "PASS"
     assert row["rules"][0]["op"] == "exaggerate"
 
@@ -136,7 +138,7 @@ def test_locked_claim_refuses_stranger_fm_and_thinned_kappa():
 
 def test_drift_arms_score_fail():
     stranger = loss_game("red=blue", pairing="stranger", claim="drift")
-    row = stranger.score()
+    row = stranger.step_and_score()
     assert row["verdict"] == "FAIL"
     assert "stranger_pairing" in row["mismatches"]
     assert row["claim"] == "drift"
@@ -153,7 +155,7 @@ def test_drift_arms_score_fail():
     assert fm_row["fm_term"] != 0.0
 
     thin = loss_game("red++", kappa=0.2, claim="drift")
-    thin_row = thin.score()
+    thin_row = thin.step_and_score()
     assert thin_row["verdict"] == "FAIL"
     assert any(item.startswith("thinned_kappa") for item in thin_row["mismatches"])
     assert thin.regularizer.kappa == 0.2
@@ -177,7 +179,7 @@ def test_replace_macro_expands_before_the_step():
     assert [rule.op for rule in match.rules] == [
         dsl.EXAGGERATE, dsl.WRITE, dsl.ORTHOGONAL,
     ]
-    row = match.score()
+    row = match.step_and_score()
     assert row["verdict"] == "PASS"
     assert row["note"] == NOT_A_TRANSFER
 
@@ -187,10 +189,53 @@ def test_random_prompt_materializes_or_refuses():
         loss_game("red%{random_prompt}")
     match = loss_game("red%{random_prompt}", random_prompt="stripe")
     assert match.rules[0].b == "stripe"
-    assert match.score()["verdict"] == "PASS"
+    assert match.step_and_score()["verdict"] == "PASS"
 
 
 def test_deprecated_at_is_stripped():
     match = loss_game("@red++")
     assert match.rules[0].op == dsl.EXAGGERATE
     assert match.rules[0].a == "red"
+
+
+def test_score_requires_committed_state_and_never_steps():
+    match = loss_game("red=blue")
+    student = [parameter.detach().clone() for parameter in match.backend.trainable_parameters()]
+    critic = [parameter.detach().clone() for parameter in match.critic.parameters()]
+    rng = torch.get_rng_state().clone()
+    with pytest.raises(GameError, match="no committed step"):
+        match.score()
+    assert match.steps_run == 0 and match.history == []
+    assert torch.equal(torch.get_rng_state(), rng)
+    for parameter, before in zip(match.backend.trainable_parameters(), student):
+        assert torch.equal(parameter, before)
+    for parameter, before in zip(match.critic.parameters(), critic):
+        assert torch.equal(parameter, before)
+    match.step()
+    row = match.score()
+    state = [parameter.detach().clone() for parameter in match.critic.parameters()]
+    rng = torch.get_rng_state().clone()
+    assert match.score() == row
+    assert torch.equal(torch.get_rng_state(), rng)
+    assert match.steps_run == 1
+    for parameter, before in zip(match.critic.parameters(), state):
+        assert torch.equal(parameter, before)
+
+
+def test_failed_student_update_does_not_commit_or_report_stale_state(monkeypatch):
+    match = loss_game("red=blue")
+    match.step()
+
+    def fail(*args, **kwargs):
+        raise RuntimeError("student failed after critic update")
+
+    monkeypatch.setattr(ops, "rule_loss", fail)
+    with pytest.raises(RuntimeError, match="student failed"):
+        match.step()
+    assert match.steps_run == 1 and len(match.history) == 1
+    assert all(parameter.grad is None for parameter in match.backend.trainable_parameters())
+    assert all(parameter.grad is None for parameter in match.critic.parameters())
+    with pytest.raises(GameError, match="last game step failed"):
+        match.score()
+    with pytest.raises(GameError, match="last game step failed"):
+        match.step()

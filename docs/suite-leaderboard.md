@@ -1,6 +1,6 @@
 # Suite leaderboard (cross-toy)
 
-**Module:** `conceptmod/toys/suite_leaderboard.py`
+**Module:** `conceptmod/research/toys/suite_leaderboard.py`
 
 This board answers: **which adv config(s) PASS every applicable CPU toy?**
 
@@ -26,10 +26,10 @@ cloud + `claim_pass` gate). Do not confuse the two.
 | **stamp** | Locked-shared / demo stamp toys. A **stamp sweep** winner must PASS every applicable stamp cell (N/A excluded). |
 | **dsl** | Phrase expand / phrase jobs / game-geometry. Scored once under `locked_shared`, or N/A for cover drifts. No second phrase recipe per config. |
 
-Cover posture is **not** a column on this board. Demo cover 1.5 and Music cover 1.0 are named claims in `conceptmod/toys/cover_posture_fork.py`. That toy still PASSes demo claim + demo pin, and music claim + music pin, and still FAILs a silent swap or the wrong pin. Scoring every suite candidate under both claims would report config identity (`locked_shared` is not the music config) as a formulation FAIL. Run that gate on its own:
+Cover posture is **not** a column on this board. Demo cover 1.5 and Music cover 1.0 are named claims in `conceptmod/research/toys/cover_posture_fork.py`. That toy still PASSes demo claim + demo pin, and music claim + music pin, and still FAILs a silent swap or the wrong pin. Scoring every suite candidate under both claims would report config identity (`locked_shared` is not the music config) as a formulation FAIL. Run that gate on its own:
 
 ```bash
-python -m conceptmod.toys.cover_posture_fork
+python -m conceptmod.research.toys.cover_posture_fork
 ```
 
 **PASS all stamp toys ≠ Music / Anima / Supra GPU transfer.** A suite PASS is CPU formulation only.
@@ -39,8 +39,8 @@ N/A appears when a family does not fork that knob (for example LoRA path targets
 ## Run
 
 ```bash
-python -m conceptmod.toys.suite_leaderboard
-python -m conceptmod.toys.suite_leaderboard --stamp-only --quiet
+python -m conceptmod.research.toys.suite_leaderboard
+python -m conceptmod.research.toys.suite_leaderboard --stamp-only --quiet
 
 pytest tests/test_toy_suite_leaderboard.py -q
 ```

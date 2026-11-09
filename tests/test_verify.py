@@ -22,7 +22,7 @@ def test_frame_grid_puts_attempt_in_the_header():
     assert framed.getpixel((10, 10))[0] < 20
     assert framed.getpixel((10, framed.height - 10)) == (30, 30, 30)
     # yellow phrase ink and near-white attempt ink are actually painted
-    pixels = list(framed.getdata())
+    pixels = list(framed.get_flattened_data())
     assert any(p[0] > 200 and p[1] > 180 and p[2] < 120 for p in pixels)
     assert any(p[0] > 200 and p[1] > 200 and p[2] > 200 for p in pixels)
 

@@ -94,10 +94,32 @@ def test_default_erase_guidance_is_neutralize():
     assert ops.OpDefaults.erase_guidance == 0.0
 
 
-def test_bare_erase_targets_empty(ctx, monkeypatch):
+def test_template_policies_are_local_to_each_context():
+    backend = MockBackend()
+    bare = ops.OpDefaults(write_templates=("{}",), erase_templates=("{}",))
+    scene = ops.OpDefaults(write_templates=("render {}",), erase_templates=("render {}",))
+    first = ops.StepContext(backend, 2, 7, bare)
+    second = ops.StepContext(backend, 2, 7, scene)
+    loss_for("cat=dog", first)
+    loss_for("cat--", first)
+    loss_for("cat=dog", second)
+    loss_for("cat--", second)
+    assert set(first._z) == {"dog", "cat"}
+    assert set(second._z) == {"render dog", "render cat"}
+    assert ops.OpDefaults().write_templates == ops.WRITE_TEMPLATES
+    assert ops.OpDefaults().erase_templates == ops.ERASE_TEMPLATES
+
+
+@pytest.mark.parametrize("templates", [(), ("{missing}",), ("{} {}",), (2,), "{}"])
+def test_invalid_template_policies_fail_at_configuration(templates):
+    with pytest.raises(ValueError):
+        ops.OpDefaults(erase_templates=templates)
+
+
+def test_bare_erase_targets_empty(ctx):
     """Default ``c--`` target is v('') — neutralize, not ESD overshoot."""
     backend, c = ctx
-    monkeypatch.setattr(ops, "ERASE_TEMPLATES", ["{}"])
+    c.cfg.erase_templates = ("{}",)
     assert c.cfg.erase_guidance == 0.0
     z, t = c.z_for("cat")
     v0 = backend.predict_v("", z, t, frozen=True)
@@ -116,10 +138,10 @@ def test_bare_erase_targets_empty(ctx, monkeypatch):
     assert d1 < d_over
 
 
-def test_erase_guidance_option_is_esd_overshoot(ctx, monkeypatch):
+def test_erase_guidance_option_is_esd_overshoot(ctx):
     """``c--:guidance=1`` overshoots even when the cfg default is 0."""
     backend, c = ctx
-    monkeypatch.setattr(ops, "ERASE_TEMPLATES", ["{}"])
+    c.cfg.erase_templates = ("{}",)
     assert c.cfg.erase_guidance == 0.0
     opt = torch.optim.SGD([backend.delta], lr=1.0)
     z, t = c.z_for("cat")
@@ -136,10 +158,10 @@ def test_erase_guidance_option_is_esd_overshoot(ctx, monkeypatch):
     assert d1 < d0
 
 
-def test_erase_guidance_1_is_esd_overshoot(ctx, monkeypatch):
+def test_erase_guidance_1_is_esd_overshoot(ctx):
     """CLI ``--erase-guidance 1`` still uses the negatively-guided target."""
     backend, c = ctx
-    monkeypatch.setattr(ops, "ERASE_TEMPLATES", ["{}"])
+    c.cfg.erase_templates = ("{}",)
     c.cfg.erase_guidance = 1.0
     opt = torch.optim.SGD([backend.delta], lr=1.0)
     z, t = c.z_for("cat")
@@ -169,43 +191,24 @@ def test_require_cuda_rejects_cpu():
         require_cuda("cpu")
 
 
-def test_unknown_backend_rejected():
-    from conceptmod.backends import BACKENDS, load_backend
+def test_backend_registry_has_no_bundled_pretrained_products():
+    from conceptmod.backends import installed_backends, load_backend
+    from conceptmod.providers import BackendRegistry
 
-    assert BACKENDS == ("sana", "zimage", "anima", "krea", "qwen", "cpu", "klein", "supra")
-    with pytest.raises(ValueError, match="unknown backend"):
-        load_backend("nope", device="cpu")
-    with pytest.raises(ValueError, match="1.x"):
-        load_backend("sdxl", device="cpu")
+    registry = BackendRegistry(discover=False)
+    assert installed_backends(registry=registry) == ()
+    with pytest.raises(LookupError, match="not installed"):
+        load_backend("missing", device="cpu", registry=registry)
 
 
-def test_backends_share_the_same_protocol():
-    """Adding a model must not fork the trainer contract."""
-    from conceptmod.backends.cpu import CpuBackend
-    from conceptmod.backends.qwen import QwenBackend
-    from conceptmod.backends.supra import SupraBackend
+def test_fixture_exposes_the_runtime_protocol():
+    from conceptmod.testing.peft_backend import CpuBackend
+    from conceptmod.contracts import VelocityBackend, TrainableEncoder, DifferentiableRenderer
 
-    required = (
-        "encode_text", "encode_text_grad", "predict_v", "partial_denoise",
-        "render", "generate", "trainable_parameters", "save_trained",
-        "training_defaults", "attach_encoder_lora",
-    )
-    classes = [CpuBackend, QwenBackend, SupraBackend]
-    for mod_name, cls_name in (
-        ("conceptmod.backends.sana", "SanaBackend"),
-        ("conceptmod.backends.zimage", "ZImageBackend"),
-        ("conceptmod.backends.anima", "AnimaBackend"),
-        ("conceptmod.backends.krea", "KreaBackend"),
-    ):
-        try:
-            import importlib
-            classes.append(getattr(importlib.import_module(mod_name), cls_name))
-        except ModuleNotFoundError as exc:
-            if "diffusers" not in str(exc):
-                raise
-    for cls in classes:
-        for name in required:
-            assert callable(getattr(cls, name)), f"{cls.__name__}.{name}"
+    backend = CpuBackend(device="cpu", lora_rank=2)
+    assert isinstance(backend, VelocityBackend)
+    assert isinstance(backend, TrainableEncoder)
+    assert isinstance(backend, DifferentiableRenderer)
 
 
 def test_encoder_pool_flattens_layered_embeds():

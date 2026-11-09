@@ -7,7 +7,7 @@ Raw faithful (teacher drift) must copy leftover ê and FAIL. One seed.
 import pytest
 import torch
 
-from conceptmod.toys.cover_leftover import (
+from conceptmod.research.toys.cover_leftover import (
     GATE_STEPS,
     LOCKED_COVER,
     LOCKED_TEACHER,

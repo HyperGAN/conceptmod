@@ -17,8 +17,8 @@ import pytest
 import torch
 
 from particlegan.grad_regularizers import GradientPenalty as GradRegularizer
-import conceptmod.toys.orbit_hold as orbit_hold
-from conceptmod.toys.orbit_hold import (
+import conceptmod.research.toys.orbit_hold as orbit_hold
+from conceptmod.research.toys.orbit_hold import (
     DIRECTION_COS_MIN,
     RADIUS_REL_MAX,
     SPEED_REL_MAX,

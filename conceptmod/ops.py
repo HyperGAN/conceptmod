@@ -16,8 +16,9 @@ import torch
 import torch.nn.functional as F
 
 from conceptmod import dsl
+from conceptmod.contracts import model_views
 
-WRITE_TEMPLATES = [
+WRITE_TEMPLATES = (
     "{}",
     "{}",
     "a photo of {}",
@@ -38,9 +39,9 @@ WRITE_TEMPLATES = [
     "a {} indoors, natural light",
     "a side view of a {} sitting",
     "a {} walking in a city",
-]
+)
 
-ERASE_TEMPLATES = [
+ERASE_TEMPLATES = (
     "{}",
     "{}",
     "a {} photograph",
@@ -49,7 +50,7 @@ ERASE_TEMPLATES = [
     "{} style",
     "{}, detailed picture",
     "an image of {}",
-]
+)
 
 
 @dataclass
@@ -70,6 +71,23 @@ class OpDefaults:
     probe_p: float = 0.7               # fraction of ++ steps trained on a
     #                                    random probe prompt (global effect)
     #                                    instead of the concept prompt itself
+    write_templates: tuple[str, ...] = WRITE_TEMPLATES
+    erase_templates: tuple[str, ...] = ERASE_TEMPLATES
+
+    def __post_init__(self):
+        for name in ("write_templates", "erase_templates"):
+            value = getattr(self, name)
+            if isinstance(value, str):
+                raise ValueError(f"{name} must be a sequence, not a string")
+            templates = tuple(value)
+            if not templates or any(not isinstance(template, str) for template in templates):
+                raise ValueError(f"{name} must be a nonempty sequence of strings")
+            for template in templates:
+                try:
+                    template.format("concept")
+                except (IndexError, KeyError, ValueError) as exc:
+                    raise ValueError(f"invalid {name} template {template!r}") from exc
+            setattr(self, name, templates)
 
 
 class StepContext:
@@ -80,6 +98,7 @@ class StepContext:
     def __init__(self, backend, stop_index: int, seed: int, cfg: OpDefaults,
                  probe: str | None = None):
         self.backend = backend
+        self.original, self.current = model_views(backend)
         self.stop_index = stop_index
         self.seed = seed
         self.cfg = cfg
@@ -110,10 +129,10 @@ class StepContext:
         if key not in self._v:
             z, t = self.z_for(context_prompt)
             if grad:
-                self._v[key] = self.backend.predict_v(prompt, z, t, frozen=frozen)
+                self._v[key] = (self.original if frozen else self.current).predict_v(prompt, z, t)
             else:
                 with torch.no_grad():
-                    self._v[key] = self.backend.predict_v(prompt, z, t, frozen=frozen)
+                    self._v[key] = (self.original if frozen else self.current).predict_v(prompt, z, t)
         return self._v[key]
 
 
@@ -152,7 +171,7 @@ def rule_loss(rule: dsl.Rule, ctx: StepContext) -> torch.Tensor:
         import random as _random
 
         g = rule.options.get("guidance", cfg.erase_guidance)
-        c = _random.Random(ctx.seed).choice(ERASE_TEMPLATES).format(rule.a)
+        c = _random.Random(ctx.seed).choice(cfg.erase_templates).format(rule.a)
         v0 = ctx.v("", c, frozen=True)
         vc = ctx.v(c, c, frozen=True)
         target = v0 - g * (vc - v0)
@@ -169,7 +188,7 @@ def rule_loss(rule: dsl.Rule, ctx: StepContext) -> torch.Tensor:
         if a:
             import random as _random
 
-            tmpl = _random.Random(ctx.seed).choice(WRITE_TEMPLATES)
+            tmpl = _random.Random(ctx.seed).choice(cfg.write_templates)
             a, b = tmpl.format(a), tmpl.format(b)
         v0 = ctx.v("", b, frozen=True)
         vb = ctx.v(b, b, frozen=True)
@@ -197,13 +216,13 @@ def rule_loss(rule: dsl.Rule, ctx: StepContext) -> torch.Tensor:
         # is meant to stay fixed, but weight updates leak through shared
         # tokens, so anchor v(b) to the frozen model.
         g_a = torch.Generator(device=ctx.backend.device).manual_seed(ctx.seed)
-        img_a = ctx.backend.render(rule.a, g_a, cfg.pixel_render_steps,
+        img_a = ctx.current.render(rule.a, g_a, cfg.pixel_render_steps,
                                    cfg.sample_guidance,
                                    grad_steps=cfg.pixel_grad_steps)
         g_b = torch.Generator(device=ctx.backend.device).manual_seed(ctx.seed)
         with torch.no_grad():
-            img_b = ctx.backend.render(rule.b, g_b, cfg.pixel_render_steps,
-                                       cfg.sample_guidance, frozen=True)
+            img_b = ctx.original.render(rule.b, g_b, cfg.pixel_render_steps,
+                                       cfg.sample_guidance)
         anchor = F.mse_loss(ctx.v(rule.b, rule.b, frozen=False, grad=True),
                             ctx.v(rule.b, rule.b, frozen=True))
         return F.mse_loss(img_a, img_b) + cfg.pixel_anchor_weight * anchor

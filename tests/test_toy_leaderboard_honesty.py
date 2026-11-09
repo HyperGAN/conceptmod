@@ -2,7 +2,7 @@
 
 CPU toy. No Music or Anima GPU claim. Tail the same lines with::
 
-    python -m conceptmod.toys.leaderboard_honesty
+    python -m conceptmod.research.toys.leaderboard_honesty
 """
 
 from __future__ import annotations
@@ -11,7 +11,7 @@ import pytest
 import torch
 
 from particlegan.grad_regularizers import GradientPenalty as GradRegularizer
-from conceptmod.toys.leaderboard_honesty import (
+from conceptmod.research.toys.leaderboard_honesty import (
     GRAD_MED_MAX,
     LOCKED_SHARED,
     TRAVEL_MIN,

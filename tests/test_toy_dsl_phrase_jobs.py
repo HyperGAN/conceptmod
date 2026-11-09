@@ -14,9 +14,9 @@ import pytest
 import torch
 
 from conceptmod import dsl, ops
-from conceptmod.toys import locked_adv_defaults
-from conceptmod.toys.cover_leftover import SAME_DIR_MAX, U_KEPT_MIN
-from conceptmod.toys.dsl_phrase_jobs import (
+from conceptmod.research.toys import locked_adv_defaults
+from conceptmod.research.toys.cover_leftover import SAME_DIR_MAX, U_KEPT_MIN
+from conceptmod.research.toys.dsl_phrase_jobs import (
     BIPOLAR_SCALE,
     DOCUMENTED_NAMES,
     REQUIRED_NEGATIVES,
@@ -69,19 +69,19 @@ def test_plus_bang_and_slash_are_not_parser_ops():
 
 
 def test_package_exports_the_board():
-    import conceptmod.toys as toys
+    import conceptmod.research.toys as toys
 
     assert toys.run_dsl_phrase_board is run_board
     assert toys.dsl_phrase_jobs.TOY_ID == "dsl_phrase_jobs"
 
 
 def test_docstring_keeps_cpu_toy_culture():
-    doc = (ROOT / "conceptmod" / "toys" / "dsl_phrase_jobs.py").read_text()
+    doc = (ROOT / "conceptmod" / "research" / "toys" / "dsl_phrase_jobs.py").read_text()
     assert "A PASS is a CPU toy" in doc
     assert "not a Music, Anima, or Supra GPU transfer" in doc
     assert "Geometric ``right``" in doc
     text = (ROOT / "docs" / "formulation-toys.md").read_text()
-    assert "conceptmod/toys/dsl_phrase_jobs.py" in text
+    assert "conceptmod/research/toys/dsl_phrase_jobs.py" in text
 
 
 def test_neutralize_pass_is_bare_erase_to_origin(board):

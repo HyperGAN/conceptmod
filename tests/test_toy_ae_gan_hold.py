@@ -9,7 +9,7 @@ import pytest
 import torch
 from torch import nn
 
-from conceptmod.toys.ae_gan_hold import (
+from conceptmod.research.toys.ae_gan_hold import (
     DEMO_COVER,
     HOLD_MAX,
     N_PARTICLES,
@@ -100,7 +100,7 @@ def test_untrained_recon_does_not_clear_the_fidelity_bar():
     prior = recipe.make_prior()
     encoder, decoder = nn.Sequential(nn.Linear(2, 4)), nn.Sequential(nn.Linear(2, 2))
     # A fresh decoder is far from the blobs; the bar is not vacuous.
-    from conceptmod.toys.ae_gan_hold import evaluate
+    from conceptmod.research.toys.ae_gan_hold import evaluate
     opened = evaluate(encoder, decoder, prior, recipe)
     assert opened["recon_mse"] > RECON_MAX
     reasons = gate_reasons({

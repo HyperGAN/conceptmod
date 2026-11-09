@@ -14,7 +14,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from conceptmod.analysis_2d import (
+from conceptmod.research.analysis_2d import (
     DEFAULT_LR,
     DEFAULT_OUT,
     DEFAULT_SEED,
@@ -23,8 +23,8 @@ from conceptmod.analysis_2d import (
     run_suite,
     write_artifacts,
 )
-from conceptmod.toys import locked_adv_defaults
-from conceptmod.analysis_dsl import JOB_TITLES, run_jobs, write_job_artifacts
+from conceptmod.research.toys import locked_adv_defaults
+from conceptmod.research.analysis_dsl import JOB_TITLES, run_jobs, write_job_artifacts
 
 
 def main():

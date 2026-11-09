@@ -12,7 +12,7 @@ from dataclasses import replace
 from particlegan.grad_regularizers import GradientPenalty
 from particlegan import GANLoss, get_recipe
 
-from conceptmod.toys.locked_shared_floor import (
+from conceptmod.research.toys.locked_shared_floor import (
     COVER_WEIGHT,
     LOCKED,
     N_PARTICLES,

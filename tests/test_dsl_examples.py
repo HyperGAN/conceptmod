@@ -6,7 +6,7 @@ import importlib.util
 from pathlib import Path
 
 from conceptmod.dsl import parse_phrase
-from conceptmod.game import game
+from conceptmod.research.game import game
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -48,7 +48,7 @@ def test_locked_game_example_scores_pass():
     assert "Music" in doc
     match = game(module.SOURCE)
     assert [rule.op for rule in match.rules] == module.EXPECTED_OPS
-    row = match.score()
+    row = match.step_and_score()
     assert row["verdict"] == "PASS"
     assert row["mismatches"] == []
     assert "Music" in row["note"]

@@ -23,7 +23,7 @@ that is a remap of the color axis.
 
 ```python
 from conceptmod.dsl import describe_phrase, parse_phrase
-from conceptmod.game import loss_game
+from conceptmod.research.game import loss_game
 
 phrase = "red=blue"
 rules = parse_phrase(phrase)
@@ -31,7 +31,7 @@ print(describe_phrase(phrase))
 
 match = loss_game(phrase)     # student vs critic, adv="locked_shared"
 print(match)
-row = match.score()           # one CPU step on the 2-D fixture
+row = match.step_and_score()           # one CPU step on the 2-D fixture
 assert row["verdict"] == "PASS"
 ```
 
@@ -57,7 +57,7 @@ python scripts/analyze_2d.py --jobs --out outputs/2d_analysis
 The same phrase as a stanza:
 
 ```python
-from conceptmod.game import game
+from conceptmod.research.game import game
 
 match = game("""
 phrase red=blue

@@ -16,9 +16,9 @@ parse. Nothing reads them.
 
 ## Velocity target
 
-None. `ops.rule_loss` raises `NotImplementedError`. `model_train`
-raises the same error before the training loop if any rule has this
-op. `loss_game` / `game` raise `GameError` and do not step.
+None. `compile_phrase` and `model_train` reject this operator during
+preflight, before model execution. Direct `ops.rule_loss` raises
+`NotImplementedError`. `loss_game` / `game` raise `GameError` and do not step.
 
 There is no scorer, no default guidance, and no 2-D number.
 
@@ -52,7 +52,7 @@ is the current decision, not a forgotten branch.
 
 ```python
 from conceptmod.dsl import parse_phrase
-from conceptmod.game import GameError, loss_game
+from conceptmod.research.game import GameError, loss_game
 
 rule = parse_phrase(";a bright sunset")[0]
 assert rule.op == "reward"

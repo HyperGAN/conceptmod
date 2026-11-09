@@ -16,7 +16,7 @@ The toys' `feature_match` is called as-is; it is not reimplemented
 here.
 
 ```python
-from conceptmod.game import game, loss_game
+from conceptmod.research.game import game, loss_game
 
 loss_game("red=blue")
 game("""

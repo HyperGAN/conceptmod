@@ -1,47 +1,24 @@
-from conceptmod.backends.base import Backend
+"""Model-independent backend interface and installed product discovery."""
+from conceptmod.backends.base import Backend, TextEmbeds
+from conceptmod.providers import BackendProvider, BackendRegistry
 
-# One process, one backend. Switching --backend must not change the others.
-BACKENDS = ("sana", "zimage", "anima", "krea", "qwen", "cpu", "klein", "supra")
+
+def installed_backends(*, registry: BackendRegistry | None = None) -> tuple[str, ...]:
+    return (registry if registry is not None else BackendRegistry()).names()
 
 
-def load_backend(name: str, device: str, **kwargs) -> Backend:
-    kwargs = {k: v for k, v in kwargs.items() if v is not None}
-    if name == "sana":
-        from conceptmod.backends.sana import SanaBackend
+def load_backend(name: str, device: str | None = None, *,
+                 registry: BackendRegistry | None = None, **options) -> Backend:
+    """Load a separately installed product after explicit caller preflight.
 
-        return SanaBackend(device=device, **kwargs)
-    if name == "zimage":
-        from conceptmod.backends.zimage import ZImageBackend
+    No default model, built-in catalogue or fallback loader is provided.
+    Tests may supply conceptmod.testing.fixture_registry() explicitly.
+    """
+    if device is not None:
+        options["device"] = device
+    registry = registry if registry is not None else BackendRegistry()
+    return registry.load(name, **{k: v for k, v in options.items() if v is not None})
 
-        return ZImageBackend(device=device, **kwargs)
-    if name == "anima":
-        from conceptmod.backends.anima import AnimaBackend
 
-        return AnimaBackend(device=device, **kwargs)
-    if name == "krea":
-        from conceptmod.backends.krea import KreaBackend
-
-        return KreaBackend(device=device, **kwargs)
-    if name == "qwen":
-        from conceptmod.backends.qwen import QwenBackend
-
-        return QwenBackend(device=device, **kwargs)
-    if name in ("cpu", "dummy"):
-        from conceptmod.backends.cpu import CpuBackend
-
-        return CpuBackend(device=device, **kwargs)
-    if name == "klein":
-        from conceptmod.backends.klein import KleinBackend
-
-        return KleinBackend(device=device, **kwargs)
-    if name == "supra":
-        from conceptmod.backends.supra import SupraBackend
-
-        return SupraBackend(device=device, **kwargs)
-    if name == "sdxl":
-        raise ValueError(
-            "SDXL is conceptmod 1.x (UNet + CLIP). "
-            "2.0 backends are flow-matching DiTs: "
-            + ", ".join(BACKENDS)
-        )
-    raise ValueError(f"unknown backend {name!r}; expected one of {BACKENDS}")
+__all__ = ["Backend", "TextEmbeds", "BackendProvider", "BackendRegistry",
+           "installed_backends", "load_backend"]

@@ -17,7 +17,7 @@ import torch
 
 from particlegan.grad_regularizers import GradientPenalty
 
-from conceptmod.toys.field_lift import (
+from conceptmod.research.toys.field_lift import (
     CONTENT,
     LIFT_ANGLE,
     SLIDER,
@@ -31,7 +31,7 @@ from conceptmod.toys.field_lift import (
     pushforward,
     run_board,
 )
-from conceptmod.toys.locked_shared_floor import ThinnedKappaCap
+from conceptmod.research.toys.locked_shared_floor import ThinnedKappaCap
 
 
 @pytest.fixture(scope="module")

@@ -32,13 +32,11 @@ kept training from collapsing) and gradient clipping.
 
 from __future__ import annotations
 
-import random
-
 import torch
 import torch.nn.functional as F
-from tqdm import tqdm
 
 from conceptmod import dsl
+from conceptmod.contracts import ModelView
 
 PROBE_TEMPLATES = [
     "a photo of {}",
@@ -111,116 +109,128 @@ def fixed_distance_target(current, target, step_dist):
     return current + direction * move
 
 
-def train_encoder(
-    backend,
-    phrase: str,
-    iterations: int = 400,
-    lr: float = 1e-4,
-    rank: int = 8,
-    seed: int = 0,
-    strength: float = 1.0,
-    curriculum_split: int = 20,
-    log_every: int = 50,
-):
-    rules = dsl.parse_phrase(phrase)
-    usable, skipped = [], []
-    for r in rules:
-        if r.needs_random_prompt:
-            skipped.append(r)  # random-prompt rules are a model-stage feature
-        elif r.op in (dsl.EXAGGERATE, dsl.ERASE, dsl.WRITE, dsl.FREEZE,
-                      dsl.ORTHOGONAL):
-            usable.append(r)
-        else:
-            skipped.append(r)
-    for r in skipped:
-        print(f"encoder stage: skipping rule {r.raw!r} (op {r.op} is model-stage only)")
-    if not usable:
-        print("encoder stage: nothing to train")
-        return []
+class EncoderObjective:
+    """Embedding-space objective with a checkpointed immutable reference."""
 
-    params = backend.attach_encoder_lora(rank)
-    n = sum(p.numel() for p in params)
-    print(f"encoder LoRA rank {rank}: {n/1e6:.1f}M params, phrase {phrase!r}")
-    opt = torch.optim.AdamW(params, lr=lr)
-    rng = random.Random(seed)
+    def __init__(self, backend, plan, config):
+        self.backend, self.plan, self.config = backend, plan, config
+        self.original = ModelView(backend, True)
+        self.rules = [rule.as_rule() for rule in plan.rules]
+        self.refresh()
 
-    # ---- precompute frozen embeddings and pooled concept directions ----
-    with torch.no_grad():
-        pool_uncond = pool(backend.encode_text("", frozen=True))
-        directions = {}
-        for r in usable:
-            for c in {r.a, r.b} - {""}:
-                if c not in directions:
-                    directions[c] = pool(backend.encode_text(c, frozen=True)) - pool_uncond
+    def refresh(self):
+        # Build a replacement reference atomically: a failed provider encoding
+        # during checkpoint restore cannot leave a partially rebuilt objective.
+        with torch.no_grad():
+            pool_uncond = pool(self.original.encode_text("")).detach()
+            directions = {}
+            for rule in self.rules:
+                for concept in {rule.a, rule.b} - {""}:
+                    if concept not in directions:
+                        directions[concept] = (
+                            pool(self.original.encode_text(concept))
+                            - pool_uncond).detach()
+        step_dist = {}
+        for rule in self.rules:
+            concept = rule.b or rule.a
+            if concept in directions:
+                step_dist[rule.raw] = directions[concept].norm().item() / self.config.curriculum_split
+        self.pool_uncond, self.directions, self.step_dist = pool_uncond, directions, step_dist
 
-    # per-rule curriculum step size: |direction| / split
-    step_dist = {}
-    for r in usable:
-        c = r.b or r.a
-        if c in directions:
-            step_dist[r.raw] = directions[c].norm().item() / curriculum_split
+    def state_dict(self):
+        return {"pool_uncond": self.pool_uncond.detach().clone(),
+                "directions": {key: value.detach().clone() for key, value in self.directions.items()},
+                "step_dist": dict(self.step_dist)}
 
-    history = []
-    pbar = tqdm(range(iterations))
-    for i in pbar:
-        losses = {}
-        total = None
-        for rule in usable:
+    def validate_state_dict(self, state):
+        import math
+
+        if not isinstance(state, dict) or set(state) != {"pool_uncond", "directions", "step_dist"}:
+            raise ValueError("invalid encoder objective reference state")
+        if (not isinstance(state["directions"], dict) or set(state["directions"]) != set(self.directions)
+                or not isinstance(state["step_dist"], dict) or set(state["step_dist"]) != set(self.step_dist)):
+            raise ValueError("encoder objective concepts do not match")
+        pairs = [(self.pool_uncond, state["pool_uncond"])]
+        pairs += [(value, state["directions"][key]) for key, value in self.directions.items()]
+        for current, saved in pairs:
+            if (not isinstance(saved, torch.Tensor) or saved.shape != current.shape
+                    or saved.dtype != current.dtype or not bool(torch.isfinite(saved).all())):
+                raise ValueError("encoder objective reference tensor does not match")
+        if any(isinstance(value, bool) or not isinstance(value, (int, float))
+               or not math.isfinite(value) or value < 0 for value in state["step_dist"].values()):
+            raise ValueError("invalid encoder curriculum distance")
+
+    def load_state_dict(self, state):
+        self.validate_state_dict(state)
+        pool_uncond = state["pool_uncond"].detach().to(self.pool_uncond.device).clone()
+        directions = {key: state["directions"][key].detach().to(value.device).clone()
+                      for key, value in self.directions.items()}
+        self.pool_uncond, self.directions, self.step_dist = pool_uncond, directions, dict(state["step_dist"])
+
+    def losses(self, rng):
+        backend = self.backend
+        strength = self.config.encoder_strength
+        for rule in self.rules:
             template = rng.choice(PROBE_TEMPLATES)
             neutral = rng.choice(NEUTRAL_PROBES)
-
             if rule.op in (dsl.EXAGGERATE, dsl.ERASE) or (
                     rule.op == dsl.WRITE and rule.a == ""):
                 concept = rule.b if rule.op == dsl.WRITE else rule.a
                 sign = -1.0 if rule.op == dsl.ERASE else 1.0
-                probe = neutral
-                cur, mask = as_padded(backend.encode_text_grad(probe))
-                fro, _ = as_padded(backend.encode_text(probe, frozen=True))
-                target = fro.float() + sign * strength * directions[concept].unsqueeze(1)
-                capped = fixed_distance_target(cur.float().detach(), target,
-                                               step_dist[rule.raw])
+                cur, mask = as_padded(backend.encode_text_grad(neutral))
+                with torch.no_grad():
+                    fro, _ = as_padded(self.original.encode_text(neutral))
+                    target = fro.float() + sign * strength * self.directions[concept].unsqueeze(1)
+                    capped = fixed_distance_target(cur.float().detach(), target,
+                                                   self.step_dist[rule.raw])
                 loss = masked_mse(cur, capped, mask)
-
             elif rule.op == dsl.WRITE:
-                p_a = template.format(rule.a)
-                p_b = template.format(rule.b)
+                p_a, p_b = template.format(rule.a), template.format(rule.b)
                 cur, mask = as_padded(backend.encode_text_grad(p_a))
-                frozen_a = backend.encode_text(p_a, frozen=True)
-                fro, _ = as_padded(frozen_a)
-                d = (pool(backend.encode_text(p_b, frozen=True))
-                     - pool(frozen_a)).unsqueeze(1)
-                target = fro.float() + strength * d
-                capped = fixed_distance_target(cur.float().detach(), target,
-                                               step_dist[rule.raw])
+                with torch.no_grad():
+                    frozen_a = self.original.encode_text(p_a)
+                    fro, _ = as_padded(frozen_a)
+                    direction = (pool(self.original.encode_text(p_b))
+                                 - pool(frozen_a)).unsqueeze(1)
+                    target = fro.float() + strength * direction
+                    capped = fixed_distance_target(cur.float().detach(), target,
+                                                   self.step_dist[rule.raw])
                 loss = masked_mse(cur, capped, mask)
-
             elif rule.op == dsl.FREEZE:
                 p_a = template.format(rule.a) if rule.a else neutral
                 p_b = template.format(rule.b) if rule.b else neutral
                 cur, mask = as_padded(backend.encode_text_grad(p_a))
-                fro, _ = as_padded(backend.encode_text(p_b, frozen=True))
-                L = min(cur.shape[1], fro.shape[1])  # unpadded formats may differ
-                loss = masked_mse(cur[:, :L], fro[:, :L], mask[:, :L])
-
+                with torch.no_grad():
+                    fro, _ = as_padded(self.original.encode_text(p_b))
+                length = min(cur.shape[1], fro.shape[1])
+                loss = masked_mse(cur[:, :length], fro[:, :length], mask[:, :length])
             elif rule.op == dsl.ORTHOGONAL:
-                d_a = directions[rule.a]
-                d_b = (pool(backend.encode_text_grad(rule.b)) - pool_uncond)
-                cos = F.cosine_similarity(d_a, d_b, dim=-1, eps=1e-6)
-                loss = cos.abs().mean()
+                d_a = self.directions[rule.a]
+                d_b = pool(backend.encode_text_grad(rule.b)) - self.pool_uncond
+                loss = F.cosine_similarity(d_a, d_b, dim=-1, eps=1e-6).abs().mean()
+            else:
+                raise ValueError(f"unsupported encoder rule {rule.raw!r}")
+            yield rule.raw, rule.alpha * loss
 
-            losses[rule.raw] = rule.alpha * loss
-            total = losses[rule.raw] if total is None else total + losses[rule.raw]
 
-        total.backward()
-        torch.nn.utils.clip_grad_norm_(params, max_norm=1.0)
-        opt.step()
-        opt.zero_grad(set_to_none=True)
+def train_encoder(backend, phrase, iterations=400, lr=1e-4, rank=8, seed=0,
+                  strength=1.0, curriculum_split=20, *,
+                  accumulation_steps=1, observers=(), stop_when=None):
+    """Execute a strict encoder plan using the session API.
 
-        history.append(total.item())
-        pbar.set_postfix({"loss": f"{history[-1]:.5f}"})
-        if log_every and i % log_every == 0:
-            parts = " ".join(f"[{k}]={v.item():.5f}" for k, v in losses.items())
-            tqdm.write(f"step {i}: {parts}")
+    Logging and evaluation belong to explicitly supplied observers. Unsupported
+    rules fail during compilation, before an encoder adapter is attached.
+    """
+    from conceptmod.plan import EditPlan, compile_phrase
+    from conceptmod.training import TrainingConfig, TrainingSession
 
-    backend._text_cache.clear()
-    return history
+    plan = phrase if isinstance(phrase, EditPlan) else compile_phrase(
+        phrase, stage="encoder", capabilities=getattr(backend, "capabilities", None))
+    if plan.stage != "encoder":
+        raise ValueError("train_encoder requires an encoder EditPlan")
+    config = TrainingConfig(iterations=iterations, lr=lr, seed=seed,
+                            accumulation_steps=accumulation_steps, encoder_rank=rank,
+                            encoder_strength=strength, curriculum_split=curriculum_split)
+    with TrainingSession(backend, plan, config, observers=observers) as session:
+        session.run(stop_when=stop_when)
+        return [report.loss for report in session.reports]

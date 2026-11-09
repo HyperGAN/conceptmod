@@ -9,7 +9,7 @@ from __future__ import annotations
 import pytest
 
 from conceptmod import dsl, ops
-from conceptmod.analysis_2d import (
+from conceptmod.research.analysis_2d import (
     COLOR,
     COLOR_OPP,
     KEEP,
@@ -18,12 +18,12 @@ from conceptmod.analysis_2d import (
     _probe_zt,
     plane_points,
 )
-from conceptmod.analysis_dsl import dead_ops, run_job, run_jobs
-from conceptmod.backends import BACKENDS
+from conceptmod.research.analysis_dsl import dead_ops, run_job, run_jobs
+from conceptmod.providers import BackendRegistry
 
 
-def test_backends_tuple_unchanged():
-    assert BACKENDS == ("sana", "zimage", "anima", "krea", "qwen", "cpu", "klein", "supra")
+def test_research_does_not_require_pretrained_products():
+    assert BackendRegistry(discover=False).names() == ()
 
 
 def test_neutralize_guidance_0_does_not_write_the_antipode():

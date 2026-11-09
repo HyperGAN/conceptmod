@@ -1,22 +1,18 @@
-"""Fixed-probe edit metrics: when is a phrase actually done?
+"""Velocity-geometry diagnostics on explicitly captured probe tensors.
 
-Training loss is the wrong stop signal. It is computed on a fresh random
-``z_ctx`` every step, starts near zero, and stays there whether or not the
-edit has taken. These scores reuse the same velocity geometry as the losses
-but on a *fixed* set of (seed, stop-index) probes so they are comparable
-across steps.
-
-Headline number for a write / composite (``a=b``):
-
-    swap_ratio = ||v_t(a) − v*(b)|| / ||v_f(a) − v*(b)||
-
-1.0 at init (trained == frozen), 0.0 when the write target is hit.
-Stop when it drops below ``swap_stop`` and the freeze *hold* has not blown up.
+Capture probes once before editing, then pass the same ProbeSet to every
+observation. Fixed seeds alone do not freeze partially denoised latents when
+model weights change. These relative errors and threshold flags describe a
+surrogate diagnostic; they do not rank edits or establish finished-output
+effect, preservation quality, or a scientific formulation PASS.
 """
 
 from __future__ import annotations
 
+from collections.abc import Mapping
+from contextlib import contextmanager
 from dataclasses import dataclass, field
+import math
 
 import torch
 import torch.nn.functional as F
@@ -52,7 +48,7 @@ class EditReport:
         for s in self.scores:
             if s.name not in ("swap_ratio", "hold", "remain"):
                 parts.append(f"{s.raw}:{s.name}={s.value:.3f}")
-        parts.append("DONE" if self.done else "train")
+        parts.append("diagnostic target met" if self.done else "diagnostic target unmet")
         return " ".join(parts)
 
 
@@ -60,17 +56,73 @@ def _mse(a, b) -> float:
     return F.mse_loss(a, b).item()
 
 
+@dataclass(frozen=True)
+class ProbeSet:
+    """Owned, detached samples; treat their tensor contents as read-only."""
+
+    samples: tuple[tuple[torch.Tensor, torch.Tensor], ...]
+
+    def __post_init__(self):
+        if not self.samples:
+            raise ValueError("probe set must contain at least one sample")
+        samples = []
+        for z, t in self.samples:
+            if not isinstance(z, torch.Tensor) or not isinstance(t, torch.Tensor):
+                raise TypeError("each probe must contain latent and timestep tensors")
+            samples.append((z.detach().clone(), t.detach().clone()))
+        object.__setattr__(self, "samples", tuple(samples))
+
+
+@contextmanager
+def _evaluating(backend):
+    declared = getattr(backend, "training_modules", None)
+    if callable(declared):
+        modules = declared()
+        if (not isinstance(modules, Mapping) or not modules
+                or not all(isinstance(name, str) and name and isinstance(module, torch.nn.Module)
+                           for name, module in modules.items())):
+            raise TypeError("training_modules() must declare a nonempty mapping of named PyTorch modules")
+        roots = list(modules.values())
+    else:
+        # Small research fixtures may directly expose modules without owning a
+        # production runtime. Do not guess pipeline-specific attribute names.
+        roots = [backend] if isinstance(backend, torch.nn.Module) else []
+        roots.extend(value for value in getattr(backend, "__dict__", {}).values()
+                     if isinstance(value, torch.nn.Module))
+    roots = list({id(root): root for root in roots}.values())
+    modes = {id(module): (module, module.training)
+             for root in roots for module in root.modules()}
+    try:
+        for root in roots:
+            root.eval()
+        yield
+    finally:
+        for module, training in modes.values():
+            module.training = training
+
+
 @torch.no_grad()
-def _probes(backend, cfg: ops.OpDefaults, seeds, stop_fracs):
+def capture_probes(backend, cfg: ops.OpDefaults | None = None, *,
+                   seeds=(0, 1), stop_fracs=(0.35, 0.7)) -> ProbeSet:
+    """Sample once, before editing; no persistent cache is hidden on backend.
+
+    Only this explicitly named sampling operation partially denoises. It sets
+    evaluation mode before sampling and restores every module's prior mode on
+    success or failure. Sampling uses local generators.
+    """
+    cfg = cfg or ops.OpDefaults()
     steps = max(int(cfg.sample_steps), 2)
+    if not stop_fracs or any(not math.isfinite(f) or not 0 < f < 1 for f in stop_fracs):
+        raise ValueError("stop_fracs must contain finite fractions between zero and one")
     stops = sorted({max(1, min(steps - 1, int(steps * f))) for f in stop_fracs})
     out = []
-    for seed in seeds:
-        for stop in stops:
-            g = torch.Generator(device=backend.device).manual_seed(int(seed) + 17 * stop)
-            z, t = backend.partial_denoise("", stop, steps, 1.0, g)
-            out.append((z, t))
-    return out
+    with _evaluating(backend):
+        for seed in seeds:
+            for stop in stops:
+                g = torch.Generator(device=backend.device).manual_seed(int(seed) + 17 * stop)
+                z, t = backend.partial_denoise("", stop, steps, 1.0, g)
+                out.append((z, t))
+    return ProbeSet(tuple(out))
 
 
 @torch.no_grad()
@@ -78,31 +130,27 @@ def eval_phrase(
     backend,
     phrase: str,
     cfg: ops.OpDefaults | None = None,
-    seeds=(0, 1),
-    stop_fracs=(0.35, 0.7),
+    *,
+    probes: ProbeSet,
     swap_stop: float = 0.35,
     hold_max: float = 0.25,
     remain_stop: float = 0.40,
 ) -> EditReport:
-    """Score every rule in ``phrase`` on a frozen probe set."""
+    """Observe rules on caller-owned probes; never sample or update a model.
+
+    ``done`` is an explicitly thresholded diagnostic flag. It is not a
+    candidate selector or an intended-effect ranking objective.
+    """
+    if not isinstance(probes, ProbeSet):
+        raise TypeError("probes must be an explicitly captured ProbeSet")
     cfg = cfg or ops.OpDefaults()
     rules = [r for r in dsl.parse_phrase(phrase)
              if r.op != dsl.REWARD and not r.needs_random_prompt]
-    probes = _probes(backend, cfg, seeds, stop_fracs)
     scores: list[RuleScore] = []
-
-    was_training = False
-    if hasattr(backend, "transformer"):
-        was_training = bool(backend.transformer.training)
-        backend.transformer.eval()
-
-    try:
+    with _evaluating(backend):
         for rule in rules:
-            scores.append(_score_rule(backend, rule, cfg, probes,
+            scores.append(_score_rule(backend, rule, cfg, probes.samples,
                                       swap_stop, hold_max, remain_stop))
-    finally:
-        if was_training and hasattr(backend, "transformer"):
-            backend.transformer.train()
 
     swaps = [s.value for s in scores if s.name == "swap_ratio"]
     holds = [s.value for s in scores if s.name == "hold"]

@@ -9,9 +9,9 @@ import inspect
 import pytest
 import torch
 
-import conceptmod.toys.residual_student as residual_student
-import conceptmod.toys.shared_trajectory as shared_trajectory
-from conceptmod.toys.residual_student import (
+import conceptmod.research.toys.residual_student as residual_student
+import conceptmod.research.toys.shared_trajectory as shared_trajectory
+from conceptmod.research.toys.residual_student import (
     LAND_TOL,
     PASS_IDENTITY_MSE,
     SLOW_IMPACT_MAX,
@@ -25,7 +25,7 @@ from conceptmod.toys.residual_student import (
     train_drift,
     train_locked,
 )
-from conceptmod.toys.shared_trajectory import LOCKED, pairing_index, trajectories
+from conceptmod.research.toys.shared_trajectory import LOCKED, pairing_index, trajectories
 
 
 def test_composes_with_shared_trajectory_rather_than_copying_it():

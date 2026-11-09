@@ -5,10 +5,8 @@ Runs the same ``red=blue`` write as ``tests/test_cpu_sample.py`` through
 
     python scripts/smoke_cpu.py
 
-Equivalent train.py invocation:
-
-    python train.py --backend cpu --device cpu --stage model --phrase red=blue \
-        --lora 4 --iterations 80 --lr 1e-2 --out outputs/cpu_sample
+The fixture is deliberately explicit and not a registered pretrained product.
+Install conceptmod[peft-test] before running this script.
 """
 from __future__ import annotations
 
@@ -18,7 +16,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from conceptmod.backends.cpu import (
+from conceptmod.testing.peft_backend import (
     COSINE_THRESHOLD,
     SAMPLE_LR,
     SAMPLE_PHRASE,

@@ -21,7 +21,10 @@ import sys
 import conceptmod.research
 assert not any(name.startswith('conceptmod.research.') for name in sys.modules)
 for name in ('analysis_2d', 'analysis_dsl', 'game', 'ops_erase', 'toys'):
-    assert importlib.util.find_spec('conceptmod.' + name) is None
+    spec = importlib.util.find_spec('conceptmod.' + name)
+    # An ignored __pycache__ left by an older checkout can form an empty
+    # namespace directory. It is not executable code or an import shim.
+    assert spec is None or (spec.origin is None and spec.loader is None), name
 """], check=True)
 
 

@@ -1,4 +1,4 @@
-# Conceptmod core and model-package migration
+# Conceptmod core and model products
 
 This is the implementation and acceptance plan for the architecture review of
 `ea3422450152eb42fd09ae0a36964b6fe0af78e8` (2026-11-09). Keep this document
@@ -28,6 +28,29 @@ as a dependency of the production runtime. Historical evidence stays intact in
 Git and remains discoverable. No scientific results or completed training are
 replayed to prove a packaging change.
 
+## State ownership and API cutpoints
+
+| Previously implicit state | Owner and public boundary | Invariant |
+| --- | --- | --- |
+| Parsed rules, macro expansion, stage and options | `compile_phrase` → immutable `EditPlan` | Reject unsupported or malformed work before model loading. |
+| Adapter selection, encoder role and train/eval modes | `ModelView` plus declared `training_modules()` | Original means original encoder and velocity model; temporary modes restore on failure. |
+| Accumulation, optimizer, RNG and progress | `TrainingSession.step()` / checkpoint | Only complete optimizer updates advance committed progress. A failed update requires restore. |
+| Particle routing during backward recomputation | Invocation-bound particle LoRA context | Recompute uses its own particle even after the forward context exits. |
+| Cached embeddings and transient graphs | `invalidate_caches()` / `StepContext` | Encoder commits and restore invalidate stale values; trainers do not edit private caches. |
+| Resumable state versus an inference edit | Session checkpoint versus `EditBundle` | Exact continuation includes optimizer/RNG/reference state; an export includes every edited component. |
+| Measurements and presentation | Fixed `ProbeSet`, explicit observers and stop policy | Scoring observes; only an explicitly named operation steps. |
+
+The core must not own model catalogues, Hub IDs, native loaders, device placement,
+model tensor layouts, deployment-format mappings, hidden prompt downloads,
+presentation side effects or scientific candidate selection. Those have moved to
+products, converters or explicit callers. Research lives under
+`conceptmod.research`; shared geometry does not import it.
+
+The owner subsequently prioritized the final structure over migration. The 3.x
+API is intentionally direct: no old model-import shims and no compatibility
+framework. Current usage is documented in [api.md](api.md) and
+[providers.md](providers.md).
+
 ## Phase 1 — merge concrete correctness fixes
 
 - [x] Export all edited components (encoder and transformer) together, including
@@ -43,30 +66,30 @@ replayed to prove a packaging change.
   the official ParticleGAN optimizer/checkpoint formula.
 - [x] Give StepContext ownership of gradient-cache invalidation; stop editing
   private dictionaries from trainers.
-- [ ] Verify raw-current model/adapter/critic/prior weights and explicitly disable
+- [x] Verify raw-current model/adapter/critic/prior weights and explicitly disable
   weight EMA. Do not change the upstream scalar optimizer running statistics.
 
 ## Phase 2 — define and use the core contracts
 
-- [ ] Compile phrases once into immutable, serializable EditPlans. Validate
+- [x] Compile phrases once into immutable, serializable EditPlans. Validate
   finite option values, known option names, supported operators, stage policy
   and backend capabilities before expensive loading. Unsupported rules cannot
   silently disappear. Preserve documented macro semantics.
-- [ ] Define backend capabilities and narrow protocols for velocity prediction,
+- [x] Define backend capabilities and narrow protocols for velocity prediction,
   trainable text encoding, differentiable rendering and artifact I/O. Distinguish
   original/current model views consistently across encoder and transformer.
-- [ ] Introduce a TrainingSession that owns optimizer state, RNG state, progress,
+- [x] Introduce a TrainingSession that owns optimizer state, RNG state, progress,
   accumulation and lifecycle. Expose committed-update checkpoints and exact
   continuation; an exception cannot report a completed update. Restore modes
   and clear transient graphs safely.
-- [ ] Inject prompt sources. No hidden Hub dataset downloads from training.
-- [ ] Separate evaluation from stepping, stopping and candidate selection.
+- [x] Inject prompt sources. No hidden Hub dataset downloads from training.
+- [x] Separate evaluation from stepping, stopping and candidate selection.
   Game.score must observe state; an explicitly named convenience method may
   step-and-score. Freeze probe tensors for repeated diagnostics.
-- [ ] Move samples, grids and logging to explicit observers; train code does not
+- [x] Move samples, grids and logging to explicit observers; train code does not
   classify fruit prompts, write presentation files or call CUDA housekeeping.
-- [ ] Replace module-global template mutation with per-plan/per-step policy.
-- [ ] Complete EditBundle save/load with encoder+transformer+manifest, effective
+- [x] Replace module-global template mutation with per-plan/per-step policy.
+- [x] Complete EditBundle save/load with encoder+transformer+manifest, effective
   configuration, raw-weight provenance and safe loading. Invalid/incomplete
   bundles fail before partially mutating a runtime.
 
@@ -78,42 +101,43 @@ choosing a scientific objective.
 
 ## Phase 3 — extract model products and remove model specifics from core
 
-- [ ] Inspect particle-sliders' actual package/product contracts and adopt the
+- [x] Inspect particle-sliders' actual package/product contracts and adopt the
   useful boundary, without copying unrelated implementation.
-- [ ] Discover installed model providers using one documented entry-point group;
+- [x] Discover installed model providers using one documented entry-point group;
   support explicit local registration for embedding and tests. Static provider
   metadata permits preflight without importing heavyweight model modules.
-- [ ] Extract SANA, Z-Image, Anima, Krea, Qwen-Image, FLUX.2 Klein and Supra into
-  independently installable, properly named repositories/packages. Proposed names
-  are `sana-conceptmod`, `zimage-conceptmod`, `anima-conceptmod`,
-  `krea2-conceptmod`, `qwen-image-conceptmod`, `flux2-klein-conceptmod` and
-  `supra-conceptmod`; verify existing organization names before creating them.
+- [x] Extract SANA, Z-Image, Anima, Krea, Qwen-Image, FLUX.2 Klein and Supra into
+  independently installable repositories/packages: `sana-conceptmod`,
+  `zimage-conceptmod`, `anima-conceptmod`, `krea2-conceptmod`,
+  `qwen-image-conceptmod`, `flux2-klein-conceptmod` and `supra-conceptmod`.
   Each owns its model dependencies, loader, defaults, original/current view,
   serialization implementation, relevant tests and model-specific docs.
-- [ ] Preserve the small CPU fixture for core contract tests without making it a
+- [x] Preserve the small CPU fixture for core contract tests without making it a
   pretrained product or coupling core installation to PEFT/diffusers.
-- [ ] Extract model-format converters into the relevant product or a separately
+- [x] Extract model-format converters into the relevant product or a separately
   installable conversion tool. Preserve Music/YuE conversion functionality and
   evidence; remove conversion mappings and deployment strength policy from core.
-- [ ] Replace bundled backend selection and model-specific root CLI flags with a
+- [x] Replace bundled backend selection and model-specific root CLI flags with a
   provider-aware core CLI/API. Missing products yield actionable install guidance;
   no compatibility shim may keep pretrained implementations bundled in core.
-- [ ] Remove heavyweight model dependencies and floating Git dependencies from
+- [x] Remove heavyweight model dependencies and floating Git dependencies from
   core packaging. Build/install/import core without those extras.
-- [ ] Update README, examples and model documentation links to the new homes;
+- [x] Update README, examples and model documentation links to the new homes;
   preserve historical proofs through clearly labeled archive links.
 
 ## Phase 4 — refactor remaining dependencies and polish
 
-- [ ] Extract shared geometry/formulation definitions from the eager toy package;
+- [x] Extract shared geometry/formulation definitions from the eager toy package;
   runtime imports cannot import the whole research suite. Keep toys usable and
   distinguish their historical objective from production training.
-- [ ] Consolidate duplicated sampler/adapter/cache lifecycle code at real shared
-  boundaries, keeping model-specific math in model products.
-- [ ] Remove dead/unwired runtime paths, implicit unsupported operators and
-  obsolete compatibility layers; document intentional breaking changes and the
-  migration from 2.x.
-- [ ] Make tests run with the default command; remove cross-test fixture import
+- [x] Consolidate generic lifecycle in the shared Backend, ModelView and
+  TrainingSession. Native sampler/layout/adapter math and behavior identity stay
+  product-owned. Seven product `state.py` helpers currently share the same
+  implementation; this is not a claim that every product duplication is removed.
+- [x] Remove dead/unwired runtime paths, implicit unsupported operators and
+  obsolete compatibility layers; document the resulting public API. Extensive
+  migration support was dropped following the owner's steering.
+- [x] Make tests run with the default command; remove cross-test fixture import
   fragility, ensure optional dependency tests skip explicitly, and add CI for
   core plus product contract compatibility.
 - [ ] Verify clean builds, installed-package smoke examples, safe checkpoint and
@@ -128,7 +152,7 @@ architecture work. Root coordinates worktrees and integration; workers do not
 overwrite one another's branches. Run focused checks for each change, then the
 appropriate complete core/product suites and isolated wheel tests. CPU fixtures
 prove contracts, not pretrained model quality. GPU/model downloads are not
-required for this code migration and are not a reason to replay existing work.
+required for this architecture change and are not a reason to replay existing work.
 
 Record merged PRs/commits, published product locations, exact test commands and
 results below. Final completion requires every item above to be implemented or
@@ -157,3 +181,30 @@ Do not call scaffolding, pending repositories, or unmerged work complete.
   the optional ComfyUI checkout lacks `comfy_aimdo.host_buffer`. These are recorded
   separately and remain work for the research/tool boundary; no thresholds were
   changed to hide them.
+
+- 2026-11-09: Plan [PR #37](https://github.com/HyperGAN/conceptmod/pull/37)
+  merged as `c4d1c58`. Correctness [PR #38](https://github.com/HyperGAN/conceptmod/pull/38)
+  merged first as `70f0cb2632190388eb4028ef80066558259494fc`. That public commit is
+  the extraction source and the archive for historical model proofs.
+- 2026-11-09: Implemented the 3.0 API and provider-only packaging, complete
+  bundles, model/encoder sessions, transactional validation, explicit observation
+  and research separation. Session tests cover partial accumulation, both stages,
+  original/reference consistency, frozen unselected modules, failure cleanup,
+  deterministic RNG, concurrent session scopes, exact continuation and invalid
+  checkpoint rejection. Metrics evaluate every declared module and restore mixed
+  train/eval modes, including after exceptions.
+- 2026-11-09: Full core command, CUDA hidden and two CPU threads:
+  `python -m pytest -q -p no:cacheprovider --tb=short`: **531 passed, 2 xfailed**
+  in 75.76 seconds with Torch 2.14.1 and ParticleGAN 0.9.4. The two strict
+  expected failures preserve the baseline mode-hold and shared-trajectory PASS
+  assertions; their thresholds and scientific claims were not relaxed. These
+  remain unresolved research results, not successful model qualification.
+- 2026-11-09: Built wheel and source distribution with `python -m build
+  --no-isolation`. Installed the wheel into a fresh Python 3.11 environment with
+  only normal core dependencies. `pip check` passed; diffusers, Transformers,
+  PEFT, datasets, torchvision, accelerate, sentencepiece, Pillow and safetensors
+  were absent. From `/tmp`, installed-package session, plan/provider, particle,
+  isolation, metrics and CLI tests passed **123 tests**, with **one explicit
+  optional PEFT-fixture skip**. The console validator ran successfully. Wheel
+  inspection found only the base backend and registry, no native models or
+  converters; the source distribution includes tests, examples and documentation.

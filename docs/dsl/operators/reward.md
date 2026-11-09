@@ -16,9 +16,9 @@ parse. Nothing reads them.
 
 ## Velocity target
 
-None. `ops.rule_loss` raises `NotImplementedError`. `compile_phrase` rejects this operator before model loading; direct `model_train`
-raises the same error before the training loop if any rule has this
-op. `loss_game` / `game` raise `GameError` and do not step.
+None. `compile_phrase` and `model_train` reject this operator during
+preflight, before model execution. Direct `ops.rule_loss` raises
+`NotImplementedError`. `loss_game` / `game` raise `GameError` and do not step.
 
 There is no scorer, no default guidance, and no 2-D number.
 

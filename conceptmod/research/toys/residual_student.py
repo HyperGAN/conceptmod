@@ -1,6 +1,6 @@
 """Slow→fast residual student on same-seed both-land pairs.
 
-Composes with :mod:`conceptmod.toys.shared_trajectory`. The arcs, the pairing
+Composes with :mod:`conceptmod.research.toys.shared_trajectory`. The arcs, the pairing
 index, and the locked_shared pins live there. This module does not restate
 them.
 

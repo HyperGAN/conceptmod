@@ -14,11 +14,11 @@ even when the residual itself is fine. The other smile failure this
 gate encodes: the poles may move the concept (expression), and scale 0
 can still be the right person, while scale ``0.5`` swaps in a stranger.
 Identity is the content retain axis from
-:func:`conceptmod.toys.cover_leftover.hold_dir`. Teacher poles go
-through :func:`conceptmod.toys.cover_leftover.faithful_guard_e` so
+:func:`conceptmod.research.toys.cover_leftover.hold_dir`. Teacher poles go
+through :func:`conceptmod.research.toys.cover_leftover.faithful_guard_e` so
 leftover ê is not part of the concept. Pole motions, when both poles
 were evaluated, are summarized with
-:func:`conceptmod.toys.cover_leftover.leftover_bipolar`.
+:func:`conceptmod.research.toys.cover_leftover.leftover_bipolar`.
 
 Locked shape
 ------------
@@ -67,7 +67,7 @@ from torch import nn
 from particlegan.grad_regularizers import GradientPenalty
 from particlegan import GANLoss
 
-from conceptmod.toys.cover_leftover import (
+from conceptmod.research.toys.cover_leftover import (
     LOCKED_COVER,
     LeftoverField,
     faithful_guard_e,

@@ -6,7 +6,7 @@ wiring, not a geometry win and not a Music or Anima GPU transfer.
 
 CPU toy. Tail the same lines with::
 
-    python -m conceptmod.toys.dsl_macro_expand
+    python -m conceptmod.research.toys.dsl_macro_expand
 """
 
 from __future__ import annotations
@@ -16,7 +16,7 @@ from dataclasses import replace
 import pytest
 
 from conceptmod import dsl
-from conceptmod.toys.dsl_macro_expand import (
+from conceptmod.research.toys.dsl_macro_expand import (
     DOCUMENTED_LAMBDA,
     FORBIDDEN_GEOMETRIC,
     GEOMETRIC_VERDICT,
@@ -37,7 +37,7 @@ from conceptmod.toys.dsl_macro_expand import (
     run_arm,
     run_board,
 )
-from conceptmod.toys.leaderboard_honesty import HonestyError as BoardHonestyError
+from conceptmod.research.toys.leaderboard_honesty import HonestyError as BoardHonestyError
 
 
 def _reports():
@@ -250,7 +250,7 @@ def test_first_cell_must_be_the_documented_expand():
 
 def test_two_pole_claim_pass_stays_closed():
     """This toy does not extend claim_pass. The two-pole gate still refuses it."""
-    from conceptmod.toys.leaderboard_honesty import CellResult, claim_pass
+    from conceptmod.research.toys.leaderboard_honesty import CellResult, claim_pass
 
     winner = CellResult(
         name="locked_shared",

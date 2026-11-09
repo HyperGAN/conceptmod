@@ -1,6 +1,6 @@
 """2-D scores for phrase-DSL *jobs* (recipes vs first-class ops).
 
-The erase/GEM suite in :mod:`conceptmod.analysis_2d` asks whether each
+The erase/GEM suite in :mod:`conceptmod.research.analysis_2d` asks whether each
 *method* moves the target axis. This module asks a different question:
 which useful geometric jobs can a user already state, and which would
 need a new operator?
@@ -10,7 +10,7 @@ Every job here goes through live :func:`conceptmod.ops.rule_loss`. No
 not expressible (the fixture has no renderer). ``;`` stays unimplemented.
 
 Keep/leak flags and the adv stamp come from the 2-D suite, which reads
-them from ``conceptmod.toys`` (locked_shared defaults, cover leftover
+them from ``conceptmod.research.toys`` (locked_shared defaults, cover leftover
 thresholds). This module does not restate that recipe.
 """
 
@@ -18,7 +18,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from conceptmod.analysis_2d import (
+from conceptmod.research.analysis_2d import (
     COLOR,
     COLOR_OPP,
     DEFAULT_LR,
@@ -169,7 +169,7 @@ def run_jobs(steps: int = DEFAULT_STEPS, lr: float = DEFAULT_LR,
 
 # Reuse the 2-D plotters by temporarily registering titles/colors.
 def write_job_artifacts(results: list[MethodResult], out: Path = DEFAULT_OUT) -> dict[str, Path]:
-    from conceptmod import analysis_2d as a2
+    from conceptmod.research import analysis_2d as a2
 
     out = Path(out)
     out.mkdir(parents=True, exist_ok=True)

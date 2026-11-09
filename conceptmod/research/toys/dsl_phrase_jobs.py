@@ -1,18 +1,18 @@
 """Phrase-DSL job honesty on the CPU 2-D field.
 
 Geometric ``right`` from ``docs/dsl.md`` is the job verdict. The live
-runners are :func:`conceptmod.analysis_dsl.run_job` and
-:func:`conceptmod.analysis_2d.run_method`. Formulation PASS is honesty
+runners are :func:`conceptmod.research.analysis_dsl.run_job` and
+:func:`conceptmod.research.analysis_2d.run_method`. Formulation PASS is honesty
 that the phrase is that documented job. A first-class ``+``, ``!!``, or
 ``/`` synonym, ``%`` used as isolate, a keep+erase row that dropped
 ``k#k``, and dead ``^`` / ``;`` claimed as right all FAIL.
 
-The adv stamp is :func:`conceptmod.toys.locked_adv_defaults`. Keep gates
+The adv stamp is :func:`conceptmod.research.toys.locked_adv_defaults`. Keep gates
 are ``U_KEPT_MIN`` and ``SAME_DIR_MAX`` from the cover / leftover toy,
 read by the 2-D suite. This module does not invent a second recipe, does
 not vendor ParticleGAN primitives, and does not add synonym operators.
 
-``claim_phrase_pass`` follows :func:`conceptmod.toys.claim_pass`: an
+``claim_phrase_pass`` follows :func:`conceptmod.research.toys.claim_pass`: an
 empty negative list raises :class:`HonestyError`. ``claim_pass`` itself
 stays the two-pole gate; this module does not loosen it.
 
@@ -20,7 +20,7 @@ A PASS is a CPU toy. It is not a Music, Anima, or Supra GPU transfer.
 
 Tail the log with::
 
-    python -m conceptmod.toys.dsl_phrase_jobs
+    python -m conceptmod.research.toys.dsl_phrase_jobs
 """
 
 from __future__ import annotations
@@ -28,8 +28,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from conceptmod import dsl, ops
-from conceptmod.toys.cover_leftover import SAME_DIR_MAX, U_KEPT_MIN
-from conceptmod.toys.leaderboard_honesty import HonestyError
+from conceptmod.research.toys.cover_leftover import SAME_DIR_MAX, U_KEPT_MIN
+from conceptmod.research.toys.leaderboard_honesty import HonestyError
 
 TOY_ID = "dsl_phrase_jobs"
 
@@ -100,7 +100,7 @@ class Row:
 
 
 def _names():
-    from conceptmod.analysis_2d import COLOR, COLOR_OPP, KEEP
+    from conceptmod.research.analysis_2d import COLOR, COLOR_OPP, KEEP
 
     return COLOR, COLOR_OPP, KEEP
 
@@ -164,13 +164,13 @@ def dead_glyph(phrase: str) -> str | None:
 
 
 def _stamp() -> dict:
-    from conceptmod.toys import locked_adv_defaults
+    from conceptmod.research.toys import locked_adv_defaults
 
     return locked_adv_defaults()
 
 
 def _budget() -> tuple[int, float, int]:
-    from conceptmod.analysis_2d import DEFAULT_LR, DEFAULT_SEED, DEFAULT_STEPS
+    from conceptmod.research.analysis_2d import DEFAULT_LR, DEFAULT_SEED, DEFAULT_STEPS
 
     return DEFAULT_STEPS, DEFAULT_LR, DEFAULT_SEED
 
@@ -210,7 +210,7 @@ def _blank(arm: Arm, *, reasons: tuple[str, ...], detail: str,
 
 
 def _from_result(arm: Arm, result, *, reasons: list[str], detail: str) -> Row:
-    from conceptmod.analysis_2d import COLOR, COLOR_OPP, KEEP
+    from conceptmod.research.analysis_2d import COLOR, COLOR_OPP, KEEP
 
     stamp = _stamp()
     adv_ok = result.adv == stamp
@@ -244,8 +244,8 @@ def _from_result(arm: Arm, result, *, reasons: list[str], detail: str) -> Row:
 
 
 def _train(kind: str, name: str, phrase: str, cache: dict):
-    from conceptmod.analysis_2d import run_method
-    from conceptmod.analysis_dsl import run_job
+    from conceptmod.research.analysis_2d import run_method
+    from conceptmod.research.analysis_dsl import run_job
 
     steps, lr, seed = _budget()
     key = (kind, name, phrase, steps, seed)
@@ -270,8 +270,8 @@ def _suite_for(job: str) -> tuple[str, str]:
 
 
 def _refuse_dead(arm: Arm, glyph: str) -> Row:
-    from conceptmod.analysis_2d import TwoAxisBackend
-    from conceptmod.analysis_dsl import dead_ops
+    from conceptmod.research.analysis_2d import TwoAxisBackend
+    from conceptmod.research.analysis_dsl import dead_ops
 
     dead = dead_ops()
     if glyph not in dead:

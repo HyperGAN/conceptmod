@@ -6,7 +6,7 @@ the 2D locked recipe is supposed to survive: ``b_cap``, demo cover,
 transfer has no 3D-only hacks. This toy is that transfer, closed form.
 
 The 2D recipe is the guarded odd residual of
-:class:`conceptmod.toys.cover_leftover.LeftoverField` (slider along û,
+:class:`conceptmod.research.toys.cover_leftover.LeftoverField` (slider along û,
 content along ĉ, unused ê stripped by ``faithful_guard_e``). On the
 coordinate plane that vector is already the ambient paste
 ``(slider, content, 0, 0)``, and the cover gates pass.
@@ -29,7 +29,7 @@ and a κ-hardcoded cap fail while the lifted geometry still holds.
 One scored step. No train budget. A PASS is a CPU toy. It is not a Music
 or Anima GPU transfer.
 
-Tail the board with ``python -m conceptmod.toys.field_lift``.
+Tail the board with ``python -m conceptmod.research.toys.field_lift``.
 """
 
 from __future__ import annotations
@@ -45,7 +45,7 @@ import torch.nn as nn
 from particlegan.grad_regularizers import GradientPenalty
 from particlegan import GANLoss
 
-from conceptmod.toys.cover_leftover import (
+from conceptmod.research.toys.cover_leftover import (
     CONTENT_KEPT_MIN,
     LEAK_RATIO_MAX,
     LeftoverField,
@@ -55,7 +55,7 @@ from conceptmod.toys.cover_leftover import (
     faithful_guard_e,
     leftover_bipolar,
 )
-from conceptmod.toys.locked_shared_floor import (
+from conceptmod.research.toys.locked_shared_floor import (
     COVER_WEIGHT,
     FM_WEIGHT,
     N_PARTICLES,

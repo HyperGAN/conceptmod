@@ -3,7 +3,7 @@
 Music Arm B (particle-sliders ``train_lm_slider_music3.ARM_B``,
 ``docs/music-arm-b-gates.md``) builds a fresh ``--adv_arch mlp`` head.
 This port does not. The host critic is the frozen linear scorer below.
-``conceptmod.toys.mlp.SimpleMLPDiscriminator`` is the ring critic, and
+``conceptmod.research.toys.mlp.SimpleMLPDiscriminator`` is the ring critic, and
 swapping it in is refused before any step.
 
 Locked shape, same stamp as ``locked_baseline_defaults.LOCKED`` / the
@@ -20,7 +20,7 @@ The critic is not stepped. ``b_cap`` is still the real module, measured
 on the frozen host. A PASS is a CPU toy. It is not a Music or Anima GPU
 transfer.
 
-Tail the board with ``python -m conceptmod.toys.keep_critic``.
+Tail the board with ``python -m conceptmod.research.toys.keep_critic``.
 """
 
 from __future__ import annotations
@@ -170,12 +170,12 @@ def _aligned(real_logits: torch.Tensor, fake_logits: torch.Tensor, pairing: str)
 
 def _refuse_mlp_swap() -> None:
     """Name the ring critic, then stop. Do not construct it and do not train."""
-    from conceptmod.toys import mlp as ring
+    from conceptmod.research.toys import mlp as ring
 
     refused = ring.SimpleMLPDiscriminator.__name__
     raise KeepCriticError(
         "forced mlp critic swap refused: host critic stays frozen "
-        f"(conceptmod.toys.mlp.{refused} is the ring critic, not this lock). "
+        f"(conceptmod.research.toys.mlp.{refused} is the ring critic, not this lock). "
         "Music Arm B --adv_arch mlp is a different head."
     )
 

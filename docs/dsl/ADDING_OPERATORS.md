@@ -3,7 +3,7 @@
 A new glyph is a parser arm plus a `rule_loss` branch plus a catalog
 page plus a 2-D row. It is not a new adversarial recipe. Pairing,
 `b_cap`, feature matching, cover, and the particle cloud stay in
-`conceptmod.toys` (`locked_adv_defaults`, `reject_unlocked`). Call
+`conceptmod.research.toys` (`locked_adv_defaults`, `reject_unlocked`). Call
 those. Do not copy `GANLoss` or `GradRegularizer` into conceptmod, and
 do not retune κ, FM, or the demo cover inside the op.
 
@@ -32,9 +32,9 @@ missing `render`, not a missing parser arm.
 | `docs/dsl/operators/<name>.md` | Syntax, velocity target, defaults, composition, 2-D verdict, failure modes, a snippet that calls the live parser. |
 | `docs/dsl/operators/index.md` | One row. If the op cannot run on `TwoAxisBackend`, say so. |
 | `docs/dsl.md` | One scoreboard row after you have actually run the 2-D fixture. `right` / `needs help` / `recipe` / `dead`. Do not write the verdict first. |
-| `conceptmod/game.py` | Only if the new op can run on `TwoAxisBackend`. If it cannot, refuse it in `loss_game` the way `^` and `;` are refused. Do not stub a fake loss. |
+| `conceptmod/research/game.py` | Only if the new op can run on `TwoAxisBackend`. If it cannot, refuse it in `loss_game` the way `^` and `;` are refused. Do not stub a fake loss. |
 
-`conceptmod/toys/` is not in this list. A loss op does not get its
+`conceptmod/research/toys/` is not in this list. A loss op does not get its
 own `gan_mode`, κ, or cover weight.
 
 ## Checklist
@@ -44,7 +44,7 @@ own `gan_mode`, κ, or cover weight.
 2. Implement `rule_loss` with the frozen/trained velocity notation
    already used in `ops.py` (`v_f` / `v_t`, CFG as `v(p) − v("")`).
 3. If the 2-D fixture can express it, add a job in
-   `conceptmod/analysis_dsl.py` that goes through `rule_loss` and
+   `conceptmod/research/analysis_dsl.py` that goes through `rule_loss` and
    extend [dsl.md](../dsl.md) from the run. If it cannot, say **dead
    here** and why (missing `render`, missing scorer, uncond embedding
    is zero). Do not invent a probe that hides the gap.
@@ -66,7 +66,7 @@ GPU proofs (SANA, Z-Image, Anima, Krea) are a separate run. A green
 - `reject_unlocked` — stranger pairing, FM-on, and thinned `b_cap`
   are already refused when a game claims locked. Do not re-encode
   those checks inside the op.
-- Erase variants GEM / EA — `conceptmod/ops_erase.py`. They are not
+- Erase variants GEM / EA — `conceptmod/research/ops_erase.py`. They are not
   phrase glyphs. Wiring a new erase mode means extending that hook
   and the 2-D method list, not a new token, and still not a new adv
   stamp.

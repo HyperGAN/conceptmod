@@ -9,7 +9,7 @@ from __future__ import annotations
 import pytest
 
 from conceptmod import dsl, ops
-from conceptmod.analysis_2d import (
+from conceptmod.research.analysis_2d import (
     COLOR,
     COLOR_OPP,
     KEEP,
@@ -18,7 +18,7 @@ from conceptmod.analysis_2d import (
     _probe_zt,
     plane_points,
 )
-from conceptmod.analysis_dsl import dead_ops, run_job, run_jobs
+from conceptmod.research.analysis_dsl import dead_ops, run_job, run_jobs
 from conceptmod.providers import BackendRegistry
 
 

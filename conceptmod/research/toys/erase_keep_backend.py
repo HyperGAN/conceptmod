@@ -1,6 +1,6 @@
 """Backend-agnostic erase/keep geometry on a host latent.
 
-DSL erase/keep is scored by :func:`conceptmod.ops_erase.erase_keep_geometry`,
+DSL erase/keep is scored by :func:`conceptmod.research.ops_erase.erase_keep_geometry`,
 which calls ``hold_dir``, ``faithful_guard_e``, and ``leftover_bipolar``.
 Those helpers are the cover / leftover source of truth. This module does
 not restate their thresholds and does not train the 800-step cover GAN.
@@ -32,8 +32,8 @@ from __future__ import annotations
 
 import torch
 
-from conceptmod import ops_erase
-from conceptmod.toys.cover_leftover import (
+from conceptmod.research import ops_erase
+from conceptmod.research.toys.cover_leftover import (
     LEAK_RATIO_MAX,
     LOCKED_COVER,
     LOCKED_TEACHER,

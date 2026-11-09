@@ -3,7 +3,7 @@
 The phrase is the student's concept objective (:func:`conceptmod.ops.rule_loss`).
 The critic is the locked_shared adversary: ``particlegan`` ``GANLoss`` in
 RpGAN logistic mode, plus ``GradRegularizer`` ``b_cap``. The stamp is
-:func:`conceptmod.toys.locked_adv_defaults`. This module does not restate
+:func:`conceptmod.research.toys.locked_adv_defaults`. This module does not restate
 that recipe and does not sample the toys' particle cloud.
 
 A formulation ``PASS`` means the step used that wiring. It is not a 2-D
@@ -33,7 +33,7 @@ from particlegan.gan_loss import GANLoss
 from particlegan.grad_regularizers import GradientPenalty as GradRegularizer
 
 from conceptmod import dsl, ops
-from conceptmod.analysis_2d import (
+from conceptmod.research.analysis_2d import (
     DEFAULT_LR,
     DEFAULT_SEED,
     PROBE_PROMPTS,
@@ -42,8 +42,8 @@ from conceptmod.analysis_2d import (
     _probe_zt,
     snapshot,
 )
-from conceptmod import toys
-from conceptmod.toys.locked_shared_floor import LOCKED, feature_match
+from conceptmod.research import toys
+from conceptmod.research.toys.locked_shared_floor import LOCKED, feature_match
 
 
 NOT_A_TRANSFER = (
@@ -210,7 +210,7 @@ def _parse_float(text: str, name: str) -> float:
 def _refuse_locked_drift(*, pairing: str, fm_weight: float, kappa: float, stamp: dict) -> None:
     """Refuse stranger / FM-on / thinned kappa when the caller claims locked.
 
-    FM and kappa go through :func:`conceptmod.toys.reject_unlocked` so the
+    FM and kappa go through :func:`conceptmod.research.toys.reject_unlocked` so the
     wording stays the formulation toy's. Stranger pairing here is the
     flipped relativistic batch (``GANLoss`` stays ``mode='rp'``), which
     that helper expresses as a ``gan_mode`` drift — so the pairing check

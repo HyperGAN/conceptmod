@@ -10,7 +10,7 @@ The curve is the whole toy. It does not run Adam, and it does not retune
 the locked_shared adv stamp (RpGAN logistic, ``b_cap`` coeff=1 kappa=1,
 FM off, demo cover 1.5, n=12, ``particle_l2=0.02``).
 
-``claim_selection_pass`` follows :func:`conceptmod.toys.leaderboard_honesty.claim_pass`:
+``claim_selection_pass`` follows :func:`conceptmod.research.toys.leaderboard_honesty.claim_pass`:
 an empty negative list raises :class:`HonestyError`, and a won flag that
 disagrees with the export is a dishonest board. ``claim_pass`` itself stays
 the two-pole gate; this module does not loosen it.
@@ -19,14 +19,14 @@ CPU only. A PASS here does not transfer to Music or Anima.
 
 Tail the log with::
 
-    python -m conceptmod.toys.late_collapse
+    python -m conceptmod.research.toys.late_collapse
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass
 
-from conceptmod.toys.leaderboard_honesty import LOCKED_SHARED, HonestyError
+from conceptmod.research.toys.leaderboard_honesty import LOCKED_SHARED, HonestyError
 
 TOY_ID = "late_collapse_selection"
 VAL_GATE_MAX = 0.25

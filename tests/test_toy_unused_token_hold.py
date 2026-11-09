@@ -11,7 +11,7 @@ import pytest
 import torch
 
 from particlegan.grad_regularizers import GradientPenalty
-from conceptmod.toys import unused_token_hold as hold
+from conceptmod.research.toys import unused_token_hold as hold
 
 
 @pytest.fixture(autouse=True)

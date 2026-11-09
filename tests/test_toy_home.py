@@ -11,7 +11,7 @@ import ast
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-TOY_DIR = ROOT / "conceptmod" / "toys"
+TOY_DIR = ROOT / "conceptmod" / "research" / "toys"
 TEST_DIR = ROOT / "tests"
 
 # Submodules and names that are core primitives, not gates.

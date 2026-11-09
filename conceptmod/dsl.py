@@ -33,7 +33,7 @@ Options hang off a rule with ``:``. A bare float is the alpha multiplier.
 ``{random_prompt}`` is filled per step by :func:`materialize`.
 
 This module does not choose an adversarial recipe. A phrase becomes a
-GAN game through :func:`conceptmod.game.loss_game`, which reads
+GAN game through :func:`conceptmod.research.game.loss_game`, which reads
 ``locked_adv_defaults()`` and does not restate it.
 
 Status: the glyphs above are the live parser. ``;`` is not a loss.

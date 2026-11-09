@@ -6,15 +6,15 @@ The val gate does not.
 
 CPU toy. No Music or Anima GPU claim. Tail the same lines with::
 
-    python -m conceptmod.toys.late_collapse
+    python -m conceptmod.research.toys.late_collapse
 """
 
 from __future__ import annotations
 
 import pytest
 
-from conceptmod.toys.leaderboard_honesty import HonestyError as BoardHonestyError
-from conceptmod.toys.late_collapse import (
+from conceptmod.research.toys.leaderboard_honesty import HonestyError as BoardHonestyError
+from conceptmod.research.toys.late_collapse import (
     GOOD_STEP,
     LATE_STEP,
     TOY_ID,
@@ -277,7 +277,7 @@ def test_claim_rejects_a_negative_that_missed_the_collapse():
 
 def test_two_pole_claim_pass_stays_closed():
     """This toy does not extend claim_pass. The two-pole gate still refuses it."""
-    from conceptmod.toys.leaderboard_honesty import CellResult, claim_pass
+    from conceptmod.research.toys.leaderboard_honesty import CellResult, claim_pass
 
     winner = CellResult(
         name="locked_shared",

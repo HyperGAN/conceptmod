@@ -73,7 +73,8 @@ exact continuation. Weights are raw current weights; weight EMA is disabled.
 ## Research and tools
 
 - [DSL catalogue](docs/dsl/README.md) and [2-D analysis](docs/2d-analysis.md).
-- [Formulation toys](docs/formulation-toys.md), isolated from core runtime imports.
+- [Formulation toys](docs/formulation-toys.md) under `conceptmod.research.toys`,
+  isolated from core runtime imports.
 - [Particle LoRA tensor integration](docs/particle-lora.md), using the official
   ParticleGAN trainer and optimizer formulas.
 - [Model-format converters](https://github.com/HyperGAN/conceptmod-converters).

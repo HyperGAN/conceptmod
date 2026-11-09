@@ -22,7 +22,7 @@ geometric ``right``, and inventing a live ``replace`` loss instead of
 expanding.
 
 ``claim_expand_pass`` follows
-:func:`conceptmod.toys.leaderboard_honesty.claim_pass`: an empty
+:func:`conceptmod.research.toys.leaderboard_honesty.claim_pass`: an empty
 negative list raises :class:`HonestyError`. ``claim_pass`` itself stays
 the two-pole gate; this module does not loosen it.
 
@@ -31,7 +31,7 @@ locked_shared game wiring). It is not a Music or Anima GPU transfer.
 
 Tail the log with::
 
-    python -m conceptmod.toys.dsl_macro_expand
+    python -m conceptmod.research.toys.dsl_macro_expand
 """
 
 from __future__ import annotations
@@ -39,7 +39,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from conceptmod import dsl
-from conceptmod.toys.leaderboard_honesty import HonestyError
+from conceptmod.research.toys.leaderboard_honesty import HonestyError
 
 TOY_ID = "dsl_macro_expand"
 
@@ -406,7 +406,7 @@ def game_wiring_row(phrase: str = PHRASE) -> dict:
     The formulation verdict on that step is wiring. The geometric verdict
     stays ``recipe``. This row does not claim ``right``.
     """
-    from conceptmod.game import NOT_A_TRANSFER, loss_game
+    from conceptmod.research.game import NOT_A_TRANSFER, loss_game
 
     match = loss_game(phrase)
     devices = {param.device.type for param in match.backend.trainable_parameters()}

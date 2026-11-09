@@ -18,7 +18,7 @@ claim locked
 ## What one score call checks
 
 ```python
-from conceptmod.game import game
+from conceptmod.research.game import game
 
 match = game("""
 phrase red=blue

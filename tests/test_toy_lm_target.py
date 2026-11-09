@@ -9,8 +9,8 @@ import inspect
 import pytest
 import torch
 
-from conceptmod.toys import locked_adv_defaults
-from conceptmod.toys import lm_target as lm
+from conceptmod.research.toys import locked_adv_defaults
+from conceptmod.research.toys import lm_target as lm
 
 
 @pytest.fixture(autouse=True)
@@ -144,7 +144,7 @@ def test_module_does_not_import_anima_or_particlegan_toys():
         "torch",
         "torch.nn.functional",
         "torch",
-        "conceptmod.toys.locked_shared_floor",
+        "conceptmod.research.toys.locked_shared_floor",
     ]
     blob = " ".join(third_party)
     assert "particlegan" not in blob

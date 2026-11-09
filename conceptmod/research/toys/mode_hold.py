@@ -25,7 +25,7 @@ Locked shape used here (formulation, not a new adv recipe):
   20k-particle table and not a 128-particle gmix.
 - critic stays ``SimpleMLPDiscriminator`` (the 100-Gaussians host shape).
   ParticleGAN's installable package does not export that MLP, so the class
-  lives in ``conceptmod.toys.mlp``. No architecture swap.
+  lives in ``conceptmod.research.toys.mlp``. No architecture swap.
 
 ``b_cap`` off (``f_none``) is the intentional drift. It is refused unless the
 caller passes an explicit drift report, and the diversity gate then FAILs.
@@ -46,7 +46,7 @@ from dataclasses import dataclass, fields, replace
 
 import torch
 
-from conceptmod.toys.mlp import SimpleMLPDiscriminator, SimpleMLPGenerator
+from conceptmod.research.toys.mlp import SimpleMLPDiscriminator, SimpleMLPGenerator
 from particlegan.grad_regularizers import GradientPenalty
 from particlegan import GANLoss, ParticlePrior, ParticleRegularizer
 

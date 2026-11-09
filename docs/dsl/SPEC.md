@@ -14,7 +14,7 @@ reject unknown keys. Do not document them as if `game()` accepted them.
 - The 2-D job scoreboard ([dsl.md](../dsl.md)): which jobs are already
   recipes, which glyphs are dead on `TwoAxisBackend`, and the
   geometric words `right` / `needs help` / `recipe`.
-- Compiling one phrase into a `Game` (`conceptmod/game.py`) whose
+- Compiling one phrase into a `Game` (`conceptmod/research/game.py`) whose
   student concept objective is those rules.
 
 ## What the formulation toys own

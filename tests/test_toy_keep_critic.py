@@ -14,7 +14,7 @@ import pytest
 
 from particlegan.grad_regularizers import GradientPenalty as GradRegularizer
 
-from conceptmod.toys.keep_critic import (
+from conceptmod.research.toys.keep_critic import (
     DEMO_COVER,
     HOST_ARCH,
     LOCKED,
@@ -26,7 +26,7 @@ from conceptmod.toys.keep_critic import (
     run_keep,
     score_keep,
 )
-from conceptmod.toys.mlp import SimpleMLPDiscriminator
+from conceptmod.research.toys.mlp import SimpleMLPDiscriminator
 
 
 def test_locked_shared_passes_with_frozen_host_critic():

@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import pytest
 
-from conceptmod.analysis_2d import (
+from conceptmod.research.analysis_2d import (
     COLOR,
     COLOR_OPP,
     KEEP,

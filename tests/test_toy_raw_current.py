@@ -5,7 +5,7 @@ These checks prove weight provenance, not the historical scientific outcomes.
 import pytest
 import torch
 
-from conceptmod.toys import cover_leftover, mode_hold
+from conceptmod.research.toys import cover_leftover, mode_hold
 
 
 def _record_updates(monkeypatch):

@@ -14,8 +14,8 @@ from __future__ import annotations
 
 import pytest
 
-from conceptmod.toys.leaderboard_honesty import HonestyError
-from conceptmod.toys.suite_leaderboard import (
+from conceptmod.research.toys.leaderboard_honesty import HonestyError
+from conceptmod.research.toys.suite_leaderboard import (
     KIND_DSL,
     KIND_STAMP,
     TOY_CATALOG,
@@ -33,7 +33,7 @@ from conceptmod.toys.suite_leaderboard import (
 
 
 # Core stamp columns: enough to decide the sweep without every long train toy.
-# Full matrix is ``python -m conceptmod.toys.suite_leaderboard``.
+# Full matrix is ``python -m conceptmod.research.toys.suite_leaderboard``.
 _CORE_TOYS = (
     "locked_shared_floor",
     "keep_critic",
@@ -111,7 +111,7 @@ def test_suite_has_no_opposite_claim_posture_cells(suite):
 
 def test_cover_posture_fork_remains_its_own_toy():
     """Smoke import only. Own-claim gates live in test_toy_cover_posture_fork."""
-    import conceptmod.toys.cover_posture_fork as fork
+    import conceptmod.research.toys.cover_posture_fork as fork
 
     assert callable(fork.run_board)
     assert fork.DEMO_CLAIM == "demo_1_5"
@@ -143,7 +143,7 @@ def test_format_matrix_mentions_no_gpu_transfer(suite):
     assert "locked_shared" in text
     assert "stamp_winners=locked_shared" in text
     assert "music_gpu_transfer=0" in text
-    assert "python -m conceptmod.toys.cover_posture_fork" in text
+    assert "python -m conceptmod.research.toys.cover_posture_fork" in text
     assert "posture_demo_pass" not in text
     assert "posture_music_pass" not in text
     assert "posture_demo" not in text

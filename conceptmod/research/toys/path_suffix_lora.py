@@ -32,7 +32,7 @@ to a fixed matrix and ``lora_B`` starts at 0, so only ``lora_B`` carries
 the signal. Any non-intended leaf at or above the floor (the bare head)
 zeroes coverage. An empty match raises :class:`EmptyTrainableError`.
 
-``python -m conceptmod.toys.path_suffix_lora`` prints one line per arm.
+``python -m conceptmod.research.toys.path_suffix_lora`` prints one line per arm.
 A PASS here is not an Anima GPU transfer.
 """
 

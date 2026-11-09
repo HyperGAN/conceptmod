@@ -9,8 +9,8 @@ from __future__ import annotations
 import pytest
 import torch
 
-from conceptmod.toys import mid_scale_identity as toy
-from conceptmod.toys.cover_leftover import LeftoverField
+from conceptmod.research.toys import mid_scale_identity as toy
+from conceptmod.research.toys.cover_leftover import LeftoverField
 
 
 @pytest.fixture(autouse=True)

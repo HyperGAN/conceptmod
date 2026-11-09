@@ -9,8 +9,9 @@ from __future__ import annotations
 import pytest
 import torch
 
-from conceptmod import dsl, ops, toys
-from conceptmod.game import (
+from conceptmod import dsl, ops
+from conceptmod.research import toys
+from conceptmod.research.game import (
     NOT_A_TRANSFER,
     GameError,
     LockedClaimError,
@@ -19,7 +20,7 @@ from conceptmod.game import (
     loss_game,
     parse_game,
 )
-from conceptmod.toys.locked_shared_floor import feature_match as floor_feature_match
+from conceptmod.research.toys.locked_shared_floor import feature_match as floor_feature_match
 from particlegan.gan_loss import GANLoss
 from particlegan.grad_regularizers import GradientPenalty as GradRegularizer
 

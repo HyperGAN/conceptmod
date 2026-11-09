@@ -31,36 +31,36 @@ Late-collapse selection is a later local gate (Lunar #23). Keep-critic is a new 
 
 | family | module | ParticleGAN source |
 |---|---|---|
-| shared slow→fast vs stranger | `conceptmod/toys/shared_trajectory.py` | [#26](https://github.com/255BITS/ParticleGAN/pull/26) (merged by mistake, being reverted; kept here) |
-| slow→fast residual student | `conceptmod/toys/residual_student.py` | this tree; composes with shared_trajectory |
-| orbit radius hold | `conceptmod/toys/orbit_hold.py` | [#27](https://github.com/255BITS/ParticleGAN/pull/27) (merged by mistake, being reverted; kept here) |
-| locked_shared RpGAN + `b_cap` floor | `conceptmod/toys/locked_shared_floor.py` | [#28](https://github.com/255BITS/ParticleGAN/pull/28) |
-| unipolar residual | `conceptmod/toys/unipolar.py` | [#29](https://github.com/255BITS/ParticleGAN/pull/29) |
-| AE-GAN + locked hold | `conceptmod/toys/ae_gan_hold.py` | [#30](https://github.com/255BITS/ParticleGAN/pull/30) |
-| cover / leftover / faithful teacher | `conceptmod/toys/cover_leftover.py` | [#31](https://github.com/255BITS/ParticleGAN/pull/31) |
-| backend-agnostic erase/keep | `conceptmod/toys/erase_keep_backend.py` | this repo (cpu/dummy path; not a ParticleGAN port) |
-| leaderboard honesty | `conceptmod/toys/leaderboard_honesty.py` | [#32](https://github.com/255BITS/ParticleGAN/pull/32) |
-| tiny particle posture | `conceptmod/toys/particle_posture.py` | [#33](https://github.com/255BITS/ParticleGAN/pull/33) |
-| mode-hold ring | `conceptmod/toys/mode_hold.py` | [#34](https://github.com/255BITS/ParticleGAN/pull/34) |
-| late-collapse selection | `conceptmod/toys/late_collapse.py` | local (Lunar #23); not a ParticleGAN pull |
-| keep-critic locked_shared | `conceptmod/toys/keep_critic.py` | new. Music Arm B handoff keeps `--adv_arch mlp`; this row freezes the host critic and refuses that swap |
-| image UNI lm_target | `conceptmod/toys/lm_target.py` | conceptmod (Anima image UNI; not a ParticleGAN pull) |
-| 2D→3D field lift | `conceptmod/toys/field_lift.py` | particle-sliders `tests/test_field3d.py` (reviewed; not a ParticleGAN pull) |
-| unused-token / UNI hold | `conceptmod/toys/unused_token_hold.py` | conceptmod (image-slider posture; not a ParticleGAN pull) |
-| path-suffix LoRA | `conceptmod/toys/path_suffix_lora.py` | native CPU gate (Anima attach / PEFT suffix match) |
-| mid-scale identity hold | `conceptmod/toys/mid_scale_identity.py` | conceptmod (Anima smile mid-scale; eval grid always includes −1) |
-| cover posture fork | `conceptmod/toys/cover_posture_fork.py` | this tree (composes the locked floor with the two cover pins; not a ParticleGAN port) |
-| replace-macro expand honesty | `conceptmod/toys/dsl_macro_expand.py` | this tree (phrase DSL `~`; not a ParticleGAN port) |
-| phrase DSL jobs | `conceptmod/toys/dsl_phrase_jobs.py` | this tree (`docs/dsl.md` scoreboard; not a ParticleGAN port) |
-| DSL game geometry | `conceptmod/toys/dsl_game_geometry.py` | this tree (locked `loss_game` step and geometric `right`; not a ParticleGAN port) |
-| cross-toy suite leaderboard | `conceptmod/toys/suite_leaderboard.py` | this tree (stamp + DSL matrix; cover posture is its own toy, not `leaderboard_honesty`) |
+| shared slow→fast vs stranger | `conceptmod/research/toys/shared_trajectory.py` | [#26](https://github.com/255BITS/ParticleGAN/pull/26) (merged by mistake, being reverted; kept here) |
+| slow→fast residual student | `conceptmod/research/toys/residual_student.py` | this tree; composes with shared_trajectory |
+| orbit radius hold | `conceptmod/research/toys/orbit_hold.py` | [#27](https://github.com/255BITS/ParticleGAN/pull/27) (merged by mistake, being reverted; kept here) |
+| locked_shared RpGAN + `b_cap` floor | `conceptmod/research/toys/locked_shared_floor.py` | [#28](https://github.com/255BITS/ParticleGAN/pull/28) |
+| unipolar residual | `conceptmod/research/toys/unipolar.py` | [#29](https://github.com/255BITS/ParticleGAN/pull/29) |
+| AE-GAN + locked hold | `conceptmod/research/toys/ae_gan_hold.py` | [#30](https://github.com/255BITS/ParticleGAN/pull/30) |
+| cover / leftover / faithful teacher | `conceptmod/research/toys/cover_leftover.py` | [#31](https://github.com/255BITS/ParticleGAN/pull/31) |
+| backend-agnostic erase/keep | `conceptmod/research/toys/erase_keep_backend.py` | this repo (cpu/dummy path; not a ParticleGAN port) |
+| leaderboard honesty | `conceptmod/research/toys/leaderboard_honesty.py` | [#32](https://github.com/255BITS/ParticleGAN/pull/32) |
+| tiny particle posture | `conceptmod/research/toys/particle_posture.py` | [#33](https://github.com/255BITS/ParticleGAN/pull/33) |
+| mode-hold ring | `conceptmod/research/toys/mode_hold.py` | [#34](https://github.com/255BITS/ParticleGAN/pull/34) |
+| late-collapse selection | `conceptmod/research/toys/late_collapse.py` | local (Lunar #23); not a ParticleGAN pull |
+| keep-critic locked_shared | `conceptmod/research/toys/keep_critic.py` | new. Music Arm B handoff keeps `--adv_arch mlp`; this row freezes the host critic and refuses that swap |
+| image UNI lm_target | `conceptmod/research/toys/lm_target.py` | conceptmod (Anima image UNI; not a ParticleGAN pull) |
+| 2D→3D field lift | `conceptmod/research/toys/field_lift.py` | particle-sliders `tests/test_field3d.py` (reviewed; not a ParticleGAN pull) |
+| unused-token / UNI hold | `conceptmod/research/toys/unused_token_hold.py` | conceptmod (image-slider posture; not a ParticleGAN pull) |
+| path-suffix LoRA | `conceptmod/research/toys/path_suffix_lora.py` | native CPU gate (Anima attach / PEFT suffix match) |
+| mid-scale identity hold | `conceptmod/research/toys/mid_scale_identity.py` | conceptmod (Anima smile mid-scale; eval grid always includes −1) |
+| cover posture fork | `conceptmod/research/toys/cover_posture_fork.py` | this tree (composes the locked floor with the two cover pins; not a ParticleGAN port) |
+| replace-macro expand honesty | `conceptmod/research/toys/dsl_macro_expand.py` | this tree (phrase DSL `~`; not a ParticleGAN port) |
+| phrase DSL jobs | `conceptmod/research/toys/dsl_phrase_jobs.py` | this tree (`docs/dsl.md` scoreboard; not a ParticleGAN port) |
+| DSL game geometry | `conceptmod/research/toys/dsl_game_geometry.py` | this tree (locked `loss_game` step and geometric `right`; not a ParticleGAN port) |
+| cross-toy suite leaderboard | `conceptmod/research/toys/suite_leaderboard.py` | this tree (stamp + DSL matrix; cover posture is its own toy, not `leaderboard_honesty`) |
 
 Allowed `particlegan` imports are the primitives: `GANLoss`, `GradientPenalty`
 / `GradRegularizer`, `ParticlePrior`, `ParticleRegularizer`, and
 `get_recipe` (the AE-GAN study preset). This tree does not copy
 `GradRegularizer`. It also does not call `particlegan.orbit_hold`,
 `particlegan.leaderboard_honesty`, or any other toy that briefly lived in
-that repo. The ring critic is `conceptmod.toys.mlp` because the published
+that repo. The ring critic is `conceptmod.research.toys.mlp` because the published
 package does not export the 100-Gaussians MLP; that class is host critic
 shape, not a second penalty.
 
@@ -71,7 +71,7 @@ R³ leftover field), Music Arm B (`docs/music-arm-b-gates.md`, trainer
 `ARM_B`: `adv_arch=mlp`, cover/pole 1.0). Demo cover 1.5 and that Music pin
 are different postures; `"cover_weight=1"` is a substring of
 `"cover_weight=1.5"` and is not a match. This repo's
-`conceptmod/analysis_2d.py` is DSL geometry, a different fixture.
+`conceptmod/research/analysis_2d.py` is DSL geometry, a different fixture.
 Keep-critic does not adopt the Music `mlp` head.
 
 A PASS here is a CPU toy. It is **not** a Music or Anima GPU transfer.
@@ -83,14 +83,14 @@ keep a second copy of the adv recipe.
 
 | live path | what it calls |
 |---|---|
-| `conceptmod.analysis_2d` / `conceptmod.analysis_dsl` | `locked_adv_defaults()` — the `locked_shared_floor.LOCKED` stamp (RpGAN logistic, `b_cap` coeff=1 κ=1, FM off, demo cover 1.5, n=12). Keep/leak flags use `U_KEPT_MIN` and `SAME_DIR_MAX`. |
-| `conceptmod.game.loss_game` | The same `locked_adv_defaults()` stamp. FM-on and thinned κ go through `reject_unlocked` when the game claims locked. Stranger pairing (flipped batch, `GANLoss` mode stays `rp`) is refused on that claim. The game does not sample `n_particles` or apply cover. |
-| `conceptmod.toys.dsl_game_geometry` | Bridge gate. A row PASSes when that locked game step is clean and `analysis_2d.run_method` / `analysis_dsl.run_job` scores geometric `right` on the same phrase. A game PASS alone is not the gate. |
-| `conceptmod.ops_erase.erase_keep_geometry` | `hold_dir`, `faithful_guard_e`, and `leftover_bipolar` from the cover / leftover toy. |
-| `conceptmod.toys.erase_keep_backend` | That same helper, with axes read back from `CpuBackend` / `dummy` `predict_v` (and a supra-shaped latent stub). |
+| `conceptmod.research.analysis_2d` / `conceptmod.research.analysis_dsl` | `locked_adv_defaults()` — the `locked_shared_floor.LOCKED` stamp (RpGAN logistic, `b_cap` coeff=1 κ=1, FM off, demo cover 1.5, n=12). Keep/leak flags use `U_KEPT_MIN` and `SAME_DIR_MAX`. |
+| `conceptmod.research.game.loss_game` | The same `locked_adv_defaults()` stamp. FM-on and thinned κ go through `reject_unlocked` when the game claims locked. Stranger pairing (flipped batch, `GANLoss` mode stays `rp`) is refused on that claim. The game does not sample `n_particles` or apply cover. |
+| `conceptmod.research.toys.dsl_game_geometry` | Bridge gate. A row PASSes when that locked game step is clean and `analysis_2d.run_method` / `analysis_dsl.run_job` scores geometric `right` on the same phrase. A game PASS alone is not the gate. |
+| `conceptmod.research.ops_erase.erase_keep_geometry` | `hold_dir`, `faithful_guard_e`, and `leftover_bipolar` from the cover / leftover toy. |
+| `conceptmod.research.toys.erase_keep_backend` | That same helper, with axes read back from `CpuBackend` / `dummy` `predict_v` (and a supra-shaped latent stub). |
 | formulation `PASS` | `claim_pass`. An empty negative list raises `HonestyError`. Geometric verdicts stay `right` / `needs help` / `recipe` and are not a PASS. |
 | replace-macro expand | `dsl_macro_expand.claim_expand_pass`. `red~blue` PASS is the documented triple (exaggerate / write / orthogonal at 0.2 / 0.4 / −0.1). Geometric `right` on that phrase is a FAIL (`recipe`). An empty negative list raises `HonestyError`. |
-| `conceptmod.toys.dsl_phrase_jobs` | The same `locked_adv_defaults()` stamp and `U_KEPT_MIN` / `SAME_DIR_MAX` keep gates, via the 2-D job runners. `claim_phrase_pass` is phrase honesty (empty negatives raise). Geometric labels stay `right`. |
+| `conceptmod.research.toys.dsl_phrase_jobs` | The same `locked_adv_defaults()` stamp and `U_KEPT_MIN` / `SAME_DIR_MAX` keep gates, via the 2-D job runners. `claim_phrase_pass` is phrase honesty (empty negatives raise). Geometric labels stay `right`. |
 
 The 2-D Adam budget (40 steps, lr 8e-2) is fixture budget. It is not a new
 adv recipe, and it does not replace locked_shared as the winning default.
@@ -277,7 +277,7 @@ PASS requires the locked rule to export step 3 and every declared bad arm to exp
 ### Keep-critic (frozen host, no MLP swap)
 
 The host critic is a frozen linear scorer. It is not
-`conceptmod.toys.mlp.SimpleMLPDiscriminator`, and it is not stepped.
+`conceptmod.research.toys.mlp.SimpleMLPDiscriminator`, and it is not stepped.
 Music Arm B's `--adv_arch mlp` is refused before any step. Cover posture
 is on every row: demo **1.5** is the lock, Music pole/cover **1.0** fails
 this stamp. A PASS does not transfer to a Music or Anima GPU run.
@@ -402,7 +402,7 @@ Same locked_shared shape on every row: RpGAN logistic, `b_cap` coeff=1 κ=1 l2, 
 | fm_on | demo_1_5 | 1.5 | demo | — | 7.28e-4 | 0.233 | FAIL `fm_on` |
 | thinned_kappa | demo_1_5 | 1.5 | demo | — | 0 | 0.233 | FAIL `thinned_bcap` |
 
-The 0.233 alias gap is the generator-term split between cover 1.5 and cover 1.0 on this seed (the same split the locked-shared floor reports for `music_cover_1`). Music 1.0 still FAILs that floor, which claims the demo posture only. The Music label does not waive stranger pairing, FM-on, or a thinned kappa cap. This fork is its own toy (`python -m conceptmod.toys.cover_posture_fork`). The suite leaderboard does not add opposite-claim columns for it.
+The 0.233 alias gap is the generator-term split between cover 1.5 and cover 1.0 on this seed (the same split the locked-shared floor reports for `music_cover_1`). Music 1.0 still FAILs that floor, which claims the demo posture only. The Music label does not waive stranger pairing, FM-on, or a thinned kappa cap. This fork is its own toy (`python -m conceptmod.research.toys.cover_posture_fork`). The suite leaderboard does not add opposite-claim columns for it.
 
 ### Replace-macro expand honesty (`a~b` is a macro)
 
@@ -473,7 +473,7 @@ The geometry budget is the 2-D fixture: 40 Adam steps, lr 8e-2, seed 0. That bud
 
 ### Suite leaderboard (which config passes all applicable stamp toys?)
 
-Cross-toy matrix in `conceptmod/toys/suite_leaderboard.py`. Distinct from
+Cross-toy matrix in `conceptmod/research/toys/suite_leaderboard.py`. Distinct from
 `leaderboard_honesty` (single-toy two-pole gate). Candidate rows include
 `locked_shared` (demo LOCKED), `music_cover_1_0`, `stranger_pair`, `fm_on`,
 `thinned_kappa`, `vanilla_logistic`, and `hub128`. Columns are **stamp**
@@ -485,8 +485,8 @@ N/A for cover drifts). Claiming a sweep with no declared failing configs
 raises `HonestyError`.
 
 Cover posture is not a suite column. Demo cover 1.5 and Music cover 1.0
-are named claims on `conceptmod/toys/cover_posture_fork.py`
-(`python -m conceptmod.toys.cover_posture_fork`). That toy still PASSes a
+are named claims on `conceptmod/research/toys/cover_posture_fork.py`
+(`python -m conceptmod.research.toys.cover_posture_fork`). That toy still PASSes a
 row only on the posture it claims, and still FAILs a silent swap or the
 wrong pin. The suite does not score `locked_shared` under the Music claim,
 or `music_cover_1_0` under the demo claim, and then report those mismatches
@@ -528,31 +528,31 @@ pytest tests/test_toy_shared_trajectory.py \
 One family at a time, with a tailable log:
 
 ```bash
-python -m conceptmod.toys.shared_trajectory   # via the module's train(); see tests
-python -m conceptmod.toys.residual_student --family
-python -m conceptmod.toys.orbit_hold
-python -m conceptmod.toys.locked_shared_floor
-python -m conceptmod.toys.unipolar
-python -m conceptmod.toys.ae_gan_hold
-python -m conceptmod.toys.cover_leftover
-python -m conceptmod.toys.erase_keep_backend
-python -m conceptmod.toys.leaderboard_honesty
-python -m conceptmod.toys.particle_posture
-python -m conceptmod.toys.mode_hold
-python -m conceptmod.toys.late_collapse
-python -m conceptmod.toys.keep_critic
-python -m conceptmod.toys.lm_target
-python -m conceptmod.toys.field_lift
-python -m conceptmod.toys.unused_token_hold
-python -m conceptmod.toys.path_suffix_lora
-python -m conceptmod.toys.mid_scale_identity
-python -m conceptmod.toys.cover_posture_fork
-python -m conceptmod.toys.dsl_macro_expand
-python -m conceptmod.toys.dsl_phrase_jobs
-python -m conceptmod.toys.dsl_game_geometry
-python -m conceptmod.toys.suite_leaderboard
+python -m conceptmod.research.toys.shared_trajectory   # via the module's train(); see tests
+python -m conceptmod.research.toys.residual_student --family
+python -m conceptmod.research.toys.orbit_hold
+python -m conceptmod.research.toys.locked_shared_floor
+python -m conceptmod.research.toys.unipolar
+python -m conceptmod.research.toys.ae_gan_hold
+python -m conceptmod.research.toys.cover_leftover
+python -m conceptmod.research.toys.erase_keep_backend
+python -m conceptmod.research.toys.leaderboard_honesty
+python -m conceptmod.research.toys.particle_posture
+python -m conceptmod.research.toys.mode_hold
+python -m conceptmod.research.toys.late_collapse
+python -m conceptmod.research.toys.keep_critic
+python -m conceptmod.research.toys.lm_target
+python -m conceptmod.research.toys.field_lift
+python -m conceptmod.research.toys.unused_token_hold
+python -m conceptmod.research.toys.path_suffix_lora
+python -m conceptmod.research.toys.mid_scale_identity
+python -m conceptmod.research.toys.cover_posture_fork
+python -m conceptmod.research.toys.dsl_macro_expand
+python -m conceptmod.research.toys.dsl_phrase_jobs
+python -m conceptmod.research.toys.dsl_game_geometry
+python -m conceptmod.research.toys.suite_leaderboard
 ```
 
 `shared_trajectory` and `residual_student` are libraries (`train_locked` /
-`train_drift`). `python -m conceptmod.toys.residual_student --family` prints
+`train_drift`). `python -m conceptmod.research.toys.residual_student --family` prints
 the residual board. The others print a one-line board when run as `__main__`.

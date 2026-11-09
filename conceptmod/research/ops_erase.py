@@ -45,7 +45,7 @@ CLI hook (unwired on purpose; default remains ESD)::
     # cfg.erase_keep = args.erase_keep   # optional keep / anchor prompt
     #
     # ops.rule_loss ERASE branch:
-    #     from conceptmod.ops_erase import erase_loss
+    #     from conceptmod.research.ops_erase import erase_loss
     #     return erase_loss(rule, ctx)
 """
 

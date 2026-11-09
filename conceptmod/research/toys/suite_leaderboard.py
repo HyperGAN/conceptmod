@@ -2,7 +2,7 @@
 
 Answers: which adv config(s) PASS every applicable CPU toy?
 
-This is **not** :mod:`conceptmod.toys.leaderboard_honesty` (that module is the
+This is **not** :mod:`conceptmod.research.toys.leaderboard_honesty` (that module is the
 single-toy two-pole honesty gate). This module scores a small set of
 **candidate configs** across the formulation toy families and prints a
 config × toy matrix (PASS / FAIL / N/A).
@@ -16,8 +16,8 @@ Applicability
   recipe per config.
 
 Cover posture (demo cover 1.5 vs Music cover 1.0) is
-:mod:`conceptmod.toys.cover_posture_fork`, run on its own
-(``python -m conceptmod.toys.cover_posture_fork``). It is not a suite
+:mod:`conceptmod.research.toys.cover_posture_fork`, run on its own
+(``python -m conceptmod.research.toys.cover_posture_fork``). It is not a suite
 column. Scoring a candidate under the other claim checks config identity,
 not formulation quality, and is not reported here.
 
@@ -26,7 +26,7 @@ Anima / Supra GPU transfer.
 
 Run::
 
-    python -m conceptmod.toys.suite_leaderboard
+    python -m conceptmod.research.toys.suite_leaderboard
 """
 
 from __future__ import annotations
@@ -35,8 +35,8 @@ from dataclasses import dataclass, field, replace
 from functools import lru_cache
 from typing import Callable, Iterable, Mapping
 
-from conceptmod.toys.leaderboard_honesty import HonestyError
-from conceptmod.toys.locked_shared_floor import (
+from conceptmod.research.toys.leaderboard_honesty import HonestyError
+from conceptmod.research.toys.locked_shared_floor import (
     COVER_WEIGHT,
     FM_WEIGHT,
     LOCKED,
@@ -219,7 +219,7 @@ def score_locked_shared_floor(candidate: SuiteCandidate) -> SuiteCell:
 
 
 def score_keep_critic(candidate: SuiteCandidate) -> SuiteCell:
-    from conceptmod.toys import keep_critic as kc
+    from conceptmod.research.toys import keep_critic as kc
 
     toy = "keep_critic"
     cfg = replace(
@@ -244,7 +244,7 @@ def score_keep_critic(candidate: SuiteCandidate) -> SuiteCell:
 
 @lru_cache(maxsize=1)
 def _honesty_board():
-    from conceptmod.toys.leaderboard_honesty import demo_arms, run_honesty_board
+    from conceptmod.research.toys.leaderboard_honesty import demo_arms, run_honesty_board
 
     return run_honesty_board(demo_arms())
 
@@ -283,7 +283,7 @@ def score_leaderboard_honesty(candidate: SuiteCandidate) -> SuiteCell:
 
 @lru_cache(maxsize=1)
 def _shared_traj_board():
-    from conceptmod.toys import shared_trajectory as st
+    from conceptmod.research.toys import shared_trajectory as st
 
     locked = st.train_locked(echo=False)
     stranger = st.train_drift("stranger", echo=False)
@@ -318,7 +318,7 @@ def score_shared_trajectory(candidate: SuiteCandidate) -> SuiteCell:
 
 @lru_cache(maxsize=1)
 def _residual_board():
-    from conceptmod.toys import residual_student as rs
+    from conceptmod.research.toys import residual_student as rs
 
     return {row["pairing"]: row for row in rs.run_family(echo=False)}
 
@@ -347,7 +347,7 @@ def score_residual_student(candidate: SuiteCandidate) -> SuiteCell:
 
 
 def score_orbit_hold(candidate: SuiteCandidate) -> SuiteCell:
-    from conceptmod.toys.orbit_hold import (
+    from conceptmod.research.toys.orbit_hold import (
         HardcodedKappaBCap,
         evaluate,
         locked_recipe,
@@ -382,13 +382,13 @@ def score_orbit_hold(candidate: SuiteCandidate) -> SuiteCell:
 
 @lru_cache(maxsize=1)
 def _unipolar_locked():
-    from conceptmod.toys.unipolar import run_arm
+    from conceptmod.research.toys.unipolar import run_arm
 
     return run_arm("locked_rpgan", steps=400, seed=0)
 
 
 def score_unipolar(candidate: SuiteCandidate) -> SuiteCell:
-    from conceptmod.toys.unipolar import UnipolarRecipe, _refuse_unless_locked_adv
+    from conceptmod.research.toys.unipolar import UnipolarRecipe, _refuse_unless_locked_adv
 
     toy = "unipolar"
     if candidate.is_locked_shared():
@@ -430,13 +430,13 @@ def score_unipolar(candidate: SuiteCandidate) -> SuiteCell:
 
 @lru_cache(maxsize=1)
 def _ae_gan_locked():
-    from conceptmod.toys.ae_gan_hold import locked_config, train
+    from conceptmod.research.toys.ae_gan_hold import locked_config, train
 
     return train(locked_config())
 
 
 def score_ae_gan_hold(candidate: SuiteCandidate) -> SuiteCell:
-    from conceptmod.toys.ae_gan_hold import (
+    from conceptmod.research.toys.ae_gan_hold import (
         fm_on_config,
         shape_mismatches,
         stranger_config,
@@ -463,13 +463,13 @@ def score_ae_gan_hold(candidate: SuiteCandidate) -> SuiteCell:
 
 @lru_cache(maxsize=1)
 def _cover_leftover_locked():
-    from conceptmod.toys.cover_leftover import CoverRecipe, fit_cover_leftover
+    from conceptmod.research.toys.cover_leftover import CoverRecipe, fit_cover_leftover
 
     return fit_cover_leftover(CoverRecipe(arm="locked"))
 
 
 def score_cover_leftover(candidate: SuiteCandidate) -> SuiteCell:
-    from conceptmod.toys.cover_leftover import reject_unlocked
+    from conceptmod.research.toys.cover_leftover import reject_unlocked
 
     toy = "cover_leftover"
     if candidate.is_locked_shared():
@@ -502,7 +502,7 @@ def score_cover_leftover(candidate: SuiteCandidate) -> SuiteCell:
 
 @lru_cache(maxsize=1)
 def _erase_keep_locked_ok() -> bool:
-    from conceptmod.toys.erase_keep_backend import ARMS, score_backend
+    from conceptmod.research.toys.erase_keep_backend import ARMS, score_backend
     from conceptmod.testing.peft_backend import CpuBackend
 
     backend = CpuBackend(device="cpu", lora_rank=4, seed=0)
@@ -535,7 +535,7 @@ def score_erase_keep_backend(candidate: SuiteCandidate) -> SuiteCell:
 
 @lru_cache(maxsize=1)
 def _particle_board():
-    from conceptmod.toys.particle_posture import run_family
+    from conceptmod.research.toys.particle_posture import run_family
 
     return {row["name"]: row for row in run_family()}
 
@@ -579,7 +579,7 @@ def score_particle_posture(candidate: SuiteCandidate) -> SuiteCell:
 
 @lru_cache(maxsize=1)
 def _mode_hold_locked():
-    from conceptmod.toys.mode_hold import locked_recipe, train_mode_hold, verdict
+    from conceptmod.research.toys.mode_hold import locked_recipe, train_mode_hold, verdict
 
     row = train_mode_hold(locked_recipe(), log=False)
     row = dict(row)
@@ -588,7 +588,7 @@ def _mode_hold_locked():
 
 
 def score_mode_hold(candidate: SuiteCandidate) -> SuiteCell:
-    from conceptmod.toys.mode_hold import (
+    from conceptmod.research.toys.mode_hold import (
         ModeHoldRecipe,
         formulation_mismatches,
         require_drift_report,
@@ -635,7 +635,7 @@ def score_mode_hold(candidate: SuiteCandidate) -> SuiteCell:
 
 @lru_cache(maxsize=1)
 def _late_collapse_board():
-    from conceptmod.toys.late_collapse import demo_arms, run_selection_board
+    from conceptmod.research.toys.late_collapse import demo_arms, run_selection_board
 
     return run_selection_board(demo_arms())
 
@@ -657,7 +657,7 @@ def score_late_collapse(candidate: SuiteCandidate) -> SuiteCell:
 
 
 def score_field_lift(candidate: SuiteCandidate) -> SuiteCell:
-    from conceptmod.toys.field_lift import LiftArm, evaluate
+    from conceptmod.research.toys.field_lift import LiftArm, evaluate
 
     toy = "field_lift"
     if candidate.is_locked_shared():
@@ -688,13 +688,13 @@ def score_field_lift(candidate: SuiteCandidate) -> SuiteCell:
 
 @lru_cache(maxsize=1)
 def _lm_target_locked():
-    from conceptmod.toys.lm_target import run_arm
+    from conceptmod.research.toys.lm_target import run_arm
 
     return run_arm("trajectory")
 
 
 def score_lm_target(candidate: SuiteCandidate) -> SuiteCell:
-    from conceptmod.toys.lm_target import reject_unlocked
+    from conceptmod.research.toys.lm_target import reject_unlocked
 
     toy = "lm_target"
     if candidate.is_locked_shared():
@@ -719,7 +719,7 @@ def score_lm_target(candidate: SuiteCandidate) -> SuiteCell:
 
 @lru_cache(maxsize=1)
 def _unused_board():
-    from conceptmod.toys.unused_token_hold import run_family
+    from conceptmod.research.toys.unused_token_hold import run_family
 
     return {row["name"]: row for row in run_family()}
 
@@ -755,7 +755,7 @@ def score_unused_token_hold(candidate: SuiteCandidate) -> SuiteCell:
 
 @lru_cache(maxsize=1)
 def _path_suffix_board():
-    from conceptmod.toys.path_suffix_lora import run_board
+    from conceptmod.research.toys.path_suffix_lora import run_board
 
     return {row.name: row for row in run_board()}
 
@@ -779,13 +779,13 @@ def score_path_suffix_lora(candidate: SuiteCandidate) -> SuiteCell:
 
 @lru_cache(maxsize=1)
 def _mid_scale_locked():
-    from conceptmod.toys.mid_scale_identity import run_arm
+    from conceptmod.research.toys.mid_scale_identity import run_arm
 
     return run_arm("locked")
 
 
 def score_mid_scale_identity(candidate: SuiteCandidate) -> SuiteCell:
-    from conceptmod.toys.mid_scale_identity import reject_unlocked
+    from conceptmod.research.toys.mid_scale_identity import reject_unlocked
 
     toy = "mid_scale_identity"
     if candidate.is_locked_shared():
@@ -817,7 +817,7 @@ def score_mid_scale_identity(candidate: SuiteCandidate) -> SuiteCell:
 
 @lru_cache(maxsize=1)
 def _dsl_macro_board():
-    from conceptmod.toys.dsl_macro_expand import run_board
+    from conceptmod.research.toys.dsl_macro_expand import run_board
 
     return run_board()
 
@@ -844,7 +844,7 @@ def score_dsl_macro_expand(candidate: SuiteCandidate) -> SuiteCell:
 
 @lru_cache(maxsize=1)
 def _dsl_phrase_board():
-    from conceptmod.toys.dsl_phrase_jobs import run_board
+    from conceptmod.research.toys.dsl_phrase_jobs import run_board
 
     return run_board()
 
@@ -871,7 +871,7 @@ def score_dsl_phrase_jobs(candidate: SuiteCandidate) -> SuiteCell:
 
 @lru_cache(maxsize=1)
 def _dsl_game_board():
-    from conceptmod.toys.dsl_game_geometry import run_board
+    from conceptmod.research.toys.dsl_game_geometry import run_board
 
     return {row["arm"]: row for row in run_board(log=False)}
 
@@ -1092,7 +1092,7 @@ def format_matrix(suite: dict) -> str:
     sep = "|---|" + "|".join(["---:"] * len(toys)) + "|"
     lines = [
         "SUITE formulation leaderboard (CPU). PASS all stamp ≠ Music/Anima/Supra transfer.",
-        "Cover posture fork is a separate toy: python -m conceptmod.toys.cover_posture_fork",
+        "Cover posture fork is a separate toy: python -m conceptmod.research.toys.cover_posture_fork",
         header,
         sep,
     ]

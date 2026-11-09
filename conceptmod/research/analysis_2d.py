@@ -18,12 +18,12 @@ cosine can still leak onto the keep axis. That is the point of the fixture:
 ``TwoConceptVelocity`` in ``test_erase_cpu`` cannot show this leak.
 
 Losses are the live ones: :func:`conceptmod.ops.rule_loss` for DSL ops and
-ESD, :func:`conceptmod.ops_erase.erase_loss` for the GEM / EA hooks. This
+ESD, :func:`conceptmod.research.ops_erase.erase_loss` for the GEM / EA hooks. This
 is not a second trainer.
 
 The adversarial stamp on every score is
-:func:`conceptmod.toys.locked_adv_defaults` (the locked_shared floor).
-Erase/keep geometry goes through :func:`conceptmod.ops_erase.erase_keep_geometry`,
+:func:`conceptmod.research.toys.locked_adv_defaults` (the locked_shared floor).
+Erase/keep geometry goes through :func:`conceptmod.research.ops_erase.erase_keep_geometry`,
 which calls the cover / leftover helpers. A formulation ``PASS`` is
 :func:`claim_formulation`, which refuses an empty negative list. The
 Adam step count and learning rate below are this fixture's budget, not
@@ -42,8 +42,8 @@ import torch
 import torch.nn.functional as F
 
 from conceptmod import dsl, ops
-from conceptmod.ops_erase import erase_keep_geometry, erase_loss
-from conceptmod.toys import (
+from conceptmod.research.ops_erase import erase_keep_geometry, erase_loss
+from conceptmod.research.toys import (
     LOCKED,
     SAME_DIR_MAX,
     U_KEPT_MIN,
@@ -346,8 +346,8 @@ def claim_formulation(*, winner, negatives):
     """Formulation PASS is the honesty gate.
 
     Geometric verdicts here are ``right``, ``needs help``, and ``recipe``.
-    They are not a PASS. :func:`conceptmod.toys.claim_pass` raises
-    :class:`conceptmod.toys.HonestyError` when ``negatives`` is empty.
+    They are not a PASS. :func:`conceptmod.research.toys.claim_pass` raises
+    :class:`conceptmod.research.toys.HonestyError` when ``negatives`` is empty.
     """
     return claim_pass(winner=winner, negatives=negatives)
 

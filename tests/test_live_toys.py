@@ -1,4 +1,4 @@
-"""Live analysis / erase paths call conceptmod.toys, not a private copy.
+"""Live analysis / erase paths call conceptmod.research.toys, not a private copy.
 
 The toy modules stay the formulation source of truth. These tests are
 not ``test_toy_*``: they enter through ``analysis_2d``, ``analysis_dsl``,
@@ -9,10 +9,10 @@ from __future__ import annotations
 
 import pytest
 
-from conceptmod.analysis_2d import claim_formulation, run_method
-from conceptmod.analysis_dsl import run_job
-from conceptmod.ops_erase import erase_keep_geometry
-from conceptmod.toys import (
+from conceptmod.research.analysis_2d import claim_formulation, run_method
+from conceptmod.research.analysis_dsl import run_job
+from conceptmod.research.ops_erase import erase_keep_geometry
+from conceptmod.research.toys import (
     LOCKED,
     LOCKED_SHARED,
     LOCKED_TEACHER,
@@ -46,8 +46,8 @@ def test_public_api_is_the_locked_shared_stamp():
 
 def test_analysis_calls_locked_adv_and_leftover_geometry(monkeypatch):
     """A real 2-D erase step must execute the toy helpers."""
-    import conceptmod.analysis_2d as analysis
-    import conceptmod.ops_erase as erase
+    import conceptmod.research.analysis_2d as analysis
+    import conceptmod.research.ops_erase as erase
 
     called = {"adv": 0, "bipolar": 0, "guard": 0, "hold": 0}
     real_adv = analysis.locked_adv_defaults

@@ -9,8 +9,8 @@ import inspect
 import pytest
 import torch
 
-import conceptmod.toys.shared_trajectory as shared_trajectory
-from conceptmod.toys.shared_trajectory import (
+import conceptmod.research.toys.shared_trajectory as shared_trajectory
+from conceptmod.research.toys.shared_trajectory import (
     LOCKED,
     PASS_IDENTITY_MSE,
     pairing_index,

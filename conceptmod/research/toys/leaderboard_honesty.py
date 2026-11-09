@@ -27,7 +27,7 @@ CPU only. A PASS here does not transfer to Music or Anima.
 
 Tail the log with::
 
-    python -m conceptmod.toys.leaderboard_honesty
+    python -m conceptmod.research.toys.leaderboard_honesty
 """
 
 from __future__ import annotations

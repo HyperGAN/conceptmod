@@ -3,7 +3,7 @@
 ``--backend cpu`` may land in a parallel PR. This file does not wait for
 it: the two-concept velocity below is self-contained and is *not* a 20B
 train. It is a tiny rectified-flow stand-in so ESD (and the optional
-GEM / EraseAnything hooks in ``conceptmod.ops_erase``) can be scored on
+GEM / EraseAnything hooks in ``conceptmod.research.ops_erase``) can be scored on
 CPU in well under 30s.
 
 Cite: EraseAnything (Gao et al., ICML'25) https://arxiv.org/abs/2412.20413
@@ -18,7 +18,7 @@ import pytest
 import torch
 
 from conceptmod import dsl, ops
-from conceptmod.ops_erase import (
+from conceptmod.research.ops_erase import (
     ERASE_MODES,
     concept_probe,
     erase_keep_geometry,

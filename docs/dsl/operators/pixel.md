@@ -68,7 +68,7 @@ The CPU game and the 2-D scoreboard cannot execute it.
 
 ```python
 from conceptmod.dsl import parse_phrase
-from conceptmod.game import GameError, loss_game
+from conceptmod.research.game import GameError, loss_game
 
 rule = parse_phrase("a painting of a house^a photo of a house")[0]
 assert rule.op == "pixel"

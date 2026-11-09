@@ -39,8 +39,8 @@ from dataclasses import replace
 from particlegan.grad_regularizers import GradientPenalty
 from particlegan import GANLoss
 
-from conceptmod.toys.cover_leftover import LOCKED_COVER
-from conceptmod.toys.locked_shared_floor import (
+from conceptmod.research.toys.cover_leftover import LOCKED_COVER
+from conceptmod.research.toys.locked_shared_floor import (
     COVER_WEIGHT,
     FM_WEIGHT,
     LOCKED,
@@ -51,7 +51,7 @@ from conceptmod.toys.locked_shared_floor import (
     cover_mse,
     run_floor,
 )
-from conceptmod.toys.particle_posture import MUSIC_COVER as MUSIC_POLE_COVER
+from conceptmod.research.toys.particle_posture import MUSIC_COVER as MUSIC_POLE_COVER
 
 
 if LOCKED_COVER != COVER_WEIGHT:

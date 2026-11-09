@@ -1,7 +1,7 @@
 """Bridge locked_shared game wiring to geometric ``right``.
 
-``conceptmod.game.loss_game`` can score ``PASS`` on one CPU step because
-the adversary matched :func:`conceptmod.toys.locked_adv_defaults`. That
+``conceptmod.research.game.loss_game`` can score ``PASS`` on one CPU step because
+the adversary matched :func:`conceptmod.research.toys.locked_adv_defaults`. That
 row is wiring. It is not a geometric verdict from ``docs/dsl.md``.
 
 A bridge row here PASSes only when both are true:
@@ -9,8 +9,8 @@ A bridge row here PASSes only when both are true:
 1. The phrase steps under ``locked_shared`` with the locked stamp
    (``loss_game`` / ``game``, claim locked, mismatches empty).
 2. After the 2-D fixture train, the field is geometric ``right`` for
-   that phrase. The verdict comes from :func:`conceptmod.analysis_2d.run_method`
-   or :func:`conceptmod.analysis_dsl.run_job` — the same scorers
+   that phrase. The verdict comes from :func:`conceptmod.research.analysis_2d.run_method`
+   or :func:`conceptmod.research.analysis_dsl.run_job` — the same scorers
    ``tests/test_2d_analysis.py`` and ``tests/test_dsl_jobs.py`` gate.
    This module does not copy those thresholds.
 
@@ -32,7 +32,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from conceptmod.toys.leaderboard_honesty import HonestyError
+from conceptmod.research.toys.leaderboard_honesty import HonestyError
 
 
 TOY_ID = "dsl_game_geometry"
@@ -72,10 +72,10 @@ class BridgeArm:
 def fixture_budget() -> dict:
     """Adam budget of the 2-D analysis fixture. Not an adv recipe.
 
-    Steps, lr, and seed are read from :mod:`conceptmod.analysis_2d`.
+    Steps, lr, and seed are read from :mod:`conceptmod.research.analysis_2d`.
     They are not keys on ``locked_adv_defaults()``.
     """
-    from conceptmod.analysis_2d import DEFAULT_LR, DEFAULT_SEED, DEFAULT_STEPS
+    from conceptmod.research.analysis_2d import DEFAULT_LR, DEFAULT_SEED, DEFAULT_STEPS
 
     return {"steps": DEFAULT_STEPS, "lr": DEFAULT_LR, "seed": DEFAULT_SEED}
 
@@ -87,8 +87,8 @@ def arms() -> tuple[BridgeArm, ...]:
     ``red--|stripe#stripe``, ``red++``). The replace macro is the job
     board's ``red~blue``, which scores ``recipe``.
     """
-    from conceptmod.analysis_2d import COLOR, COLOR_OPP, KEEP, method_specs
-    from conceptmod.analysis_dsl import job_specs
+    from conceptmod.research.analysis_2d import COLOR, COLOR_OPP, KEEP, method_specs
+    from conceptmod.research.analysis_dsl import job_specs
 
     methods = {spec["name"]: spec for spec in method_specs()}
     jobs = {spec["name"]: spec for spec in job_specs()}
@@ -215,23 +215,23 @@ def arms() -> tuple[BridgeArm, ...]:
 def score_geometry(arm: BridgeArm, *, steps: int, lr: float, seed: int) -> dict:
     """Train ``arm.phrase`` and return the live job/method verdict.
 
-    ``method`` arms call :func:`conceptmod.analysis_2d.run_method`.
-    ``job`` arms call :func:`conceptmod.analysis_dsl.run_job`.
+    ``method`` arms call :func:`conceptmod.research.analysis_2d.run_method`.
+    ``job`` arms call :func:`conceptmod.research.analysis_dsl.run_job`.
     """
     if arm.scorer not in ("method", "job") or not arm.scorer_name:
         raise HonestyError(f"{arm.name} has no geometric scorer")
-    from conceptmod.toys import locked_adv_defaults
+    from conceptmod.research.toys import locked_adv_defaults
 
     stamp = locked_adv_defaults()
     if arm.scorer == "method":
-        from conceptmod.analysis_2d import run_method
+        from conceptmod.research.analysis_2d import run_method
 
         result = run_method(
             arm.scorer_name, arm.phrase, steps=steps, lr=lr, seed=seed,
         )
         source = "analysis_2d.run_method"
     else:
-        from conceptmod.analysis_dsl import run_job
+        from conceptmod.research.analysis_dsl import run_job
 
         result = run_job(
             arm.scorer_name, arm.phrase, steps=steps, lr=lr, seed=seed,
@@ -274,8 +274,8 @@ def score_game(
     who invokes ``loss_game`` directly.
     """
     from conceptmod.dsl import DSLError
-    from conceptmod.game import GameError, loss_game
-    from conceptmod.toys import locked_adv_defaults
+    from conceptmod.research.game import GameError, loss_game
+    from conceptmod.research.toys import locked_adv_defaults
 
     claim = kwargs.get("claim", "locked")
     pairing = kwargs.get("pairing", "locked_shared")
@@ -350,7 +350,7 @@ def _faked_geometry(phrase: str, budget: dict) -> dict:
 
 
 def _dead_geometry(phrase: str, op: str, budget: dict) -> dict:
-    from conceptmod.analysis_dsl import dead_ops
+    from conceptmod.research.analysis_dsl import dead_ops
 
     notes = dead_ops()
     if op not in notes:
@@ -570,7 +570,7 @@ def claim_board(rows: list[dict] | tuple[dict, ...]) -> dict:
     """Family PASS: every bridge arm passed, every mismatch arm failed.
 
     An empty negative list raises :class:`HonestyError`, same rule as
-    :func:`conceptmod.toys.claim_pass`.
+    :func:`conceptmod.research.toys.claim_pass`.
     """
     rows = list(rows)
     by_arm = {row["arm"]: row for row in rows}

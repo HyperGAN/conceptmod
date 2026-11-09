@@ -1,6 +1,6 @@
 """Backend-agnostic erase/keep: locked geometry passes on cpu/dummy.
 
-The score enters ``conceptmod.ops_erase.erase_keep_geometry`` (hold_dir,
+The score enters ``conceptmod.research.ops_erase.erase_keep_geometry`` (hold_dir,
 faithful_guard_e, leftover_bipolar). Drift arms fail: teacher_leak,
 cover_zero undershoot, wrong leftover poles. No CUDA and no Hub.
 """
@@ -13,7 +13,7 @@ import torch
 from conceptmod.backends import load_backend
 from conceptmod.testing import fixture_registry
 from conceptmod.testing.peft_backend import CpuBackend
-from conceptmod.toys.erase_keep_backend import (
+from conceptmod.research.toys.erase_keep_backend import (
     ARMS,
     COVER_ZERO_SCALE,
     FAMILY,
@@ -44,7 +44,7 @@ def test_singleton_time_axis_is_refused():
 
 def test_locked_cpu_invokes_live_erase_geometry(monkeypatch):
     """CpuBackend predict_v feeds the live ops_erase helpers."""
-    import conceptmod.ops_erase as erase
+    import conceptmod.research.ops_erase as erase
 
     called = {"geo": 0, "hold": 0, "guard": 0, "bipolar": 0}
     real_geo = erase.erase_keep_geometry

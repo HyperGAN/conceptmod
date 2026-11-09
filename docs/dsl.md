@@ -12,7 +12,7 @@ on one CPU step, not a geometric verdict from this scoreboard, and not
 a Music or Anima GPU transfer.
 
 DSL job scores use the same locked_shared adv stamp and cover/leftover
-keep gates as the 2-D suite (`conceptmod.toys`). They do not define a
+keep gates as the 2-D suite (`conceptmod.research.toys`). They do not define a
 second recipe.
 
 Notation: `v_f` / `v_t` frozen / trained velocity, `v0 = v('')`,

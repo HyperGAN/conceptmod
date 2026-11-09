@@ -40,7 +40,7 @@ import torch
 import torch.nn.functional as F
 from torch import nn
 
-from conceptmod.toys.locked_shared_floor import LOCKED
+from conceptmod.research.toys.locked_shared_floor import LOCKED
 
 
 LOCKED_TARGET = "trajectory"

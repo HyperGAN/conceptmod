@@ -52,7 +52,7 @@ is the current decision, not a forgotten branch.
 
 ```python
 from conceptmod.dsl import parse_phrase
-from conceptmod.game import GameError, loss_game
+from conceptmod.research.game import GameError, loss_game
 
 rule = parse_phrase(";a bright sunset")[0]
 assert rule.op == "reward"

@@ -2,7 +2,7 @@
 
 CPU only. Run and tail::
 
-    python -m conceptmod.toys.mode_hold
+    python -m conceptmod.research.toys.mode_hold
     python -m pytest -s tests/test_toy_mode_hold.py
 """
 
@@ -11,7 +11,7 @@ from conceptmod.particle_api import make_gan_loss, make_gradient_penalty
 import torch
 import pytest
 
-from conceptmod.toys.mode_hold import (
+from conceptmod.research.toys.mode_hold import (
     COLLAPSE_MODES,
     PASS_HQ,
     PASS_MODES,

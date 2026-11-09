@@ -45,7 +45,7 @@ changed, the game enters a failed state; rebuild it before further stepping or
 scoring. It does not silently replay the failed update.
 
 Shared pole/leftover operations live in `conceptmod.geometry`, which imports no
-research trainers. Existing `conceptmod.toys` geometry names alias those exact
+research trainers. Existing `conceptmod.research.toys` geometry names alias those exact
 functions and constants. Other research exports resolve lazily, so importing an
 erase loss or a geometry helper does not load the research suite. Historical
 formulation outcomes remain research evidence, rather than production ranking

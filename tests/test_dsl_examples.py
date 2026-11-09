@@ -6,7 +6,7 @@ import importlib.util
 from pathlib import Path
 
 from conceptmod.dsl import parse_phrase
-from conceptmod.game import game
+from conceptmod.research.game import game
 
 ROOT = Path(__file__).resolve().parents[1]
 

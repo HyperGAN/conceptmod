@@ -7,7 +7,7 @@ import pytest
 
 from particlegan.grad_regularizers import GradientPenalty
 
-from conceptmod.toys.particle_posture import (
+from conceptmod.research.toys.particle_posture import (
     CLOUD_MS_MAX,
     DEMO_L2,
     bcap_kappa_is_explicit,

@@ -25,7 +25,7 @@ are the orbit state, not a latent particle prior. That omission is reported
 here and is not a second adv recipe. No Music or Anima GPU transfer is claimed
 from a pass on this CPU toy.
 
-Tail the family with ``python -m conceptmod.toys.orbit_hold``.
+Tail the family with ``python -m conceptmod.research.toys.orbit_hold``.
 """
 
 from __future__ import annotations

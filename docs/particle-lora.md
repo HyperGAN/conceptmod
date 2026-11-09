@@ -1,18 +1,14 @@
-# ParticleGAN 0.9.4 and particle LoRAs
+# Particle LoRA tensor integration
 
-Install `conceptmod` with `particlegan>=0.9.4,<0.10`. This range was tested
-against the PyPI 0.9.4 wheel. Two intentionally separate training paths exist:
+Core pins the published ParticleGAN 0.9.4 recipe used by its executable
+regressions. `ParticleLoRAGenerator` binds sampled particle codes to explicit
+low-rank branches on a caller-owned frozen host. The official `GANTrainer`
+owns BISPF, SBNP, DualNorm, prior updates and checkpoint arithmetic.
 
-* The existing DSL velocity trainer and its PEFT exports remain unchanged.
-  The `locked_shared` CPU games preserve their historical paired logistic
-  RpGAN / fixed L2 `b_cap` formulation. They do not claim to use the current
-  ParticleGAN default. `conceptmod.particle_api` translates their recorded
-  knobs to actual upstream primitives; it contains no copied GAN arithmetic.
-* `ParticleLoRAGenerator` is an explicit modern tensor integration: a real
-  learned particle prior routes low-rank residuals into named frozen Linear
-  layers. Its public `GANTrainer` uses the current `bispf_optimized` recipe,
-  including non-saturating loss, Born–Infeld penalty, SBNP prior regularization
-  and DualNorm. Only dimensions and training budget are overridden.
+Dimensions, budget and explicit no-weight-EMA settings are supplied. Raw current
+weights are used; no generator, critic or prior weight averaging is enabled.
+Official scalar optimizer statistics are unchanged. Historical paired-logistic
+research games remain separately under `conceptmod.research`.
 
 ```python
 import torch
@@ -50,56 +46,16 @@ arguments bound as buffers. This is not an assertion of conditional training
 across changing prompts, E22 routed-row evidence, or token-specific routing.
 The caller owns target tensors, output-compatible critic architecture, model
 loading, and evaluation. Native image backends are not wired into this API or
-qualified by the small CPU tests. No new pretrained-model controls or published
-weights are established by this migration; the existing image examples were
-not retrained with ParticleGAN 0.9.4.
+qualified by the small CPU tests. CPU tensor integration does not qualify a pretrained model or establish
+new image controls.
 
-## Validation on 2026-11-04
 
-The CPU validation environment used Python 3.11.17, Torch 2.14.1+cu130,
-ParticleGAN 0.9.4, PEFT 0.21.2, Transformers 4.57.6, Accelerate 1.15.0 and
-Diffusers 0.39.0. The seven new primitive/particle-LoRA tests passed, including
-an actual 128×4 learned bank with rank-8 branches, exact next-update checkpoint
-replay, frozen BatchNorm/Dropout behavior, and strength-zero identity.
+The host must access layers through its registered module tree. Each invocation
+binds its own codes without mutating live-layer routing state or copying frozen
+weight tensors. Reentrant and nonreentrant activation-checkpoint recomputation,
+nested/concurrent forwards and exact next-update trainer replay have executable
+CPU regressions in `tests/test_particle_lora.py`.
 
-Two existing scientific tests remain failing without relaxed thresholds:
-
-| Gate | Required | Measured with original and migrated code |
-| --- | --- | --- |
-| `test_toy_mode_hold.py::test_locked_shared_holds_ring_modes` | At least 7/8 modes and HQ ≥0.90 | 3/8 modes, HQ 0.495; `INCONCLUSIVE` after 1,200 updates |
-| `test_toy_shared_trajectory.py::test_locked_shared_passes` | Identity MSE ≤0.02 | 0.2338901311159134 after 400 updates; `pass=false` |
-
-Both failures were reproduced with pristine conceptmod
-`13271a8` and the original ParticleGAN 0.5.0 wheel in the same environment.
-The shared-trajectory final MSE and discriminator/generator losses are exactly
-identical across the comparison. This upgrade neither claims those gates pass
-nor retunes their training to change the evidence.
-
-The optional live ComfyUI tests require a separate functional ComfyUI install.
-The available checkout lacked `comfy_aimdo.host_buffer`, so these integration
-tests were excluded. Ordinary conversion and CPU LoRA/backend tests were run.
-The broad migration check keeps those exclusions explicit:
-
-```bash
-OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python -m pytest -q --import-mode=importlib \
-  --ignore=tests/test_comfyui_lora_apply.py \
-  --deselect=tests/test_convert_yue2.py::test_actual_comfyui_yue2_loader \
-  --deselect=tests/test_toy_mode_hold.py::test_locked_shared_holds_ring_modes \
-  --deselect=tests/test_toy_shared_trajectory.py::test_locked_shared_passes
-```
-
-The two scientific gates can be reproduced separately without exclusions:
-
-```bash
-OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python -m pytest -q --import-mode=importlib \
-  tests/test_toy_mode_hold.py::test_locked_shared_holds_ring_modes \
-  tests/test_toy_shared_trajectory.py::test_locked_shared_passes
-```
-
-The broad command above completed with **446 passed, 1 skipped and
-3 deselected** (the live YuE2/ComfyUI test and the two known scientific gates).
-The independent new-API checks completed with **7 passed**. The wheel built
-successfully, was installed into the isolated environment, and ran an official
-BISPF update from outside the source checkout with a 128×4 prior and exact
-strength-zero replay. These are source/package checks, not image-quality or
-pretrained-model training results.
+Verification results and the two unchanged historical scientific outcome
+assertions are recorded in [plan.md](plan.md). Original 2.x measurements remain
+in the [historical documentation](https://github.com/HyperGAN/conceptmod/blob/70f0cb2632190388eb4028ef80066558259494fc/docs/particle-lora.md).

@@ -70,7 +70,7 @@ These are the next cuts. They are not accepted stanza keys today.
 | Vanilla logistic as a pairing name | not implemented — stranger here is the flipped `rp` batch, matching `locked_shared_floor` |
 | GEM / EA selected by the stanza | not implemented — those hooks stay on `analysis_2d` / `ops_erase` |
 | `^` and `;` inside a CPU game | refused — pixel has no `render` here; reward has no scorer |
-| A backend other than `TwoAxisBackend` | not implemented — DiT training is still `train.py` plus `rule_loss`, not `Game` |
+| A backend other than `TwoAxisBackend` | not implemented — native training uses validated plans and `TrainingSession`; this research `Game` is only the 2-D fixture |
 | Multi-critic or more than two players | not implemented |
 
 When one of those lands, it has to call the toy stamp rather than

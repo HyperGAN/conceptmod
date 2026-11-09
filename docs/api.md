@@ -63,6 +63,11 @@ Presentation, logging and scoring belong to observers/callers rather than loss
 computation. `train_model()` and `train_encoder()` are convenience functions
 which execute the same session API.
 
+Sessions serialize their temporary global Python/Torch RNG scopes with a shared
+lock, preserving independent streams across sequential or concurrent session
+operations. Unrelated threads consuming global RNG outside this API are outside
+that isolation; products should use explicit generators for such external work.
+
 Session states are `ready -> running -> ready/complete`, with `failed` after an
 unsuccessful optimization. Checkpoints are allowed only at committed boundaries.
 A failed optimizer may have partly changed weights; restore a known checkpoint

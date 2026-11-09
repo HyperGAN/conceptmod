@@ -490,7 +490,7 @@ class Game:
             loss = rule.alpha * ops.rule_loss(rule, ctx)
             phrase_loss += float(loss.detach())
             loss.backward()
-            ctx._v = {key: value for key, value in ctx._v.items() if not key[3]}
+            ctx.clear_grad_cache()
 
         fake = self._plane(frozen=False)
         g_real = self.critic(real)

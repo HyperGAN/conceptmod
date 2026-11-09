@@ -87,6 +87,15 @@ class StepContext:
         self._z: dict[str, tuple[torch.Tensor, torch.Tensor]] = {}
         self._v: dict[tuple, torch.Tensor] = {}
 
+    def clear_grad_cache(self) -> None:
+        """Release predictions whose autograd graph was consumed by backward.
+
+        Detached predictions and sampled latents remain reusable across rules
+        within this step. Discard the whole context after updating parameters;
+        its cached values are only valid while model weights stay unchanged.
+        """
+        self._v = {key: value for key, value in self._v.items() if not key[3]}
+
     def z_for(self, context_prompt: str):
         if context_prompt not in self._z:
             g = torch.Generator(device=self.backend.device).manual_seed(self.seed)

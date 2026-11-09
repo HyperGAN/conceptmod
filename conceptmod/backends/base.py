@@ -91,9 +91,43 @@ class Backend(abc.ABC):
     def trainable_parameters(self, train_method: str) -> list[torch.nn.Parameter]:
         """Select the parameter group to finetune (xattn/selfattn/full/...)."""
 
-    @abc.abstractmethod
     def save_trained(self, path: str) -> None:
-        """Save the trained weights (full state dict or LoRA adapter)."""
+        """Save a complete inference bundle, including any edited encoder."""
+        from conceptmod.artifacts import save_edit_bundle
+
+        save_edit_bundle(path, self.edit_components(), metadata=self.artifact_metadata())
+
+    def save_transformer(self, path: str) -> None:
+        """Export only the transformer in the legacy adapter / safetensors format."""
+        from conceptmod.artifacts import save_transformer_weights
+
+        save_transformer_weights(self.transformer, path)
+
+    def edit_components(self) -> dict[str, torch.nn.Module]:
+        """Explicit component boundary for complete inference artifacts."""
+        return {"transformer": self.transformer}
+
+    def artifact_metadata(self) -> dict:
+        """Effective initialization and sampling settings, independent of CLI flags."""
+        metadata = {"backend": type(self).__name__}
+        for name in ("model_id", "base_seed", "resolution", "lora_rank",
+                     "generate_steps", "generate_guidance", "ckpt_path"):
+            if hasattr(self, name):
+                metadata[name] = getattr(self, name)
+        metadata["latent_shape"] = list(self.latent_shape)
+        return metadata
+
+    def load_trained(self, path: str) -> None:
+        """Restore a bundle into an identically initialized backend and adapters.
+
+        Attach encoder LoRA with the saved rank first, if the bundle has one.
+        Loading preserves the original reference model and invalidates embeddings.
+        """
+        from conceptmod.artifacts import load_edit_bundle
+
+        load_edit_bundle(path, self.edit_components(),
+                         expected_metadata=self.artifact_metadata())
+        self._text_cache.clear()
 
     def training_defaults(self) -> dict:
         """Backend-specific OpDefaults overrides (sample_steps / sample_guidance)."""

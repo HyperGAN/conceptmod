@@ -63,6 +63,7 @@ class KreaBackend(Backend):
                  generate_guidance: float | None = None):
         self.device = str(require_cuda(device))
         self.resolution = resolution
+        self.model_id = model_id
         self.pipe = _load_pipeline(model_id)
         # 12B DiT + 4B Qwen3-VL + VAE do not all fit next to training
         # activations. Only the transformer lives on GPU; encode/generate
@@ -324,5 +325,8 @@ class KreaBackend(Backend):
             print(f"krea backend is LoRA-only; ignoring train_method={train_method!r}")
         return params
 
-    def save_trained(self, path: str):
-        self.transformer.save_pretrained(path)
+    def edit_components(self):
+        components = super().edit_components()
+        if self.encoder_lora:
+            components["text_encoder"] = self.pipe.text_encoder
+        return components

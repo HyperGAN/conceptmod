@@ -1,0 +1,212 @@
+"""Complete edit roundtrips, with real tiny PEFT models and no downloads."""
+
+from __future__ import annotations
+
+import importlib
+import json
+from types import SimpleNamespace
+
+import pytest
+import torch
+
+from conceptmod.artifacts import (
+    MANIFEST_NAME,
+    load_edit_bundle,
+    read_edit_bundle,
+    save_edit_bundle,
+)
+from conceptmod.backends.cpu import CpuBackend
+
+
+def _trained(stage):
+    backend = CpuBackend(device="cpu", lora_rank=3, seed=17)
+    if stage != "model":
+        backend.attach_encoder_lora(rank=2)
+    parameters = []
+    if stage != "encoder":
+        parameters += list(backend.transformer.parameters())
+    if stage != "model":
+        parameters += list(backend.text_encoder.parameters())
+    optimizer = torch.optim.SGD([p for p in parameters if p.requires_grad], lr=0.1)
+    z = torch.zeros(1, *backend.latent_shape)
+    t = torch.tensor([500.0])
+    text = backend.encode_text_grad("red")
+    if stage == "encoder":
+        loss = text.embeds.square().sum()
+    else:
+        loss = backend._forward(backend.transformer, z, t, text).square().mean()
+    loss.backward()
+    optimizer.step()
+    backend._text_cache.clear()
+    return backend
+
+
+def _state(module):
+    return {key: value.detach().clone() for key, value in module.state_dict().items()}
+
+
+@pytest.mark.parametrize("stage", ["encoder", "model", "both"])
+def test_complete_backend_roundtrip(stage, tmp_path):
+    source = _trained(stage)
+    z = torch.zeros(1, *source.latent_shape)
+    t = torch.tensor([500.0])
+    expected = source.predict_v("red", z, t, frozen=False)
+    reference = source.predict_v("red", z, t, frozen=True)
+    assert not torch.equal(expected, reference), "the fixture must contain a real edit"
+    path = tmp_path / "edit"
+    source.save_trained(str(path))
+    manifest = read_edit_bundle(path)
+    assert manifest["components"]["transformer"]["adapters"]["default"]["rank"] == 3
+    # Existing transformer-only PEFT consumers can still read the root files.
+    assert (path / "adapter_config.json").is_file()
+    assert (path / "adapter_model.safetensors").is_file()
+
+    restored = CpuBackend(device="cpu", lora_rank=3, seed=17)
+    if stage != "model":
+        encoder_rank = manifest["components"]["text_encoder"]["adapters"]["default"]["rank"]
+        assert encoder_rank == 2
+        restored.attach_encoder_lora(rank=encoder_rank)
+    # Loading must clear old embeddings computed before the encoder changed.
+    restored.encode_text("red")
+    restored.load_trained(str(path))
+    assert not restored._text_cache
+    torch.testing.assert_close(restored.predict_v("red", z, t, frozen=False), expected,
+                               rtol=0, atol=0)
+    torch.testing.assert_close(restored.predict_v("red", z, t, frozen=True), reference,
+                               rtol=0, atol=0)
+    assert restored.generate("red", 11).tobytes() == source.generate("red", 11).tobytes()
+
+
+def test_missing_encoder_adapter_is_rejected_before_loading(tmp_path):
+    source = _trained("both")
+    path = tmp_path / "edit"
+    source.save_trained(str(path))
+    restored = CpuBackend(device="cpu", lora_rank=3, seed=17)
+    before = _state(restored.transformer)
+    with pytest.raises(ValueError, match="attach the saved encoder adapters"):
+        restored.load_trained(str(path))
+    for key, value in before.items():
+        assert torch.equal(restored.transformer.state_dict()[key], value)
+
+
+@pytest.mark.parametrize("corruption", ["shape", "key", "config"])
+def test_later_component_failure_does_not_mutate_earlier_weights(corruption, tmp_path):
+    from safetensors.torch import load_file, save_file
+
+    source = _trained("both")
+    path = tmp_path / "edit"
+    source.save_trained(str(path))
+    if corruption == "config":
+        config_path = path / "text_encoder" / "adapter_config.json"
+        config = json.loads(config_path.read_text())
+        config["lora_alpha"] += 1
+        config_path.write_text(json.dumps(config))
+    else:
+        weights_path = path / "text_encoder" / "adapter_model.safetensors"
+        state = load_file(str(weights_path))
+        key = next(iter(state))
+        if corruption == "shape":
+            state[key] = state[key][:1].clone()
+        else:
+            del state[key]
+        save_file(state, str(weights_path))
+    restored = CpuBackend(device="cpu", lora_rank=3, seed=17)
+    restored.attach_encoder_lora(rank=2)
+    before = {name: _state(module) for name, module in restored.edit_components().items()}
+    with pytest.raises(ValueError, match="incompatible"):
+        restored.load_trained(str(path))
+    for name, module in restored.edit_components().items():
+        for key, value in before[name].items():
+            assert torch.equal(module.state_dict()[key], value)
+
+
+def test_wrong_base_seed_is_rejected(tmp_path):
+    source = _trained("model")
+    source.save_trained(str(tmp_path / "edit"))
+    restored = CpuBackend(device="cpu", lora_rank=3, seed=18)
+    with pytest.raises(ValueError, match="metadata"):
+        restored.load_trained(str(tmp_path / "edit"))
+
+
+def test_full_weights_keep_precision_and_buffers(tmp_path):
+    source = torch.nn.Linear(3, 2, dtype=torch.float64)
+    source.register_buffer("counter", torch.tensor(7))
+    path = tmp_path / "full"
+    save_edit_bundle(path, {"transformer": source}, metadata={"base": "test"})
+    from safetensors.torch import load_file
+
+    saved = load_file(str(path / "transformer.safetensors"))
+    assert saved["weight"].dtype == torch.float64
+    assert saved["counter"].dtype == torch.int64
+    restored = torch.nn.Linear(3, 2, dtype=torch.float64)
+    restored.register_buffer("counter", torch.tensor(0))
+    load_edit_bundle(path, {"transformer": restored}, expected_metadata={"base": "test"})
+    for key, value in source.state_dict().items():
+        assert torch.equal(restored.state_dict()[key], value)
+
+
+def test_legacy_transformer_export_is_explicit(tmp_path):
+    source = _trained("both")
+    path = tmp_path / "transformer-only"
+    source.save_transformer(str(path))
+    assert (path / "adapter_config.json").is_file()
+    assert not (path / MANIFEST_NAME).exists()
+    assert not (path / "text_encoder").exists()
+
+
+def test_bundles_do_not_overwrite_existing_artifacts(tmp_path):
+    path = tmp_path / "edit"
+    source = _trained("model")
+    source.save_trained(str(path))
+    original = (path / MANIFEST_NAME).read_bytes()
+    with pytest.raises(FileExistsError, match="new or empty"):
+        source.save_trained(str(path))
+    assert (path / MANIFEST_NAME).read_bytes() == original
+
+
+def test_failed_export_does_not_publish_a_partial_bundle(tmp_path):
+    class BrokenAdapter(torch.nn.Module):
+        peft_config = {"default": object()}
+
+        def save_pretrained(self, path, **kwargs):
+            from pathlib import Path
+
+            (Path(path) / "partial").write_text("incomplete")
+            raise RuntimeError("could not export adapter")
+
+    path = tmp_path / "edit"
+    with pytest.raises(RuntimeError, match="could not export"):
+        save_edit_bundle(path, {"transformer": BrokenAdapter()})
+    assert not path.exists()
+    assert not list(tmp_path.iterdir())
+
+
+def test_manifest_paths_cannot_escape_bundle(tmp_path):
+    source = _trained("model")
+    path = tmp_path / "edit"
+    source.save_trained(str(path))
+    manifest = read_edit_bundle(path)
+    manifest["components"]["transformer"]["adapters"]["default"]["path"] = "../outside"
+    (path / MANIFEST_NAME).write_text(json.dumps(manifest))
+    with pytest.raises(ValueError, match="escapes"):
+        source.load_trained(str(path))
+
+
+@pytest.mark.parametrize("name,cls", [
+    ("sana", "SanaBackend"), ("zimage", "ZImageBackend"),
+    ("anima", "AnimaBackend"), ("krea", "KreaBackend"),
+    ("qwen", "QwenBackend"), ("klein", "KleinBackend"),
+    ("supra", "SupraBackend"),
+])
+def test_all_backends_declare_their_edited_encoder(name, cls):
+    backend_cls = getattr(importlib.import_module(f"conceptmod.backends.{name}"), cls)
+    backend = object.__new__(backend_cls)
+    backend.transformer = torch.nn.Linear(1, 1)
+    encoder = torch.nn.Linear(1, 1)
+    backend.text_encoder = encoder
+    backend.pipe = SimpleNamespace(text_encoder=encoder)
+    backend.encoder_lora = False
+    assert backend.edit_components() == {"transformer": backend.transformer}
+    backend.encoder_lora = True
+    assert backend.edit_components() == {"transformer": backend.transformer,
+                                         "text_encoder": encoder}

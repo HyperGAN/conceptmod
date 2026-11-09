@@ -9,7 +9,7 @@ What it does prove: the same locked geometry PASSes when the axes are
 read back from a host ``predict_v``, not from a private tensor and not
 from a video latent with a singleton time axis. Hosts are
 
-* ``load_backend("cpu")`` and the ``dummy`` alias (``CpuBackend``)
+* the explicitly registered CPU test fixture and its ``dummy`` alias
 * a tiny Supra2-IMG-shaped stub: image latent ``(4, 32, 32)``, flow time
   ``t = i/K`` in ``[0, 1]``. No CUDA, no Hub checkpoint. The real supra
   backend is not required; this stub is the stand-in.
@@ -257,11 +257,12 @@ def score_backend(backend, arm: str, *, name: str, seed: int = PROBE_SEED) -> di
 
 def run_board(*, seed: int = PROBE_SEED) -> list[dict]:
     """Locked arm and three drift arms on cpu, dummy, and the supra stub."""
-    from conceptmod.backends import load_backend
+    from conceptmod.testing import fixture_registry
 
+    registry = fixture_registry()
     hosts: list[tuple[str, object]] = []
     for alias in ("cpu", "dummy"):
-        hosts.append((alias, load_backend(alias, device="cpu", lora_rank=4, seed=seed)))
+        hosts.append((alias, registry.load(alias, device="cpu", lora_rank=4, seed=seed)))
     hosts.append(("supra_stub", SupraShapedStub()))
     rows = []
     for name, backend in hosts:

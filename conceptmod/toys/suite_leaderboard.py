@@ -503,9 +503,9 @@ def score_cover_leftover(candidate: SuiteCandidate) -> SuiteCell:
 @lru_cache(maxsize=1)
 def _erase_keep_locked_ok() -> bool:
     from conceptmod.toys.erase_keep_backend import ARMS, score_backend
-    from conceptmod.backends import load_backend
+    from conceptmod.testing.peft_backend import CpuBackend
 
-    backend = load_backend("cpu", device="cpu", lora_rank=4, seed=0)
+    backend = CpuBackend(device="cpu", lora_rank=4, seed=0)
     row = score_backend(backend, "locked", name="cpu", seed=0)
     assert "locked" in ARMS
     return bool(row["pass"])

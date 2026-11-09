@@ -30,18 +30,18 @@ replayed to prove a packaging change.
 
 ## Phase 1 — merge concrete correctness fixes
 
-- [ ] Export all edited components (encoder and transformer) together, including
+- [x] Export all edited components (encoder and transformer) together, including
   effective adapter configuration and base-model identity; verify a CPU
   roundtrip. Keep resumable training state distinct from inference artifacts.
-- [ ] Anima's original-model generation disables both encoder and transformer
+- [x] Anima's original-model generation disables both encoder and transformer
   adapters, with exception-safe restoration.
-- [ ] Commit the final partial accumulation group with correct normalization;
+- [x] Commit the final partial accumulation group with correct normalization;
   handle early stop, invalid budgets and stale gradients explicitly. Count
   microbatches separately from committed optimizer updates.
-- [ ] Keep particle routing valid through activation-checkpoint backward
+- [x] Keep particle routing valid through activation-checkpoint backward
   recomputation and restore context on failure. Preserve frozen host weights and
   the official ParticleGAN optimizer/checkpoint formula.
-- [ ] Give StepContext ownership of gradient-cache invalidation; stop editing
+- [x] Give StepContext ownership of gradient-cache invalidation; stop editing
   private dictionaries from trainers.
 - [ ] Verify raw-current model/adapter/critic/prior weights and explicitly disable
   weight EMA. Do not change the upstream scalar optimizer running statistics.
@@ -86,7 +86,7 @@ choosing a scientific objective.
 - [ ] Extract SANA, Z-Image, Anima, Krea, Qwen-Image, FLUX.2 Klein and Supra into
   independently installable, properly named repositories/packages. Proposed names
   are `sana-conceptmod`, `zimage-conceptmod`, `anima-conceptmod`,
-  `krea-conceptmod`, `qwen-image-conceptmod`, `flux2-klein-conceptmod` and
+  `krea2-conceptmod`, `qwen-image-conceptmod`, `flux2-klein-conceptmod` and
   `supra-conceptmod`; verify existing organization names before creating them.
   Each owns its model dependencies, loader, defaults, original/current view,
   serialization implementation, relevant tests and model-specific docs.
@@ -145,3 +145,15 @@ Do not call scaffolding, pending repositories, or unmerged work complete.
 - 2026-11-09: Parallel fix workers started for training state, complete exports
   and reference views, and particle routing. Root owns planning, integration,
   provider architecture and extraction coordination.
+
+- 2026-11-09: Correctness integration includes training state `ee94411`, particle
+  routing `bc3a7b7`, complete exports/reference `9a8a0c7`, and unambiguous test
+  imports. Integration regression command: existing CPU environment, CUDA hidden,
+  two threads, `python -m pytest -q -p no:cacheprovider` over model-train state,
+  particle API/LoRA, bundles, Anima reference, CPU sample, Supra, Klein, operators,
+  metrics, game and 2-D analysis: **136 passed**. Full pre-export integration suite:
+  **473 passed, 6 skipped, 3 failed**. The two unchanged research assertions
+  (mode-hold PASS and shared-trajectory PASS) also fail on the pre-fix baseline;
+  the optional ComfyUI checkout lacks `comfy_aimdo.host_buffer`. These are recorded
+  separately and remain work for the research/tool boundary; no thresholds were
+  changed to hide them.

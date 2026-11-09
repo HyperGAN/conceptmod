@@ -42,7 +42,8 @@ class EditPlan:
 
     @property
     def needs_prompt_source(self) -> bool:
-        return any(r.needs_random_prompt or r.op == dsl.EXAGGERATE for r in self.rules)
+        return self.stage != "encoder" and any(
+            r.needs_random_prompt or r.op == dsl.EXAGGERATE for r in self.rules)
 
     def materialize(self, random_prompt: str | None = None) -> list[dsl.Rule]:
         return dsl.materialize([r.as_rule() for r in self.rules], random_prompt)

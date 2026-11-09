@@ -20,8 +20,6 @@ def require_cuda(device: str) -> torch.device:
         raise ValueError(f"backends require a CUDA device, got {device!r}")
     if not torch.cuda.is_available():
         raise RuntimeError("CUDA is not available")
-    torch.backends.cuda.matmul.allow_tf32 = True
-    torch.backends.cudnn.allow_tf32 = True
     return dev
 
 
@@ -56,7 +54,7 @@ def _assert_cuda(module: torch.nn.Module, device: torch.device, name: str) -> No
 class TextEmbeds:
     """Prompt embeddings plus attention mask (mask may be None)."""
 
-    def __init__(self, embeds: torch.Tensor, mask: torch.Tensor | None):
+    def __init__(self, embeds: torch.Tensor | list[torch.Tensor], mask: torch.Tensor | None):
         self.embeds = embeds
         self.mask = mask
 
@@ -66,7 +64,7 @@ class Backend(abc.ABC):
     latent_shape: tuple  # (C, H, W) for one sample
 
     @abc.abstractmethod
-    def encode_text(self, prompt: str) -> TextEmbeds:
+    def encode_text(self, prompt: str, frozen: bool = False) -> TextEmbeds:
         """Encode a prompt (cached). '' is the unconditional prompt."""
 
     @abc.abstractmethod
@@ -109,7 +107,7 @@ class Backend(abc.ABC):
 
     def artifact_metadata(self) -> dict:
         """Effective initialization and sampling settings, independent of CLI flags."""
-        metadata = {"backend": type(self).__name__}
+        metadata = {"backend": type(self).__name__, "weight_provenance": "raw-current"}
         for name in ("model_id", "base_seed", "resolution", "lora_rank",
                      "generate_steps", "generate_guidance", "ckpt_path"):
             if hasattr(self, name):
@@ -127,7 +125,40 @@ class Backend(abc.ABC):
 
         load_edit_bundle(path, self.edit_components(),
                          expected_metadata=self.artifact_metadata())
-        self._text_cache.clear()
+        self.invalidate_caches()
+
+    def invalidate_caches(self) -> None:
+        """Invalidate model-dependent embeddings after an update or restore.
+
+        Products with other caches override this hook. Callers never reach into
+        a product's private dictionaries or retain an autograd graph in them.
+        """
+        cache = getattr(self, "_text_cache", None)
+        if cache is not None:
+            cache.clear()
+
+    def training_modules(self) -> dict[str, torch.nn.Module]:
+        """Declare current and original modules needed for exact continuation."""
+        modules = {}
+        for name in ("transformer", "text_encoder", "frozen"):
+            module = getattr(self, name, None)
+            if module is None and name == "text_encoder":
+                module = getattr(getattr(self, "pipe", None), name, None)
+            if isinstance(module, torch.nn.Module):
+                modules[name] = module
+        return modules
+
+    @property
+    def original_view(self):
+        from conceptmod.contracts import ModelView
+
+        return ModelView(self, True)
+
+    @property
+    def current_view(self):
+        from conceptmod.contracts import ModelView
+
+        return ModelView(self, False)
 
     def training_defaults(self) -> dict:
         """Backend-specific OpDefaults overrides (sample_steps / sample_guidance)."""

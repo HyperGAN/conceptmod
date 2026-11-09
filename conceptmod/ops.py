@@ -17,7 +17,7 @@ import torch.nn.functional as F
 
 from conceptmod import dsl
 
-WRITE_TEMPLATES = [
+WRITE_TEMPLATES = (
     "{}",
     "{}",
     "a photo of {}",
@@ -38,9 +38,9 @@ WRITE_TEMPLATES = [
     "a {} indoors, natural light",
     "a side view of a {} sitting",
     "a {} walking in a city",
-]
+)
 
-ERASE_TEMPLATES = [
+ERASE_TEMPLATES = (
     "{}",
     "{}",
     "a {} photograph",
@@ -49,7 +49,7 @@ ERASE_TEMPLATES = [
     "{} style",
     "{}, detailed picture",
     "an image of {}",
-]
+)
 
 
 @dataclass
@@ -70,6 +70,23 @@ class OpDefaults:
     probe_p: float = 0.7               # fraction of ++ steps trained on a
     #                                    random probe prompt (global effect)
     #                                    instead of the concept prompt itself
+    write_templates: tuple[str, ...] = WRITE_TEMPLATES
+    erase_templates: tuple[str, ...] = ERASE_TEMPLATES
+
+    def __post_init__(self):
+        for name in ("write_templates", "erase_templates"):
+            value = getattr(self, name)
+            if isinstance(value, str):
+                raise ValueError(f"{name} must be a sequence, not a string")
+            templates = tuple(value)
+            if not templates or any(not isinstance(template, str) for template in templates):
+                raise ValueError(f"{name} must be a nonempty sequence of strings")
+            for template in templates:
+                try:
+                    template.format("concept")
+                except (IndexError, KeyError, ValueError) as exc:
+                    raise ValueError(f"invalid {name} template {template!r}") from exc
+            setattr(self, name, templates)
 
 
 class StepContext:
@@ -152,7 +169,7 @@ def rule_loss(rule: dsl.Rule, ctx: StepContext) -> torch.Tensor:
         import random as _random
 
         g = rule.options.get("guidance", cfg.erase_guidance)
-        c = _random.Random(ctx.seed).choice(ERASE_TEMPLATES).format(rule.a)
+        c = _random.Random(ctx.seed).choice(cfg.erase_templates).format(rule.a)
         v0 = ctx.v("", c, frozen=True)
         vc = ctx.v(c, c, frozen=True)
         target = v0 - g * (vc - v0)
@@ -169,7 +186,7 @@ def rule_loss(rule: dsl.Rule, ctx: StepContext) -> torch.Tensor:
         if a:
             import random as _random
 
-            tmpl = _random.Random(ctx.seed).choice(WRITE_TEMPLATES)
+            tmpl = _random.Random(ctx.seed).choice(cfg.write_templates)
             a, b = tmpl.format(a), tmpl.format(b)
         v0 = ctx.v("", b, frozen=True)
         vb = ctx.v(b, b, frozen=True)

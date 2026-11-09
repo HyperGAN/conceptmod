@@ -8,9 +8,11 @@ distribution for ``GANLoss`` (RpGAN) and ``GradRegularizer`` /
 not vendor ``GradRegularizer``.
 
 This package is the formulation source of truth. Live conceptmod
-(``analysis_2d``, ``analysis_dsl``, ``ops_erase``) calls
-:func:`locked_adv_defaults`, the cover / leftover helpers, and
-:func:`claim_pass`. It does not restate the adv recipe.
+research (``analysis_2d`` and ``analysis_dsl``) calls
+:func:`locked_adv_defaults`, and
+:func:`claim_pass`. It does not restate the adv recipe. Shared tensor geometry lives in
+``conceptmod.geometry``; this package re-exports those exact definitions.
+Imports are lazy: importing one helper never loads the whole research suite.
 ``erase_keep_backend`` scores that same erase/keep geometry on the
 cpu/dummy backend (and a supra-shaped latent stub).
 
@@ -53,78 +55,102 @@ Scoreboard: ``docs/formulation-toys.md``.
 
 from __future__ import annotations
 
-from . import (
-    ae_gan_hold,
-    cover_leftover,
-    cover_posture_fork,
-    dsl_game_geometry,
-    dsl_macro_expand,
-    dsl_phrase_jobs,
-    erase_keep_backend,
-    field_lift,
-    keep_critic,
-    leaderboard_honesty,
-    late_collapse,
-    lm_target,
-    locked_shared_floor,
-    mid_scale_identity,
-    mode_hold,
-    orbit_hold,
-    particle_posture,
-    path_suffix_lora,
-    residual_student,
-    shared_trajectory,
-    suite_leaderboard,
-    unipolar,
-    unused_token_hold,
-)
-from .cover_leftover import (
-    CONTENT_KEPT_MIN,
-    FORMULATION,
-    LEAK_RATIO_MAX,
-    LOCKED_COVER,
-    LOCKED_TEACHER,
-    POLE_REL_ERR_MAX,
-    SAME_DIR_MAX,
-    U_KEPT_MIN,
-    CoverRecipe,
-    LeftoverField,
-    blend_guard,
-    faithful_guard_e,
-    faithful_sub_e,
-    hold_dir,
-    leftover_bipolar,
-    reject_unlocked,
-    run_board as run_cover_board,
-    score_geometry,
-    teacher_poles,
-)
-from .late_collapse import (
-    claim_selection_pass,
-    run_selection_board,
-)
-from .dsl_macro_expand import (
-    claim_expand_pass,
-    run_board as run_macro_expand_board,
-)
-from .leaderboard_honesty import (
-    LOCKED_SHARED,
-    HonestyError,
-    claim_pass,
-    make_arm,
-    run_honesty_board,
-)
-from .keep_critic import leaderboard as run_keep_critic_board
-from .locked_shared_floor import (
-    COVER_WEIGHT,
-    FM_WEIGHT,
-    LOCKED,
-    N_PARTICLES,
-    PARTICLE_L2,
-    LockedSharedFloor,
-    leaderboard as run_locked_floor,
-    make_regularizer,
-)
+from importlib import import_module
+
+# Public research aliases resolve only when requested.
+_EXPORTS = {
+    'CONTENT_KEPT_MIN': ('conceptmod.geometry', 'CONTENT_KEPT_MIN'),
+    'COVER_WEIGHT': ('conceptmod.toys.locked_shared_floor', 'COVER_WEIGHT'),
+    'CoverRecipe': ('conceptmod.toys.cover_leftover', 'CoverRecipe'),
+    'FM_WEIGHT': ('conceptmod.toys.locked_shared_floor', 'FM_WEIGHT'),
+    'FORMULATION': ('conceptmod.toys.cover_leftover', 'FORMULATION'),
+    'HonestyError': ('conceptmod.toys.leaderboard_honesty', 'HonestyError'),
+    'LEAK_RATIO_MAX': ('conceptmod.geometry', 'LEAK_RATIO_MAX'),
+    'LOCKED': ('conceptmod.toys.locked_shared_floor', 'LOCKED'),
+    'LOCKED_COVER': ('conceptmod.toys.cover_leftover', 'LOCKED_COVER'),
+    'LOCKED_SHARED': ('conceptmod.toys.leaderboard_honesty', 'LOCKED_SHARED'),
+    'LOCKED_TEACHER': ('conceptmod.geometry', 'LOCKED_TEACHER'),
+    'LeftoverField': ('conceptmod.geometry', 'LeftoverField'),
+    'LockedSharedFloor': ('conceptmod.toys.locked_shared_floor', 'LockedSharedFloor'),
+    'N_PARTICLES': ('conceptmod.toys.locked_shared_floor', 'N_PARTICLES'),
+    'PARTICLE_L2': ('conceptmod.toys.locked_shared_floor', 'PARTICLE_L2'),
+    'POLE_REL_ERR_MAX': ('conceptmod.geometry', 'POLE_REL_ERR_MAX'),
+    'SAME_DIR_MAX': ('conceptmod.geometry', 'SAME_DIR_MAX'),
+    'U_KEPT_MIN': ('conceptmod.geometry', 'U_KEPT_MIN'),
+    'ae_gan_hold': ('conceptmod.toys.ae_gan_hold', None),
+    'blend_guard': ('conceptmod.geometry', 'blend_guard'),
+    'claim_expand_pass': ('conceptmod.toys.dsl_macro_expand', 'claim_expand_pass'),
+    'claim_pass': ('conceptmod.toys.leaderboard_honesty', 'claim_pass'),
+    'claim_selection_pass': ('conceptmod.toys.late_collapse', 'claim_selection_pass'),
+    'cover_leftover': ('conceptmod.toys.cover_leftover', None),
+    'cover_posture_fork': ('conceptmod.toys.cover_posture_fork', None),
+    'dsl_game_geometry': ('conceptmod.toys.dsl_game_geometry', None),
+    'dsl_macro_expand': ('conceptmod.toys.dsl_macro_expand', None),
+    'dsl_phrase_jobs': ('conceptmod.toys.dsl_phrase_jobs', None),
+    'erase_keep_backend': ('conceptmod.toys.erase_keep_backend', None),
+    'faithful_guard_e': ('conceptmod.geometry', 'faithful_guard_e'),
+    'faithful_sub_e': ('conceptmod.geometry', 'faithful_sub_e'),
+    'field_lift': ('conceptmod.toys.field_lift', None),
+    'hold_dir': ('conceptmod.geometry', 'hold_dir'),
+    'keep_critic': ('conceptmod.toys.keep_critic', None),
+    'late_collapse': ('conceptmod.toys.late_collapse', None),
+    'leaderboard_honesty': ('conceptmod.toys.leaderboard_honesty', None),
+    'leftover_bipolar': ('conceptmod.geometry', 'leftover_bipolar'),
+    'lm_target': ('conceptmod.toys.lm_target', None),
+    'locked_shared_floor': ('conceptmod.toys.locked_shared_floor', None),
+    'make_arm': ('conceptmod.toys.leaderboard_honesty', 'make_arm'),
+    'make_regularizer': ('conceptmod.toys.locked_shared_floor', 'make_regularizer'),
+    'mid_scale_identity': ('conceptmod.toys.mid_scale_identity', None),
+    'mode_hold': ('conceptmod.toys.mode_hold', None),
+    'orbit_hold': ('conceptmod.toys.orbit_hold', None),
+    'particle_posture': ('conceptmod.toys.particle_posture', None),
+    'path_suffix_lora': ('conceptmod.toys.path_suffix_lora', None),
+    'reject_unlocked': ('conceptmod.toys.cover_leftover', 'reject_unlocked'),
+    'residual_student': ('conceptmod.toys.residual_student', None),
+    'run_cover_board': ('conceptmod.toys.cover_leftover', 'run_board'),
+    'run_cover_posture_board': ('conceptmod.toys.cover_posture_fork', 'run_board'),
+    'run_dsl_game_board': ('conceptmod.toys.dsl_game_geometry', 'run_board'),
+    'run_dsl_phrase_board': ('conceptmod.toys.dsl_phrase_jobs', 'run_board'),
+    'run_erase_keep_board': ('conceptmod.toys.erase_keep_backend', 'run_board'),
+    'run_field_board': ('conceptmod.toys.field_lift', 'run_board'),
+    'run_honesty_board': ('conceptmod.toys.leaderboard_honesty', 'run_honesty_board'),
+    'run_keep_critic_board': ('conceptmod.toys.keep_critic', 'leaderboard'),
+    'run_locked_floor': ('conceptmod.toys.locked_shared_floor', 'leaderboard'),
+    'run_macro_expand_board': ('conceptmod.toys.dsl_macro_expand', 'run_board'),
+    'run_mid_scale_board': ('conceptmod.toys.mid_scale_identity', 'run_board'),
+    'run_orbit_family': ('conceptmod.toys.orbit_hold', 'run_family'),
+    'run_posture_family': ('conceptmod.toys.particle_posture', 'run_family'),
+    'run_residual_family': ('conceptmod.toys.residual_student', 'run_family'),
+    'run_selection_board': ('conceptmod.toys.late_collapse', 'run_selection_board'),
+    'run_suite_board': ('conceptmod.toys.suite_leaderboard', 'run_suite'),
+    'run_unipolar_arm': ('conceptmod.toys.unipolar', 'run_arm'),
+    'run_unused_token_family': ('conceptmod.toys.unused_token_hold', 'run_family'),
+    'score_geometry': ('conceptmod.toys.cover_leftover', 'score_geometry'),
+    'shared_trajectory': ('conceptmod.toys.shared_trajectory', None),
+    'suite_leaderboard': ('conceptmod.toys.suite_leaderboard', None),
+    'teacher_poles': ('conceptmod.geometry', 'teacher_poles'),
+    'train_ae_gan': ('conceptmod.toys.ae_gan_hold', 'train'),
+    'train_drift': ('conceptmod.toys.shared_trajectory', 'train_drift'),
+    'train_locked': ('conceptmod.toys.shared_trajectory', 'train_locked'),
+    'train_mode_hold': ('conceptmod.toys.mode_hold', 'train_mode_hold'),
+    'unipolar': ('conceptmod.toys.unipolar', None),
+    'unused_token_hold': ('conceptmod.toys.unused_token_hold', None),
+}
+
+
+def __getattr__(name):
+    if name not in _EXPORTS:
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+    module_name, attribute = _EXPORTS[name]
+    module = import_module(module_name)
+    value = module if attribute is None else getattr(module, attribute)
+    globals()[name] = value
+    return value
+
+
+def __dir__():
+    return sorted(set(globals()) | set(__all__))
+
 
 # Formulation fields on the floor stamp. ``steps`` / ``seed`` / ``lr`` /
 # ``batch`` are budget, not a second recipe.
@@ -152,6 +178,9 @@ def locked_adv_defaults() -> dict:
     Not a new recipe. Keys that also live on :data:`LOCKED_SHARED` are
     checked so the floor and the honesty gate cannot fork.
     """
+    from .locked_shared_floor import LOCKED
+    from .leaderboard_honesty import LOCKED_SHARED
+
     stamp = {name: getattr(LOCKED, name) for name in _ADV_FIELDS}
     for key, value in stamp.items():
         if key in LOCKED_SHARED and LOCKED_SHARED[key] != value:
@@ -162,22 +191,6 @@ def locked_adv_defaults() -> dict:
     return stamp
 
 
-train_locked = shared_trajectory.train_locked
-train_drift = shared_trajectory.train_drift
-run_residual_family = residual_student.run_family
-run_orbit_family = orbit_hold.run_family
-run_field_board = field_lift.run_board
-run_unipolar_arm = unipolar.run_arm
-run_mid_scale_board = mid_scale_identity.run_board
-train_ae_gan = ae_gan_hold.train
-train_mode_hold = mode_hold.train_mode_hold
-run_posture_family = particle_posture.run_family
-run_unused_token_family = unused_token_hold.run_family
-run_erase_keep_board = erase_keep_backend.run_board
-run_cover_posture_board = cover_posture_fork.run_board
-run_dsl_game_board = dsl_game_geometry.run_board
-run_dsl_phrase_board = dsl_phrase_jobs.run_board
-run_suite_board = suite_leaderboard.run_suite
 
 __all__ = [
     "CONTENT_KEPT_MIN",

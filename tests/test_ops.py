@@ -94,10 +94,32 @@ def test_default_erase_guidance_is_neutralize():
     assert ops.OpDefaults.erase_guidance == 0.0
 
 
-def test_bare_erase_targets_empty(ctx, monkeypatch):
+def test_template_policies_are_local_to_each_context():
+    backend = MockBackend()
+    bare = ops.OpDefaults(write_templates=("{}",), erase_templates=("{}",))
+    scene = ops.OpDefaults(write_templates=("render {}",), erase_templates=("render {}",))
+    first = ops.StepContext(backend, 2, 7, bare)
+    second = ops.StepContext(backend, 2, 7, scene)
+    loss_for("cat=dog", first)
+    loss_for("cat--", first)
+    loss_for("cat=dog", second)
+    loss_for("cat--", second)
+    assert set(first._z) == {"dog", "cat"}
+    assert set(second._z) == {"render dog", "render cat"}
+    assert ops.OpDefaults().write_templates == ops.WRITE_TEMPLATES
+    assert ops.OpDefaults().erase_templates == ops.ERASE_TEMPLATES
+
+
+@pytest.mark.parametrize("templates", [(), ("{missing}",), ("{} {}",), (2,), "{}"])
+def test_invalid_template_policies_fail_at_configuration(templates):
+    with pytest.raises(ValueError):
+        ops.OpDefaults(erase_templates=templates)
+
+
+def test_bare_erase_targets_empty(ctx):
     """Default ``c--`` target is v('') — neutralize, not ESD overshoot."""
     backend, c = ctx
-    monkeypatch.setattr(ops, "ERASE_TEMPLATES", ["{}"])
+    c.cfg.erase_templates = ("{}",)
     assert c.cfg.erase_guidance == 0.0
     z, t = c.z_for("cat")
     v0 = backend.predict_v("", z, t, frozen=True)
@@ -116,10 +138,10 @@ def test_bare_erase_targets_empty(ctx, monkeypatch):
     assert d1 < d_over
 
 
-def test_erase_guidance_option_is_esd_overshoot(ctx, monkeypatch):
+def test_erase_guidance_option_is_esd_overshoot(ctx):
     """``c--:guidance=1`` overshoots even when the cfg default is 0."""
     backend, c = ctx
-    monkeypatch.setattr(ops, "ERASE_TEMPLATES", ["{}"])
+    c.cfg.erase_templates = ("{}",)
     assert c.cfg.erase_guidance == 0.0
     opt = torch.optim.SGD([backend.delta], lr=1.0)
     z, t = c.z_for("cat")
@@ -136,10 +158,10 @@ def test_erase_guidance_option_is_esd_overshoot(ctx, monkeypatch):
     assert d1 < d0
 
 
-def test_erase_guidance_1_is_esd_overshoot(ctx, monkeypatch):
+def test_erase_guidance_1_is_esd_overshoot(ctx):
     """CLI ``--erase-guidance 1`` still uses the negatively-guided target."""
     backend, c = ctx
-    monkeypatch.setattr(ops, "ERASE_TEMPLATES", ["{}"])
+    c.cfg.erase_templates = ("{}",)
     c.cfg.erase_guidance = 1.0
     opt = torch.optim.SGD([backend.delta], lr=1.0)
     z, t = c.z_for("cat")

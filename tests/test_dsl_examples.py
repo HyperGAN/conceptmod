@@ -48,7 +48,7 @@ def test_locked_game_example_scores_pass():
     assert "Music" in doc
     match = game(module.SOURCE)
     assert [rule.op for rule in match.rules] == module.EXPECTED_OPS
-    row = match.score()
+    row = match.step_and_score()
     assert row["verdict"] == "PASS"
     assert row["mismatches"] == []
     assert "Music" in row["note"]

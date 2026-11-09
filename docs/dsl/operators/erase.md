@@ -19,7 +19,7 @@ c--:guidance=1
 ## Velocity target
 
 ESD, in a templated context `c'` (the GPU trainer samples
-`ERASE_TEMPLATES`; the 2-D fixture and `loss_game` pin that list to
+`OpDefaults.erase_templates`; the 2-D fixture and `loss_game` explicitly set their policy to
 `"{}"` so the story is the axis, not the template):
 
 ```text

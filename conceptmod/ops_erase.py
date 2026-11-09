@@ -32,7 +32,7 @@ Modes
     regularizer, no bi-level LoRA, no LLM-sampled ``D_ir`` / RSC features.
 
 Erase/keep geometry (the retain axis, the faithful poles, and a bipolar
-leftover when both poles are passed) comes from ``conceptmod.toys`` —
+leftover when both poles are passed) comes from ``conceptmod.geometry`` —
 ``hold_dir``, ``faithful_guard_e``, and ``leftover_bipolar``. Those
 helpers are the cover / leftover source of truth. This module does not
 restate their thresholds or the locked_shared adv recipe.
@@ -57,7 +57,7 @@ import torch
 import torch.nn.functional as F
 
 from conceptmod import dsl, ops
-from conceptmod.toys.cover_leftover import (
+from conceptmod.geometry import (
     LEAK_RATIO_MAX,
     LOCKED_TEACHER,
     SAME_DIR_MAX,
@@ -88,7 +88,7 @@ def resolve_erase_mode(ctx: ops.StepContext | None = None,
 
 def formatted_erase_prompt(rule: dsl.Rule, ctx: ops.StepContext) -> str:
     """Same template draw as ``ops.rule_loss`` (seeded by ``ctx.seed``)."""
-    return _random.Random(ctx.seed).choice(ops.ERASE_TEMPLATES).format(rule.a)
+    return _random.Random(ctx.seed).choice(ctx.cfg.erase_templates).format(rule.a)
 
 
 def esd_target(v0: torch.Tensor, vc: torch.Tensor,
@@ -204,14 +204,14 @@ def erase_keep_geometry(
     """Score erase/keep with the cover leftover helpers.
 
     ``erase_axis`` is û and ``keep_axis`` is leftover ê. The retain
-    direction is :func:`conceptmod.toys.hold_dir` (ê perpendicular to û).
-    :func:`conceptmod.toys.faithful_guard_e` builds the teacher poles
+    direction is :func:`conceptmod.geometry.hold_dir` (ê perpendicular to û).
+    :func:`conceptmod.geometry.faithful_guard_e` builds the teacher poles
     (``faithful_guard_e``): leftover ê comes off the odd part when the
     blend guard admits it. ``teacher_leak`` is that pole's component on ê.
 
     ``delta_plus`` and ``delta_minus`` are residuals on the two poles of
     the erase axis (the concept and its antipode). When both are passed,
-    :func:`conceptmod.toys.leftover_bipolar` reports even leftover
+    :func:`conceptmod.geometry.leftover_bipolar` reports even leftover
     (``same_dir``). The keep probe is not a pole, so a one-sided erase
     fixture omits them.
     """

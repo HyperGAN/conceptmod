@@ -25,7 +25,7 @@ phrase red=blue
 pairing locked_shared
 claim locked
 """)
-row = match.score()
+row = match.step_and_score()
 assert row["verdict"] == "PASS"
 assert row["rules"][0]["op"] == "write"
 ```

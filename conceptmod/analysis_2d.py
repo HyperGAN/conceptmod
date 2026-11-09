@@ -64,7 +64,7 @@ _TOKEN_RE = re.compile(r"[a-z0-9]+")
 
 # Bare-word templates so the 2-D story is the axes, not template coverage.
 # Same pin as tests/test_erase_cpu.py.
-_BARE_TEMPLATES = ["{}"]
+_BARE_TEMPLATES = ("{}",)
 
 # Cheap CPU budget: a few dozen Adam steps on a 64-d linear field.
 # Not the locked_shared trainer card (that is locked_adv_defaults()).
@@ -232,6 +232,8 @@ def _cfg(guidance: float = DEFAULT_GUIDANCE, mode: str = "esd",
     # phrase sets :guidance=… — do not silently keep the old g=1 ESD.
     cfg = ops.OpDefaults(
         write_guidance=guidance,
+        write_templates=_BARE_TEMPLATES,
+        erase_templates=_BARE_TEMPLATES,
         exaggerate_guidance=exaggerate if exaggerate is not None else EXAGGERATE_GUIDANCE,
         sample_steps=4,
         sample_guidance=1.0,
@@ -274,19 +276,6 @@ def plane_points(backend: TwoAxisBackend, z, t, frozen: bool) -> dict[str, tuple
     return out
 
 
-def _pin_bare_templates(monkey_ops=ops):
-    """Return a restore callable. Used by the suite and by tests."""
-    old_e, old_w = monkey_ops.ERASE_TEMPLATES, monkey_ops.WRITE_TEMPLATES
-    monkey_ops.ERASE_TEMPLATES = list(_BARE_TEMPLATES)
-    monkey_ops.WRITE_TEMPLATES = list(_BARE_TEMPLATES)
-
-    def restore():
-        monkey_ops.ERASE_TEMPLATES = old_e
-        monkey_ops.WRITE_TEMPLATES = old_w
-
-    return restore
-
-
 def train_one(
     phrase: str,
     *,
@@ -299,35 +288,30 @@ def train_one(
     erase_guidance: float | None = None,
 ) -> tuple[TwoAxisBackend, list[ProbeSnapshot], float]:
     """SGD/Adam on the live ``rule_loss`` / ``erase_loss`` path."""
-    restore = _pin_bare_templates()
-    try:
-        backend = TwoAxisBackend(seed=seed)
-        z, t = _probe_zt(backend, seed)
-        rules = dsl.parse_phrase(phrase)
-        mode = erase_mode or "esd"
-        exaggerate = EXAGGERATE_GUIDANCE if any(r.op == dsl.EXAGGERATE for r in rules) else None
-        cfg = _cfg(guidance=guidance, mode=mode, keep=keep, exaggerate=exaggerate,
-                   erase_guidance=erase_guidance)
-        opt = torch.optim.Adam(backend.trainable_parameters(), lr=lr)
-        history = [snapshot(backend, z, t, 0)]
-        t0 = time.time()
-        for i in range(steps):
-            ctx = ops.StepContext(backend, stop_index=2, seed=seed + i, cfg=cfg)
-            for rule in rules:
-                if erase_mode in ("gem", "ea") and rule.op == dsl.ERASE:
-                    loss = rule.alpha * erase_loss(rule, ctx, mode=erase_mode)
-                else:
-                    loss = rule.alpha * ops.rule_loss(rule, ctx)
-                loss.backward()
-                ctx.clear_grad_cache()
-            torch.nn.utils.clip_grad_norm_(backend.trainable_parameters(), 1.0)
-            opt.step()
-            opt.zero_grad(set_to_none=True)
-            history.append(snapshot(backend, z, t, i + 1))
-        return backend, history, time.time() - t0
-    finally:
-        restore()
-
+    backend = TwoAxisBackend(seed=seed)
+    z, t = _probe_zt(backend, seed)
+    rules = dsl.parse_phrase(phrase)
+    mode = erase_mode or "esd"
+    exaggerate = EXAGGERATE_GUIDANCE if any(r.op == dsl.EXAGGERATE for r in rules) else None
+    cfg = _cfg(guidance=guidance, mode=mode, keep=keep, exaggerate=exaggerate,
+               erase_guidance=erase_guidance)
+    opt = torch.optim.Adam(backend.trainable_parameters(), lr=lr)
+    history = [snapshot(backend, z, t, 0)]
+    t0 = time.time()
+    for i in range(steps):
+        ctx = ops.StepContext(backend, stop_index=2, seed=seed + i, cfg=cfg)
+        for rule in rules:
+            if erase_mode in ("gem", "ea") and rule.op == dsl.ERASE:
+                loss = rule.alpha * erase_loss(rule, ctx, mode=erase_mode)
+            else:
+                loss = rule.alpha * ops.rule_loss(rule, ctx)
+            loss.backward()
+            ctx.clear_grad_cache()
+        torch.nn.utils.clip_grad_norm_(backend.trainable_parameters(), 1.0)
+        opt.step()
+        opt.zero_grad(set_to_none=True)
+        history.append(snapshot(backend, z, t, i + 1))
+    return backend, history, time.time() - t0
 
 def keep_leak_flags(after: ProbeSnapshot, geometry: dict | None = None) -> tuple[bool, bool]:
     """Keep-hold and target-leak flags.

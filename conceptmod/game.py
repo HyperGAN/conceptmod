@@ -39,7 +39,6 @@ from conceptmod.analysis_2d import (
     PROBE_PROMPTS,
     TwoAxisBackend,
     _cfg,
-    _pin_bare_templates,
     _probe_zt,
     snapshot,
 )
@@ -357,6 +356,7 @@ class Game:
         self.seed = int(seed)
         self.steps_run = 0
         self.history: list[GameStep] = []
+        self._step_failed = False
 
         torch.manual_seed(self.seed)
         self.backend = TwoAxisBackend(seed=self.seed)
@@ -453,16 +453,23 @@ class Game:
         return torch.stack(rows)
 
     def step(self) -> GameStep:
-        """One critic update, then one student update. The student loss is the phrase plus RpGAN ``g_loss``."""
-        restore = _pin_bare_templates()
-        try:
-            return self._step_pinned()
-        finally:
-            restore()
+        """Commit one critic and student update, or enter a failed state.
 
-    def _step_pinned(self) -> GameStep:
-        self.steps_run += 1
-        step_index = self.steps_run
+        A failed update may have changed one player already. It is not a
+        completed step and this non-resumable research fixture must be rebuilt.
+        """
+        if self._step_failed:
+            raise GameError("the last game step failed; rebuild the game before stepping")
+        try:
+            return self._step()
+        except BaseException:
+            self._step_failed = True
+            self.opt_critic.zero_grad(set_to_none=True)
+            self.opt_student.zero_grad(set_to_none=True)
+            raise
+
+    def _step(self) -> GameStep:
+        step_index = self.steps_run + 1
         real = self._plane(frozen=True).detach()
         fake_det = self._plane(frozen=False).detach()
         critic_snap = copy.deepcopy(self.critic)
@@ -526,12 +533,15 @@ class Game:
             probe=snapshot(self.backend, self._z, self._t, step_index),
         )
         self.history.append(taken)
+        self.steps_run = step_index
         return taken
 
     def score(self) -> dict:
-        """Formulation row for the latest step. Runs one step if none has."""
+        """Observe the latest committed step without updating either player."""
+        if self._step_failed:
+            raise GameError("the last game step failed; rebuild the game before scoring")
         if not self.history:
-            self.step()
+            raise GameError("game has no committed step; call step() or step_and_score() first")
         taken = self.history[-1]
         mismatches = self._mismatches(taken)
         verdict = "PASS" if self.claimed_locked and not mismatches else "FAIL"
@@ -581,6 +591,11 @@ class Game:
             ),
             "note": NOT_A_TRANSFER,
         }
+
+    def step_and_score(self) -> dict:
+        """Explicit convenience: commit one step, then observe its score."""
+        self.step()
+        return self.score()
 
     def _mismatches(self, taken: GameStep) -> list[str]:
         bad: list[str] = []

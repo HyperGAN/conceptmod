@@ -412,7 +412,7 @@ def game_wiring_row(phrase: str = PHRASE) -> dict:
     devices = {param.device.type for param in match.backend.trainable_parameters()}
     if devices != {"cpu"}:
         raise HonestyError(f"replace-macro toy left the game on {sorted(devices)}")
-    score = match.score()
+    score = match.step_and_score()
     rules = view_rules(match.rules)
     want = documented_triple()
     wiring_ok = (

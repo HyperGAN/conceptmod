@@ -72,14 +72,8 @@ class TwoConceptVelocity:
         return [self.delta_e, self.delta_k]
 
 
-@pytest.fixture
-def bare_templates(monkeypatch):
-    """Pin the ESD template so the phrase is the bare concept word."""
-    monkeypatch.setattr(ops, "ERASE_TEMPLATES", ["{}"])
-
-
 def _cfg(mode="esd"):
-    cfg = ops.OpDefaults(sample_steps=4)
+    cfg = ops.OpDefaults(sample_steps=4, erase_templates=("{}",))
     cfg.erase_mode = mode
     cfg.erase_keep = KEEP
     cfg.gem_eta = 1.0
@@ -117,7 +111,7 @@ def _step_erase(backend, mode, steps=16, lr=0.5, seed=0):
     return rule, cfg
 
 
-def test_esd_erase_reduces_erase_probe_more_than_keep(bare_templates):
+def test_esd_erase_reduces_erase_probe_more_than_keep():
     """Success criterion: ``stripe--`` disentangles from ``dot``.
 
     After ESD on the live ``ops.rule_loss`` path, the erase-concept CFG
@@ -142,7 +136,7 @@ def test_esd_erase_reduces_erase_probe_more_than_keep(bare_templates):
     assert time.time() - t0 < 30.0
 
 
-def test_ops_erase_esd_matches_live_rule_loss(bare_templates):
+def test_ops_erase_esd_matches_live_rule_loss():
     """``ops_erase.esd`` is the same tensor as ``ops.rule_loss`` (ERASE)."""
     backend = TwoConceptVelocity()
     rule = dsl.parse_phrase(f"{ERASE}--")[0]
@@ -152,7 +146,7 @@ def test_ops_erase_esd_matches_live_rule_loss(bare_templates):
     assert torch.allclose(a, b)
 
 
-def test_ea_retain_is_esd_plus_keep_anchor(bare_templates):
+def test_ea_retain_is_esd_plus_keep_anchor():
     """EA hook = ESD + retain; keep probe stays put, erase still drops.
 
     Not a full EraseAnything port (no attention regularizer / RSC / bi-level).
@@ -168,7 +162,7 @@ def test_ea_retain_is_esd_plus_keep_anchor(bare_templates):
     assert abs(keep1 - keep0) < 1e-6
 
 
-def test_gem_contrastive_reduces_erase_probe(bare_templates):
+def test_gem_contrastive_reduces_erase_probe():
     """GEM hinge attracts toward the ESD safe field, repels erase.
 
     ``erase_keep`` is a retain, not the attractor (paper ĉ is a harmless
@@ -193,7 +187,7 @@ def test_erase_keep_axes_use_the_faithful_teacher():
     assert report["teacher_leak_ok"] is True
 
 
-def test_unknown_erase_mode_rejected(bare_templates):
+def test_unknown_erase_mode_rejected():
     backend = TwoConceptVelocity()
     rule = dsl.parse_phrase(f"{ERASE}--")[0]
     ctx = ops.StepContext(backend, 2, seed=0, cfg=_cfg())
@@ -202,7 +196,7 @@ def test_unknown_erase_mode_rejected(bare_templates):
     assert ERASE_MODES == ("esd", "gem", "ea")
 
 
-def test_erase_loss_rejects_non_erase_rule(bare_templates):
+def test_erase_loss_rejects_non_erase_rule():
     backend = TwoConceptVelocity()
     rule = dsl.parse_phrase(f"{ERASE}++")[0]
     ctx = ops.StepContext(backend, 2, seed=0, cfg=_cfg())

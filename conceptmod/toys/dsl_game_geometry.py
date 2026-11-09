@@ -293,7 +293,7 @@ def score_game(
             "claimed_pass": claimed_pass,
             "step": 0,
         }
-    row = match.score()
+    row = match.step_and_score()
     stamp = locked_adv_defaults()
     return {
         "verdict": row["verdict"],

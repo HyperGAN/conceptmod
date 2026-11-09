@@ -31,7 +31,7 @@ print(describe_phrase(phrase))
 
 match = loss_game(phrase)     # student vs critic, adv="locked_shared"
 print(match)
-row = match.score()           # one CPU step on the 2-D fixture
+row = match.step_and_score()           # one CPU step on the 2-D fixture
 assert row["verdict"] == "PASS"
 ```
 

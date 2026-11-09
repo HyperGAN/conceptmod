@@ -140,7 +140,7 @@ choosing a scientific objective.
 - [x] Make tests run with the default command; remove cross-test fixture import
   fragility, ensure optional dependency tests skip explicitly, and add CI for
   core plus product contract compatibility.
-- [ ] Verify clean builds, installed-package smoke examples, safe checkpoint and
+- [x] Verify clean builds, installed-package smoke examples, safe checkpoint and
   bundle loading, exact continuation, deterministic independent sessions,
   exception cleanup and provider isolation. Update release/version metadata and
   public API documentation to the resulting behavior.
@@ -208,3 +208,36 @@ Do not call scaffolding, pending repositories, or unmerged work complete.
   optional PEFT-fixture skip**. The console validator ran successfully. Wheel
   inspection found only the base backend and registry, no native models or
   converters; the source distribution includes tests, examples and documentation.
+- 2026-11-09: Added the declared test extra in that fresh environment and ran the
+  full default suite again: **531 passed, 2 xfailed**, no warnings, in 69.49
+  seconds. This also tests PEFT 0.21.2 with current Transformers 5.22.2, whereas
+  the product acceptance environment uses Transformers 4.57.6 and diffusers
+  0.39.0. No shared environment or process-wide runtime policy was changed.
+- 2026-11-09: Built and installed all eight separate package wheels, then ran
+  each repository's tests from `/tmp` with `--import-mode=importlib`, offline Hub
+  settings, CUDA hidden and two CPU threads: **153 passed, 7 skipped**. Skips
+  are an explicit optional Krea-format comparison and six ComfyUI integrations
+  requiring an opted-in local checkout. All seven providers discover without
+  importing Torch/model libraries; every native backend imports from its installed
+  wheel. The converter imports without core, and both console entry points run.
+  Actual Supra model and encoder updates each save a safe checkpoint, restore
+  into a differently initialized backend and continue bit-identically. This
+  exposed a PEFT str-Enum identity issue, fixed in every product by normalizing
+  metadata to plain primitives, without weakening `weights_only=True` loading.
+
+Verified product commits (publication follows the core merge):
+
+| Repository | Passed / optional skips | Commit |
+| --- | --- | --- |
+| [sana-conceptmod](https://github.com/HyperGAN/sana-conceptmod) | 12 / 0 | [8842bff](https://github.com/HyperGAN/sana-conceptmod/commit/8842bff58aa954fb988c32a20e2731f6787ace4a) |
+| [zimage-conceptmod](https://github.com/HyperGAN/zimage-conceptmod) | 11 / 0 | [df7ee67](https://github.com/HyperGAN/zimage-conceptmod/commit/df7ee677964faab1d9a134a8b5a607da7f069929) |
+| [anima-conceptmod](https://github.com/HyperGAN/anima-conceptmod) | 19 / 0 | [e83bcd3](https://github.com/HyperGAN/anima-conceptmod/commit/e83bcd30db206a4f0105600dcf559531850a2c58) |
+| [krea2-conceptmod](https://github.com/HyperGAN/krea2-conceptmod) | 15 / 1 | [e5658bf](https://github.com/HyperGAN/krea2-conceptmod/commit/e5658bfb16f0a9b35798484abf876b362ae817b9) |
+| [qwen-image-conceptmod](https://github.com/HyperGAN/qwen-image-conceptmod) | 13 / 0 | [4bf5f95](https://github.com/HyperGAN/qwen-image-conceptmod/commit/4bf5f95ce056bb7b951c8dc25a669eaedb98a9e2) |
+| [flux2-klein-conceptmod](https://github.com/HyperGAN/flux2-klein-conceptmod) | 15 / 0 | [e0a3db5](https://github.com/HyperGAN/flux2-klein-conceptmod/commit/e0a3db5fb2ab0b1ea31b8606e36f30b3b7cca4a9) |
+| [supra-conceptmod](https://github.com/HyperGAN/supra-conceptmod) | 28 / 0 | [43ae82f](https://github.com/HyperGAN/supra-conceptmod/commit/43ae82fddaef529ea735601f283f010a1e184ff9) |
+| [conceptmod-converters](https://github.com/HyperGAN/conceptmod-converters) | 40 / 6 | [d032e4f](https://github.com/HyperGAN/conceptmod-converters/commit/d032e4f43abfd8c57cc722411051462587fe7581) |
+
+Architecture [PR #39](https://github.com/HyperGAN/conceptmod/pull/39) is the final
+integration after the separately merged correctness fixes. Remote merge and
+publication receipts follow below when verified.

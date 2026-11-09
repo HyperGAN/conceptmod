@@ -36,6 +36,7 @@ import torch
 import torch.nn.functional as F
 
 from conceptmod import dsl
+from conceptmod.contracts import ModelView
 
 PROBE_TEMPLATES = [
     "a photo of {}",
@@ -109,10 +110,11 @@ def fixed_distance_target(current, target, step_dist):
 
 
 class EncoderObjective:
-    """Embedding-space objective; its immutable reference is rebuilt on restore."""
+    """Embedding-space objective with a checkpointed immutable reference."""
 
     def __init__(self, backend, plan, config):
         self.backend, self.plan, self.config = backend, plan, config
+        self.original = ModelView(backend, True)
         self.rules = [rule.as_rule() for rule in plan.rules]
         self.refresh()
 
@@ -120,13 +122,13 @@ class EncoderObjective:
         # Build a replacement reference atomically: a failed provider encoding
         # during checkpoint restore cannot leave a partially rebuilt objective.
         with torch.no_grad():
-            pool_uncond = pool(self.backend.encode_text("", frozen=True)).detach()
+            pool_uncond = pool(self.original.encode_text("")).detach()
             directions = {}
             for rule in self.rules:
                 for concept in {rule.a, rule.b} - {""}:
                     if concept not in directions:
                         directions[concept] = (
-                            pool(self.backend.encode_text(concept, frozen=True))
+                            pool(self.original.encode_text(concept))
                             - pool_uncond).detach()
         step_dist = {}
         for rule in self.rules:
@@ -134,6 +136,36 @@ class EncoderObjective:
             if concept in directions:
                 step_dist[rule.raw] = directions[concept].norm().item() / self.config.curriculum_split
         self.pool_uncond, self.directions, self.step_dist = pool_uncond, directions, step_dist
+
+    def state_dict(self):
+        return {"pool_uncond": self.pool_uncond.detach().clone(),
+                "directions": {key: value.detach().clone() for key, value in self.directions.items()},
+                "step_dist": dict(self.step_dist)}
+
+    def validate_state_dict(self, state):
+        import math
+
+        if not isinstance(state, dict) or set(state) != {"pool_uncond", "directions", "step_dist"}:
+            raise ValueError("invalid encoder objective reference state")
+        if (not isinstance(state["directions"], dict) or set(state["directions"]) != set(self.directions)
+                or not isinstance(state["step_dist"], dict) or set(state["step_dist"]) != set(self.step_dist)):
+            raise ValueError("encoder objective concepts do not match")
+        pairs = [(self.pool_uncond, state["pool_uncond"])]
+        pairs += [(value, state["directions"][key]) for key, value in self.directions.items()]
+        for current, saved in pairs:
+            if (not isinstance(saved, torch.Tensor) or saved.shape != current.shape
+                    or saved.dtype != current.dtype or not bool(torch.isfinite(saved).all())):
+                raise ValueError("encoder objective reference tensor does not match")
+        if any(isinstance(value, bool) or not isinstance(value, (int, float))
+               or not math.isfinite(value) or value < 0 for value in state["step_dist"].values()):
+            raise ValueError("invalid encoder curriculum distance")
+
+    def load_state_dict(self, state):
+        self.validate_state_dict(state)
+        pool_uncond = state["pool_uncond"].detach().to(self.pool_uncond.device).clone()
+        directions = {key: state["directions"][key].detach().to(value.device).clone()
+                      for key, value in self.directions.items()}
+        self.pool_uncond, self.directions, self.step_dist = pool_uncond, directions, dict(state["step_dist"])
 
     def losses(self, rng):
         backend = self.backend
@@ -147,7 +179,7 @@ class EncoderObjective:
                 sign = -1.0 if rule.op == dsl.ERASE else 1.0
                 cur, mask = as_padded(backend.encode_text_grad(neutral))
                 with torch.no_grad():
-                    fro, _ = as_padded(backend.encode_text(neutral, frozen=True))
+                    fro, _ = as_padded(self.original.encode_text(neutral))
                     target = fro.float() + sign * strength * self.directions[concept].unsqueeze(1)
                     capped = fixed_distance_target(cur.float().detach(), target,
                                                    self.step_dist[rule.raw])
@@ -156,9 +188,9 @@ class EncoderObjective:
                 p_a, p_b = template.format(rule.a), template.format(rule.b)
                 cur, mask = as_padded(backend.encode_text_grad(p_a))
                 with torch.no_grad():
-                    frozen_a = backend.encode_text(p_a, frozen=True)
+                    frozen_a = self.original.encode_text(p_a)
                     fro, _ = as_padded(frozen_a)
-                    direction = (pool(backend.encode_text(p_b, frozen=True))
+                    direction = (pool(self.original.encode_text(p_b))
                                  - pool(frozen_a)).unsqueeze(1)
                     target = fro.float() + strength * direction
                     capped = fixed_distance_target(cur.float().detach(), target,
@@ -169,7 +201,7 @@ class EncoderObjective:
                 p_b = template.format(rule.b) if rule.b else neutral
                 cur, mask = as_padded(backend.encode_text_grad(p_a))
                 with torch.no_grad():
-                    fro, _ = as_padded(backend.encode_text(p_b, frozen=True))
+                    fro, _ = as_padded(self.original.encode_text(p_b))
                 length = min(cur.shape[1], fro.shape[1])
                 loss = masked_mse(cur[:, :length], fro[:, :length], mask[:, :length])
             elif rule.op == dsl.ORTHOGONAL:

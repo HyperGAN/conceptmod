@@ -19,7 +19,9 @@ def setup(seed=4):
     host.requires_grad_(False)
     original = deepcopy(host.state_dict())
     context = torch.tensor([[0.2, -0.5, 1.0]])
-    base = host(context).detach()
+    # Keep the reference batch identical: BLAS may use different accumulation
+    # kernels for a single row and a batch, with valid float32 roundoff.
+    base = host(context.expand(4, -1)).detach()
     generator = ParticleLoRAGenerator(host, ("0", "2"), context, rank=8, z_dim=4)
     critic = nn.Sequential(nn.Linear(2, 8), nn.SiLU(), nn.Linear(8, 1))
     trainer = generator.make_trainer(critic, batch_size=8, total_steps=8, seed=12)
@@ -55,7 +57,7 @@ def test_official_recipe_updates_lora_and_real_prior_keeps_base_frozen():
         assert torch.equal(layer.base.weight, original[f"{name}.weight"])
         assert torch.equal(layer.base.bias, original[f"{name}.bias"])
     codes = trainer.prior.z[:4]
-    assert torch.equal(generator(codes, strength=0), base.expand(4, -1))
+    assert torch.equal(generator(codes, strength=0), base)
     assert not torch.equal(generator(codes, strength=1), generator(codes, strength=0))
     # The same context genuinely depends on the sampled particle row.
     assert not torch.equal(generator(codes)[0], generator(codes)[1])
@@ -97,7 +99,7 @@ def test_trainer_never_reactivates_frozen_dropout_or_running_statistics():
     host.requires_grad_(False).eval()
     context = torch.ones(1, 3)
     original = deepcopy(host.state_dict())
-    base = host(context).detach()
+    base = host(context.expand(16, -1)).detach()
     generator = ParticleLoRAGenerator(host, ("0", "3"), context, rank=4)
     critic = nn.Sequential(nn.Linear(2, 8), nn.Tanh(), nn.Linear(8, 1))
     trainer = generator.make_trainer(critic, num_particles=16, batch_size=8, total_steps=4)
@@ -108,7 +110,7 @@ def test_trainer_never_reactivates_frozen_dropout_or_running_statistics():
         assert torch.equal(host[1].state_dict()[key], original["1." + key])
     # Passing the Parameter itself must remain transient context, never become
     # a registered adapter parameter or leak into its checkpoint.
-    assert torch.equal(generator(trainer.prior.z, strength=0), base.expand(16, -1))
+    assert torch.equal(generator(trainer.prior.z, strength=0), base)
     assert not any("_codes" in name for name in generator.state_dict())
 
 

@@ -8,6 +8,7 @@ No GAN losses, regularizers or optimizer updates are reimplemented here.
 from __future__ import annotations
 
 import math
+from copy import copy
 
 import torch
 from torch import nn
@@ -26,19 +27,59 @@ class RoutedLoRALinear(nn.Module):
         self.route = nn.Linear(z_dim, rank, bias=False, device=device, dtype=torch.float32)
         self.up = nn.Linear(rank, base.out_features, bias=False, device=device, dtype=torch.float32)
         nn.init.zeros_(self.up.weight)
-        self._codes = None
-        self._strength = 1.0
 
-    def forward(self, value):
+    def forward(self, value, codes=None, *, strength=1.0):
         result = self.base(value)
-        if self._strength == 0:
+        if strength == 0:
             return result
-        if self._codes is None or value.shape[0] != self._codes.shape[0]:
+        if codes is None or value.shape[0] != codes.shape[0]:
             raise RuntimeError("particle LoRA must run through its generator with a matching batch")
-        routed = self.route(self._codes).tanh()
+        routed = self.route(codes).tanh()
         routed = routed.reshape(routed.shape[0], *([1] * (value.ndim - 2)), routed.shape[-1])
         delta = self.up(self.down(value.float()) * routed)
-        return result + (self._strength * delta).to(result.dtype)
+        return result + (strength * delta).to(result.dtype)
+
+
+class _BoundLoRA(nn.Module):
+    """An invocation's routing, retained by its checkpoint recompute closures."""
+
+    def __init__(self, adapter, codes, strength):
+        super().__init__()
+        self.adapter = adapter
+        # A sampled prior may be an nn.Parameter. It belongs to the prior,
+        # never to this temporary module or the generator's state_dict.
+        object.__setattr__(self, "codes", codes)
+        self.strength = strength
+        self.training = adapter.training
+
+    def forward(self, value):
+        return self.adapter(value, codes=self.codes, strength=self.strength)
+
+
+def _bind_host(host, codes, strength):
+    """Copy module containers, sharing all parameter and buffer tensors.
+
+    Each checkpoint must capture its invocation's module objects rather than
+    look up mutable routing state on the live host during backward. A shallow
+    module-tree copy gives ordinary registered children that lifetime without
+    copying frozen model weights, altering the live tree, or retaining routing
+    on it. Memoization preserves shared child modules within the invocation.
+    """
+    memo = {}
+
+    def bind(module):
+        if module is None:
+            return None
+        if id(module) not in memo:
+            if isinstance(module, RoutedLoRALinear):
+                memo[id(module)] = _BoundLoRA(module, codes, strength)
+            else:
+                bound = copy(module)
+                memo[id(module)] = bound
+                bound._modules = {name: bind(child) for name, child in module._modules.items()}
+        return memo[id(module)]
+
+    return bind(host)
 
 
 class ParticleLoRAGenerator(nn.Module):
@@ -49,6 +90,12 @@ class ParticleLoRAGenerator(nn.Module):
     module with its remaining context bound before handing it to this class.
     The host is modified in place; create a separate host for each generator.
     Its frozen weights are included in the official trainer checkpoint.
+
+    Hosts must access layers through their registered module tree, including
+    inside activation-checkpoint closures. External closures or cached bound
+    methods that capture the original host's layers bypass invocation binding.
+    Reentrant and nonreentrant PyTorch activation checkpoints are supported;
+    PyTorch's own restrictions on each checkpoint variant still apply.
     """
 
     def __init__(self, host: nn.Module, targets: tuple[str, ...], context: torch.Tensor,
@@ -97,31 +144,31 @@ class ParticleLoRAGenerator(nn.Module):
             raise ValueError(f"codes must have shape (batch, {self.z_dim})")
         if not math.isfinite(strength):
             raise ValueError("strength must be finite")
-        adapters = self.adapters
-        if any(layer._codes is not None for layer in adapters):
-            raise RuntimeError("particle generator is already evaluating a context")
-        try:
-            for layer in adapters:
-                object.__setattr__(layer, "_codes", codes)
-                layer._strength = float(strength)
-            inputs = self.context.expand(codes.shape[0], *self.context.shape[1:])
-            output = self.host(inputs)
-            if not isinstance(output, torch.Tensor) or output.shape[0] != codes.shape[0]:
-                raise ValueError("host must return a tensor with the same leading batch dimension")
-            return output
-        finally:
-            for layer in adapters:
-                object.__setattr__(layer, "_codes", None)
-                layer._strength = 1.0
+        host = _bind_host(self.host, codes, float(strength))
+        inputs = self.context.expand(codes.shape[0], *self.context.shape[1:])
+        if torch.is_grad_enabled() and strength != 0:
+            # Reentrant checkpoint needs a grad-requiring input even though
+            # the fixed context itself is frozen. A fresh leaf belongs only
+            # to this graph; its gradient cannot accumulate on the buffer.
+            inputs = inputs.detach().requires_grad_(True)
+        output = host(inputs)
+        if not isinstance(output, torch.Tensor) or output.shape[0] != codes.shape[0]:
+            raise ValueError("host must return a tensor with the same leading batch dimension")
+        return output
 
     def make_trainer(self, critic: nn.Module, *, num_particles: int = 128,
                      batch_size: int = 32, total_steps: int = 1000, seed: int = 0):
         """Use the unmodified current official recipe and its learned prior.
 
-        Only task dimensions and budget are overridden. The public trainer
-        owns BISPF, SBNP, DualNorm, prior updates, random streams and checkpoints.
+        Only task dimensions, budget and explicit no-weight-EMA settings are
+        overridden. ParticleGAN 0.9.x uses zero (not None) to disable its EMA.
+        The public trainer owns BISPF, SBNP, DualNorm, prior updates, random
+        streams and checkpoints.
         Call ``trainer.step(real_targets)`` and save ``trainer.state_dict()``.
         """
         recipe = get_recipe("gan", z_dim=self.z_dim, num_particles=num_particles,
-                            batch_size=batch_size, total_steps=total_steps)
+                            batch_size=batch_size, total_steps=total_steps,
+                            ema_decay=0.0, serve_average=0.0)
+        if recipe.effective_critic_formulation != "bispf":
+            raise RuntimeError("particle LoRA requires an official recipe without critic weight EMA")
         return GANTrainer(recipe, self, critic, seed=seed)

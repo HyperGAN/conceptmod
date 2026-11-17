@@ -9,8 +9,7 @@ from torch import nn
 from torch.utils.checkpoint import checkpoint
 
 from particlegan import GANTrainer, ParticlePrior, Recipe, get_recipe
-from particlegan.bispf import SBNPPriorRegularizer
-from particlegan.rhbi import RHBICriticPenalty, RHBIGANLoss
+from particlegan.empf import EMPFCriticPenalty, EMPFPriorRegularizer
 from conceptmod.particle_lora import ParticleLoRAGenerator
 
 
@@ -39,21 +38,25 @@ def test_official_recipe_updates_lora_and_real_prior_keeps_base_frozen():
     assert isinstance(trainer, GANTrainer)
     assert type(trainer.prior) is ParticlePrior
     assert trainer.prior.z.shape == (128, 4)
-    assert trainer.recipe == get_recipe("gan", z_dim=4, num_particles=128,
+    assert trainer.recipe == get_recipe("empf", z_dim=4, num_particles=128,
                                        batch_size=8, total_steps=8,
-                                       ema_decay=0.0, serve_average=0.0)
-    assert trainer.recipe.name == "rhbi_optimized"
+                                       reg_every=1, ema_decay=0.0, serve_average=0.0)
+    assert trainer.recipe.name == "empf"
     assert trainer.recipe.optimizer_family == "dualnorm"
     assert trainer.recipe.ema_decay == 0.0
     assert trainer.recipe.serve_average == 0.0
     assert getattr(trainer.opt_d, "ema_critic", None) is None
-    assert isinstance(trainer.loss, RHBIGANLoss)
-    assert isinstance(trainer.penalty, RHBICriticPenalty)
-    assert isinstance(trainer.prior_regularizer, SBNPPriorRegularizer)
+    assert isinstance(trainer.penalty, EMPFCriticPenalty)
+    assert isinstance(trainer.prior_regularizer, EMPFPriorRegularizer)
+    assert trainer.recipe.reg_every == trainer.penalty.regularizer.lazy_k == 1
+    assert [g["lr"] for g in trainer.opt_g.param_groups] == pytest.approx([0.012, 0.03])
+    assert [g["lr"] for g in trainer.opt_d.param_groups] == pytest.approx([0.018])
     before = trainer.prior.z.detach().clone()
-    for _ in range(3):
-        result = trainer.step(real())
+    for index in range(1, 4):
+        result = trainer.step(real(), collect_stats=True)
         assert result["step"] == trainer.completed_steps
+        assert result["penalty_stats"]["applied"] is True
+        assert trainer.penalty.regularizer.record.calls == index
     assert trainer.completed_steps == 3
     # Upstream retains zero-decay checkpoint copies; they must equal current
     # weights exactly rather than accumulate a moving-weight history.
@@ -117,6 +120,14 @@ def test_explicit_recipe_rejects_averaging_and_incompatible_latent_dimensions(ov
 def test_explicit_legacy_critic_anchor_is_rejected_even_with_generator_ema_disabled():
     recipe = get_recipe("ka2", z_dim=4, ema_decay=0.0, serve_average=0.0)
     with pytest.raises(ValueError, match="weight EMA"):
+        setup(recipe=recipe)
+
+
+@pytest.mark.parametrize("reg_every", [2, 4])
+def test_explicit_recipe_cannot_skip_regularizer_steps(reg_every):
+    recipe = get_recipe("empf", z_dim=4, reg_every=reg_every,
+                        ema_decay=0.0, serve_average=0.0)
+    with pytest.raises(ValueError, match=r"reg_every=1 \(lazy_k=1\)"):
         setup(recipe=recipe)
 
 

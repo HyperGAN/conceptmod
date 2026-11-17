@@ -35,14 +35,18 @@ VCS install is also supported:
 python -m pip install 'git+https://github.com/HyperGAN/conceptmod.git@v3.1.0'
 ```
 
-ParticleGAN 0.10.0 is pinned to its immutable official release commit
+ParticleGAN 0.10.0 comes from official release commit
 `952c3b62ba434f7da194067923351ff5748ef8dd`. Its
 [PyPI publishing workflow](https://github.com/HyperGAN/ParticleGAN/actions/runs/43957339851)
-failed after the release tests/build passed, so this version uses the public
-source archive with SHA-256 verification rather than an unavailable PyPI version.
-That repository archive includes substantial research output (about 1.2 GB). The numerical
-package and release identity remain upstream's 0.10.0; there is no fallback to
-an older installed ParticleGAN.
+failed after the release tests/build passed. This release therefore mirrors the
+**unchanged official tested wheel** (about 438 KB) as a dependency asset and pins
+its download URL with SHA-256
+`135f8507956d5ef70eabf212cf117e2cf94ffb6338d3520adcb813b5b1be2bed`.
+It was downloaded from upstream workflow run `43957339851`, artifact
+`14273827345`; every member body also matches a wheel built independently from
+the official release source. This avoids the large research-output archive.
+The numerical package and release identity remain upstream's 0.10.0; there is
+no fallback to an older installed ParticleGAN.
 
 Install a [model product](providers.md) separately when execution needs one.
 

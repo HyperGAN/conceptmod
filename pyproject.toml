@@ -13,8 +13,8 @@ license = "MIT"
 license-files = ["LICENSE"]
 dependencies = [
     "torch>=2.8,<3",
-    # v0.10.0; immutable release source while its PyPI publication is unavailable.
-    "particlegan @ https://github.com/HyperGAN/ParticleGAN/archive/952c3b62ba434f7da194067923351ff5748ef8dd.tar.gz#sha256=46d33f84464c74f92c3a5cb1047c0fc5dea1a057559f899366796fbd6b37f8ac",
+    # Unchanged upstream v0.10.0 CI wheel, mirrored while PyPI publication is unavailable.
+    "particlegan @ https://github.com/HyperGAN/conceptmod/releases/download/v3.1.0/particlegan-0.10.0-py3-none-any.whl#sha256=135f8507956d5ef70eabf212cf117e2cf94ffb6338d3520adcb813b5b1be2bed",
 ]
 
 [project.optional-dependencies]

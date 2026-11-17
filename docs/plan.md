@@ -285,10 +285,10 @@ Clean Python 3.11 / Torch 2.14.1 CPU validation: **539 passed, 2 existing resear
 xfailed**, plus **128 installed-wheel tests passed** outside the checkout.
 Complete next-step state replay passes for RHBI, BISPF and EMPF. The package
 still contains exactly 19 reviewed modules; strict editable, wheel/source build,
-metadata and installed-boundary checks pass. The immutable release-source
-dependency is hash-verified because upstream's PyPI publication failed; its
-built wheel has exactly the same member bodies as the official tested release
-artifact. No pretrained-model/LR work was rerun.
+metadata and installed-boundary checks pass. The unchanged official dependency
+wheel is mirrored with SHA-256 verification because upstream's PyPI publication
+failed; an independent build from the immutable upstream release source has
+exactly the same member bodies. No pretrained-model/LR work was rerun.
 
 See [3.1.0 release notes](releases/3.1.0.md) and
 [dependency/install details](distribution.md). The following 3.0.0 record remains

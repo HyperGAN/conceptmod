@@ -1,8 +1,9 @@
 # Formulation toys (CPU scoreboard)
 
 **HyperGAN/conceptmod is the home for these gates.** ParticleGAN is
-core primitives only. Install the PyPI package (`pip install particlegan`,
-`particlegan>=0.9.4,<0.10` in `pyproject.toml` and `requirements.txt`). The
+core primitives only. Install Conceptmod's declared ParticleGAN 0.10.0 dependency
+through `pip install -e '.[test]'`; `requirements.txt` delegates to
+`pyproject.toml`. The
 fixed L2 `GradientPenalty` is imported from `particlegan.grad_regularizers`;
 legacy `GradRegularizer` names below refer to that upstream class.
 `conceptmod.particle_api` translates historical loss/configuration names without

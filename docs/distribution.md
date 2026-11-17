@@ -10,7 +10,7 @@ Conceptmod follows the model-independent distribution boundary in
 | Distribution | Reviewed module list; no native implementations or research runners | 19 reviewed modules; no native implementations, research or PEFT test fixture |
 | Editable installs | Strict PEP 660, same boundary as wheels | Same strict installation policy |
 | Checkpoints and weights | Explicit exact continuation; raw current weights | Same ownership guarantees; complete inference bundles are separate |
-| Numerical implementation | Conditional ParticleGAN response lifecycle, PG 0.9.5 | Concept-editing DSL/session API, tested PG 0.9.4 |
+| Numerical implementation | Conditional ParticleGAN response lifecycle, PG 0.9.5 | Concept-editing DSL/session API, PG 0.10.0; fresh particle-LoRA trainers use RHBI |
 
 These are corresponding ownership boundaries, not interchangeable numerical
 APIs. Packaging does not upgrade an optimizer, change a formulation or qualify
@@ -24,7 +24,7 @@ directory difference does not expose additional installed modules.
 ## Install a versioned package
 
 ```sh
-python -m pip install https://github.com/HyperGAN/conceptmod/releases/download/v3.0.0/conceptmod-3.0.0-py3-none-any.whl
+python -m pip install https://github.com/HyperGAN/conceptmod/releases/download/v3.1.0/conceptmod-3.1.0-py3-none-any.whl
 conceptmod validate --phrase 'red=blue'
 ```
 
@@ -32,8 +32,17 @@ The release includes a wheel, source distribution and SHA-256 checksums. A pinne
 VCS install is also supported:
 
 ```sh
-python -m pip install 'git+https://github.com/HyperGAN/conceptmod.git@v3.0.0'
+python -m pip install 'git+https://github.com/HyperGAN/conceptmod.git@v3.1.0'
 ```
+
+ParticleGAN 0.10.0 is pinned to its immutable official release commit
+`952c3b62ba434f7da194067923351ff5748ef8dd`. Its
+[PyPI publishing workflow](https://github.com/HyperGAN/ParticleGAN/actions/runs/43957339851)
+failed after the release tests/build passed, so this version uses the public
+source archive with SHA-256 verification rather than an unavailable PyPI version.
+That repository archive includes substantial research output (about 1.2 GB). The numerical
+package and release identity remain upstream's 0.10.0; there is no fallback to
+an older installed ParticleGAN.
 
 Install a [model product](providers.md) separately when execution needs one.
 
@@ -45,8 +54,8 @@ python scripts/check_distribution.py --installed
 python -m pytest -q
 python -m build
 python -m twine check dist/*
-python scripts/check_distribution.py --wheel dist/conceptmod-3.0.0-py3-none-any.whl
-python -m pip install --force-reinstall --no-deps dist/conceptmod-3.0.0-py3-none-any.whl
+python scripts/check_distribution.py --wheel dist/conceptmod-3.1.0-py3-none-any.whl
+python -m pip install --force-reinstall --no-deps dist/conceptmod-3.1.0-py3-none-any.whl
 python scripts/check_distribution.py --installed
 ```
 

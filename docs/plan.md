@@ -272,6 +272,28 @@ Core checks use the [Core contracts workflow](https://github.com/HyperGAN/concep
 
 ## Versioned package follow-up
 
+### ParticleGAN 0.10.0 update — 2026-11-17
+
+Conceptmod 3.1.0 adopts the official fresh `rhbi_optimized` default and accepts an
+explicit saved `Recipe` for checkpoint restoration. Weight EMA and served
+averaging are refused; historical research formulations and all saved results
+remain unchanged. The upstream loader retains its schema/execution/optimizer
+compatibility checks, so this does not promise cross-version continuation of
+incompatible checkpoints.
+
+Clean Python 3.11 / Torch 2.14.1 CPU validation: **539 passed, 2 existing research
+xfailed**, plus **128 installed-wheel tests passed** outside the checkout.
+Complete next-step state replay passes for RHBI, BISPF and EMPF. The package
+still contains exactly 19 reviewed modules; strict editable, wheel/source build,
+metadata and installed-boundary checks pass. The immutable release-source
+dependency is hash-verified because upstream's PyPI publication failed; its
+built wheel has exactly the same member bodies as the official tested release
+artifact. No pretrained-model/LR work was rerun.
+
+See [3.1.0 release notes](releases/3.1.0.md) and
+[dependency/install details](distribution.md). The following 3.0.0 record remains
+historical.
+
 The owner requested a merged, installable package using particle-sliders as the
 template. The comparison uses current public `particle-sliders` main
 `ec5566323d46a04145e9ecfa02bf9ad55843be5e` (core 0.14.1). The remaining packaging

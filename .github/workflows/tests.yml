@@ -23,8 +23,8 @@ jobs:
       - run: python -m twine check dist/*
       - name: Check wheel and installed runtime
         run: |
-          python scripts/check_distribution.py --wheel dist/conceptmod-3.0.0-py3-none-any.whl
-          python -m pip install --force-reinstall --no-deps dist/conceptmod-3.0.0-py3-none-any.whl
+          python scripts/check_distribution.py --wheel dist/conceptmod-3.1.0-py3-none-any.whl
+          python -m pip install --force-reinstall --no-deps dist/conceptmod-3.1.0-py3-none-any.whl
           python scripts/check_distribution.py --installed
       - name: Test installed core outside checkout
         run: |

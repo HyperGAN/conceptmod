@@ -5,13 +5,17 @@ backend-path = ["."]
 
 [project]
 name = "conceptmod"
-version = "3.0.0"
+version = "3.1.0"
 description = "Model-independent concept editing plans, execution and artifacts"
 readme = "README.md"
 requires-python = ">=3.11"
 license = "MIT"
 license-files = ["LICENSE"]
-dependencies = ["torch>=2.8,<3", "particlegan==0.9.4"]
+dependencies = [
+    "torch>=2.8,<3",
+    # v0.10.0; immutable release source while its PyPI publication is unavailable.
+    "particlegan @ https://github.com/HyperGAN/ParticleGAN/archive/952c3b62ba434f7da194067923351ff5748ef8dd.tar.gz#sha256=46d33f84464c74f92c3a5cb1047c0fc5dea1a057559f899366796fbd6b37f8ac",
+]
 
 [project.optional-dependencies]
 serialization = ["safetensors>=0.6,<1"]

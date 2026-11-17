@@ -9,6 +9,7 @@ import zipfile
 
 INSTALLED_CHECK = r'''
 import importlib.util
+from importlib.metadata import version
 import json
 from pathlib import Path
 import sys
@@ -16,13 +17,15 @@ import conceptmod
 from conceptmod import compile_phrase
 from conceptmod.training import TrainingConfig, TrainingSession
 
-assert conceptmod.__version__ == '3.0.0'
+assert conceptmod.__version__ == '3.1.0'
+assert version('particlegan') == '0.10.0'
 assert compile_phrase('red=blue').rules[0].op == 'write'
 for module in ('research', 'testing', 'toys', 'game', 'convert',
                'backends.sana', 'backends.anima', 'backends.supra'):
     assert importlib.util.find_spec('conceptmod.' + module) is None, module
 assert not any(name in sys.modules for name in ('diffusers', 'transformers', 'peft'))
-print(json.dumps({'version': conceptmod.__version__, 'origin': str(Path(conceptmod.__file__).resolve())}))
+print(json.dumps({'version': conceptmod.__version__, 'particlegan': version('particlegan'),
+                  'origin': str(Path(conceptmod.__file__).resolve())}))
 '''
 
 

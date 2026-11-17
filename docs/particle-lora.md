@@ -1,9 +1,12 @@
 # Particle LoRA tensor integration
 
-Core pins the published ParticleGAN 0.9.4 recipe used by its executable
-regressions. `ParticleLoRAGenerator` binds sampled particle codes to explicit
-low-rank branches on a caller-owned frozen host. The official `GANTrainer`
-owns BISPF, SBNP, DualNorm, prior updates and checkpoint arithmetic.
+Core pins ParticleGAN 0.10.0. `ParticleLoRAGenerator` binds sampled particle
+codes to explicit low-rank branches on a caller-owned frozen host. The official `GANTrainer`
+owns RHBI, SBNP, DualNorm, prior updates and checkpoint arithmetic. Fresh
+trainers use the upstream `rhbi_optimized` default; Conceptmod does not replace
+its loss, regularizer, optimizer or numerical profile. This is the upstream
+[research selection](https://github.com/HyperGAN/ParticleGAN/releases/tag/v0.10.0),
+not evidence of pretrained-model quality or a new learning-rate comparison.
 
 Dimensions, budget and explicit no-weight-EMA settings are supplied. Raw current
 weights are used; no generator, critic or prior weight averaging is enabled.
@@ -29,8 +32,31 @@ codes, _ = trainer.prior.sample(4)
 adapted = generator(codes, strength=1.0)
 base = generator(codes, strength=0.0)  # exact frozen-host output
 checkpoint = trainer.state_dict()     # model, prior, optimizers, recipe and RNG
-# Reconstruct the same host/generator/critic, then trainer.load_state_dict(checkpoint).
 ```
+
+To resume, reconstruct the same host/generator/critic and use the **saved recipe**:
+
+```python
+from particlegan import Recipe
+
+restored = generator.make_trainer(critic, recipe=Recipe.from_dict(checkpoint["recipe"]))
+restored.load_state_dict(checkpoint)
+```
+
+An explicit `recipe` owns the particle dimensions, batch size and budget; the
+factory's dimension/budget keywords are used only when it constructs a fresh
+default. The saved latent dimension must match the generator. Explicit upstream
+`bispf_optimized`, `empf` and `rhbi` recipes are supported with `ema_decay=0.0`
+and `serve_average=0.0`. Recipes enabling weight EMA, averaged serving or a
+legacy EMA critic anchor are rejected before trainer construction. The official
+zero-decay checkpoint copies mirror raw current weights; no moving-weight
+history is used.
+
+The 0.10.0 default must not reinterpret an older run. A mismatched recipe is
+rejected by the upstream checkpoint loader. Its existing schema, execution and
+optimizer validation stays intact: checkpoints that upstream cannot exactly
+restore must use their original pinned runtime. Saved weights, initialization,
+completed updates and earlier learning-rate results are not migrated or replayed.
 
 The host is modified in place and must already be frozen. Adapters remain
 FP32; residuals are cast to the host output dtype. One sampled particle code
@@ -54,7 +80,9 @@ The host must access layers through its registered module tree. Each invocation
 binds its own codes without mutating live-layer routing state or copying frozen
 weight tensors. Reentrant and nonreentrant activation-checkpoint recomputation,
 nested/concurrent forwards and exact next-update trainer replay have executable
-CPU regressions in `tests/test_particle_lora.py`.
+CPU regressions in `tests/test_particle_lora.py`. Replay checks compare the
+complete next-step state, including optimizers, formulation records and random
+streams, for RHBI, BISPF and EMPF.
 
 Verification results and the two unchanged historical scientific outcome
 assertions are recorded in [plan.md](plan.md). Original 2.x measurements remain

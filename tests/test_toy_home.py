@@ -78,12 +78,13 @@ def test_docs_do_not_tell_you_to_run_toys_from_particlegan():
     assert "particlegan @ git+" not in text
     pyproject = (ROOT / "pyproject.toml").read_text()
     requirements = (ROOT / "requirements.txt").read_text()
-    assert "particlegan==0.9.4" in pyproject
     # Requirements delegates to the single authoritative project metadata.
     assert "-e ." in requirements
     import tomllib
     dependencies = tomllib.loads(pyproject)["project"]["dependencies"]
-    assert "particlegan==0.9.4" in dependencies
+    assert any(dep.startswith("particlegan @ https://github.com/HyperGAN/ParticleGAN/archive/"
+                              "952c3b62ba434f7da194067923351ff5748ef8dd.tar.gz")
+               for dep in dependencies)
     for path in (ROOT / "conceptmod").rglob("*.py"):
         tree = ast.parse(path.read_text(), filename=str(path))
         for node in ast.walk(tree):

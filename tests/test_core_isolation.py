@@ -29,5 +29,6 @@ def test_core_distribution_does_not_depend_on_models():
     root = Path(__file__).resolve().parents[1]
     project = tomllib.loads((root / "pyproject.toml").read_text())["project"]
     assert project["version"].startswith("3.")
-    assert {dep.split('>=')[0].split('==')[0] for dep in project["dependencies"]} == {"torch", "particlegan"}
+    assert {dep.split('>=')[0].split('==')[0].split(' @ ')[0]
+            for dep in project["dependencies"]} == {"torch", "particlegan"}
     assert {path.name for path in (root / "conceptmod" / "backends").glob("*.py")} == {"__init__.py", "base.py"}

@@ -2,16 +2,42 @@
 
 Core pins ParticleGAN 0.10.0. `ParticleLoRAGenerator` binds sampled particle
 codes to explicit low-rank branches on a caller-owned frozen host. The official `GANTrainer`
-owns RHBI, SBNP, DualNorm, prior updates and checkpoint arithmetic. Fresh
-trainers use the upstream `rhbi_optimized` default; Conceptmod does not replace
-its loss, regularizer, optimizer or numerical profile. This is the upstream
-[research selection](https://github.com/HyperGAN/ParticleGAN/releases/tag/v0.10.0),
-not evidence of pretrained-model quality or a new learning-rate comparison.
+owns EMPF, DualNorm, prior updates and checkpoint arithmetic. Fresh
+trainers explicitly use upstream's `empf` preset; Conceptmod does not replace
+its loss, regularizer, optimizer or numerical profile. The pinned
+[upstream release](https://github.com/HyperGAN/ParticleGAN/releases/tag/v0.10.0)
+supplies that implementation; CPU integration checks are not a new
+pretrained-model qualification or learning-rate comparison.
 
 Dimensions, budget and explicit no-weight-EMA settings are supplied. Raw current
 weights are used; no generator, critic or prior weight averaging is enabled.
 Official scalar optimizer statistics are unchanged. Historical paired-logistic
 research games remain separately under `conceptmod.research`.
+
+Regularization runs on **every update**: `reg_every=1` in the recipe becomes
+`lazy_k=1` in the actual upstream penalty kernel. An explicit recipe with a
+larger interval is rejected before trainer construction. Tests compare every
+recipe field against `get_recipe("empf", ...)`, check actual optimizer-group
+rates, and observe a regularizer application on each consecutive update.
+
+| EMPF setting | Value |
+| --- | --- |
+| Initial generator / critic / particle-bank learning rates | 0.012 / 0.018 / 0.03 |
+| Schedule | Cosine, using the declared total budget |
+| Critic regularizer interval / coefficient / kappa | 1 / 1 / 1 |
+| Optimizer / momentum / smoothing | DualNorm / 0 / 0.001 |
+| Convolution / convolution rule | Per offset / quintic |
+| Dense profile / SVD backend | `newton_schulz_hybrid_v1` / batched |
+| EMPF critic `ebi_beta` | 6 |
+| Prior regularizer / weight | EMPF / 0.01 |
+| `ucd_weight` / routing temperature | 0.02 / 0.25 |
+| Training precision profile | `bf16_channels_last` (upstream support rules apply) |
+| Weight EMA / served averaging | Disabled / disabled |
+
+These are the stock ParticleGAN 0.10.0 EMPF hyperparameters. Task dimensions
+and budget are caller-owned; a model-specific tuned recipe must be supplied
+explicitly and retains its saved fields. No previous search or measured rate is
+replaced by these starting values.
 
 ```python
 import torch
@@ -52,7 +78,7 @@ legacy EMA critic anchor are rejected before trainer construction. The official
 zero-decay checkpoint copies mirror raw current weights; no moving-weight
 history is used.
 
-The 0.10.0 default must not reinterpret an older run. A mismatched recipe is
+The EMPF default must not reinterpret an older run. A mismatched recipe is
 rejected by the upstream checkpoint loader. Its existing schema, execution and
 optimizer validation stays intact: checkpoints that upstream cannot exactly
 restore must use their original pinned runtime. Saved weights, initialization,

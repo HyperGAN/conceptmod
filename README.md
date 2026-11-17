@@ -18,7 +18,7 @@ stages and rendering operations are available.
 ## Install and choose a product
 
 ```bash
-pip install https://github.com/HyperGAN/conceptmod/releases/download/v3.1.0/conceptmod-3.1.0-py3-none-any.whl
+pip install https://github.com/HyperGAN/conceptmod/releases/download/v3.1.1/conceptmod-3.1.1-py3-none-any.whl
 pip install 'git+https://github.com/HyperGAN/anima-conceptmod.git'
 conceptmod backends
 conceptmod validate --backend anima --phrase 'human=robot'
@@ -76,8 +76,8 @@ exact continuation. Weights are raw current weights; weight EMA is disabled.
 - [Formulation toys](docs/formulation-toys.md) under `conceptmod.research.toys`,
   available in the source checkout and excluded from the installed core.
 - [Particle LoRA tensor integration](docs/particle-lora.md), using the official
-  ParticleGAN 0.10.0 RHBI default and optimizer formulas, with explicit saved
-  recipes for checkpoint restoration.
+  ParticleGAN 0.10.0 EMPF preset and optimizer formulas, with `lazy_k=1`
+  (regularization every update) and explicit saved recipes for restoration.
 - [Model-format converters](https://github.com/HyperGAN/conceptmod-converters).
 - [Historical 2.x model proofs](https://github.com/HyperGAN/conceptmod/tree/70f0cb2632190388eb4028ef80066558259494fc/outputs),
   retained as historical evidence rather than new-model qualification.

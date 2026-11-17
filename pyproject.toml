@@ -5,7 +5,7 @@ backend-path = ["."]
 
 [project]
 name = "conceptmod"
-version = "3.1.0"
+version = "3.1.1"
 description = "Model-independent concept editing plans, execution and artifacts"
 readme = "README.md"
 requires-python = ">=3.11"

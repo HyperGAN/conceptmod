@@ -159,24 +159,26 @@ class ParticleLoRAGenerator(nn.Module):
     def make_trainer(self, critic: nn.Module, *, num_particles: int = 128,
                      batch_size: int = 32, total_steps: int = 1000, seed: int = 0,
                      recipe: Recipe | None = None):
-        """Use the unmodified current official recipe and its learned prior.
+        """Use the official EMPF preset and its learned prior.
 
         Only task dimensions, budget and explicit no-weight-EMA settings are
         overridden. ParticleGAN uses zero (not None) to disable its EMA.
-        The public trainer owns RHBI, SBNP, DualNorm, prior updates, random
+        The public trainer owns EMPF, DualNorm, prior updates, random
         streams and checkpoints. An explicit ``recipe`` owns its dimensions
         and budget instead; restore saved fields with ``Recipe.from_dict``
         rather than resolving the current default for an existing run.
         Call ``trainer.step(real_targets)`` and save ``trainer.state_dict()``.
         """
         if recipe is None:
-            recipe = get_recipe("gan", z_dim=self.z_dim, num_particles=num_particles,
+            recipe = get_recipe("empf", z_dim=self.z_dim, num_particles=num_particles,
                                 batch_size=batch_size, total_steps=total_steps,
-                                ema_decay=0.0, serve_average=0.0)
+                                reg_every=1, ema_decay=0.0, serve_average=0.0)
         if not isinstance(recipe, Recipe):
             raise TypeError("recipe must be a ParticleGAN Recipe")
         if recipe.z_dim != self.z_dim:
             raise ValueError("recipe z_dim must match the particle LoRA generator")
+        if recipe.reg_every != 1:
+            raise ValueError("particle LoRA requires reg_every=1 (lazy_k=1); regularizer skipping is forbidden")
         if (recipe.ema_decay != 0.0 or recipe.serve_average != 0.0
                 or recipe.effective_critic_formulation not in {"bispf", "empf", "rhbi"}):
             raise ValueError("particle LoRA requires a recipe without weight EMA or served averaging")

@@ -1,5 +1,10 @@
 # conceptmod
 
+> **Highly experimental and untested on real models.** We do not currently have
+> the GPU resources needed for proper end-to-end training and evaluation.
+> Existing tests cover CPU fixtures and software behavior only; training
+> stability, output quality and concept-editing effectiveness are unverified.
+
 Compile concept-editing phrases into explicit training plans. Core owns the
 language, loss composition, training lifecycle, checkpoints and complete edit
 bundles. Pretrained models live in [separate product repositories](docs/providers.md).

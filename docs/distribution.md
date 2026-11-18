@@ -51,6 +51,20 @@ no fallback to an older installed ParticleGAN.
 
 Install a [model product](providers.md) separately when execution needs one.
 
+## Publish a release
+
+Set the new stable version in `pyproject.toml` and add the corresponding
+`docs/releases/<version>.md` in the release pull request. The workflow tests the
+source and installed wheel before uploading the wheel, sdist and SHA-256
+manifest. Merging to `main` publishes those exact assets after GitHub confirms
+their digests and the workflow confirms the tested commit is still current.
+Merges that retain an already published version preserve its tag and files.
+
+If an upload stops partway through, rerun the failed publish job while its
+source commit is still on top of `main`. The job checks the draft source and
+any uploaded files, then uploads the missing files. The workflow reports
+drafts with a different source or asset digest for review.
+
 ## Build and check
 
 ```sh

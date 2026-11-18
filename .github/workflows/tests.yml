@@ -1,15 +1,22 @@
 name: Core contracts
 on: [push, pull_request]
+permissions:
+  contents: read
 jobs:
   cpu:
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    outputs:
+      version: ${{ steps.version.outputs.value }}
+      release: ${{ steps.release.outputs.status }}
     env:
       CUDA_VISIBLE_DEVICES: ""
       OMP_NUM_THREADS: "2"
       MKL_NUM_THREADS: "2"
     steps:
       - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
       - uses: actions/setup-python@v7
         with:
           python-version: "3.11"
@@ -19,12 +26,20 @@ jobs:
       - name: Check strict editable boundary
         run: python scripts/check_distribution.py --installed
       - run: python -m pytest -q
+      - name: Read the distribution version
+        id: version
+        run: |
+          version=$(python scripts/publish_release.py version)
+          echo "value=$version" >> "$GITHUB_OUTPUT"
       - run: python -m build
       - run: python -m twine check dist/*
       - name: Check wheel and installed runtime
+        env:
+          VERSION: ${{ steps.version.outputs.value }}
         run: |
-          python scripts/check_distribution.py --wheel dist/conceptmod-3.1.1-py3-none-any.whl
-          python -m pip install --force-reinstall --no-deps dist/conceptmod-3.1.1-py3-none-any.whl
+          wheel="dist/conceptmod-${VERSION}-py3-none-any.whl"
+          python scripts/check_distribution.py --wheel "$wheel"
+          python -m pip install --force-reinstall --no-deps "$wheel"
           python scripts/check_distribution.py --installed
       - name: Test installed core outside checkout
         run: |
@@ -38,3 +53,44 @@ jobs:
             "$source_root/tests/test_particle_api.py" \
             "$source_root/tests/test_metrics.py" \
             "$source_root/tests/test_core_isolation.py"
+      - name: Check release readiness against GitHub
+        id: release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          status=$(python scripts/publish_release.py plan)
+          echo "status=$status" >> "$GITHUB_OUTPUT"
+      - name: Preserve the tested distributions for publication
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && github.repository == 'HyperGAN/conceptmod' && steps.release.outputs.status == 'candidate'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: conceptmod-dist
+          path: dist/
+          if-no-files-found: error
+
+  publish:
+    name: Publish tested distributions
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && github.repository == 'HyperGAN/conceptmod' && needs.cpu.outputs.release == 'candidate'
+    needs: cpu
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    concurrency:
+      group: conceptmod-release-${{ needs.cpu.outputs.version }}
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.11"
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: conceptmod-dist
+          path: dist/
+      - name: Publish the qualified GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python scripts/publish_release.py publish

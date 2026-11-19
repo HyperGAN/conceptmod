@@ -1,0 +1,10 @@
+{
+  "base_revision": "d64d30dfd28834f551fc63db9c7ab1804457c942",
+  "changes": {
+    "README.md": {
+      "bytes": 450,
+      "git_blob": "555cb48687faf6bb0c9fdd9ef8a96274f0c6ba79"
+    }
+  },
+  "staged_revision": "a0df3fa71af1aea5bf5d532d5909c10784c8d73a"
+}

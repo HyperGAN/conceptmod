@@ -118,16 +118,27 @@ def publish(value, directory, sha):
     missing = [str(directory / name) for name in hashes if name not in existing]
     if missing:
         gh("release", "upload", tag, "--repo", REPOSITORY, *missing)
-    if uploaded_digests(release_record(tag), hashes) != hashes:
+    staged = release_record(tag)
+    if not staged or staged["id"] != record["id"] or not staged["draft"] or staged["prerelease"]:
+        raise RuntimeError(f"Draft {tag} changed while staging assets")
+    if uploaded_digests(staged, hashes) != hashes:
         raise RuntimeError(f"GitHub did not receive all tested release assets for {tag}")
     if not current_main(sha):
         raise RuntimeError(f"Main advanced while staging {tag}. Review the draft before retrying.")
-    if tag_commit(tag) not in (None, sha):
+    current_tag = tag_commit(tag)
+    if current_tag not in (None, sha):
         raise RuntimeError(f"Existing tag {tag} points elsewhere")
+    if current_tag is None:
+        gh("api", "--method", "POST", f"repos/{REPOSITORY}/git/refs",
+           "-f", f"ref=refs/tags/{tag}", "-f", f"sha={sha}", "--silent")
+        if tag_commit(tag) != sha:
+            raise RuntimeError(f"Could not verify {tag} at the tested commit {sha}")
 
-    gh("release", "edit", tag, "--repo", REPOSITORY, "--draft=false")
+    gh("api", "--method", "PATCH", f"repos/{REPOSITORY}/releases/{staged['id']}",
+       "-F", "draft=false", "--silent")
     published = release_record(tag)
-    if published["draft"] or uploaded_digests(published, hashes) != hashes:
+    if (not published or published["id"] != staged["id"] or published["draft"]
+            or published["prerelease"] or uploaded_digests(published, hashes) != hashes):
         raise RuntimeError(f"Published release {tag} did not match the tested artifacts")
     if tag_commit(tag) != sha:
         raise RuntimeError(f"Published tag {tag} does not point to {sha}")

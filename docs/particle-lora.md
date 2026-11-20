@@ -1,11 +1,11 @@
 # Particle LoRA tensor integration
 
-Core pins ParticleGAN 0.10.0. `ParticleLoRAGenerator` binds sampled particle
+Core pins ParticleGAN 0.11.0. `ParticleLoRAGenerator` binds sampled particle
 codes to explicit low-rank branches on a caller-owned frozen host. The official `GANTrainer`
 owns EMPF, DualNorm, prior updates and checkpoint arithmetic. Fresh
 trainers explicitly use upstream's `empf` preset; Conceptmod does not replace
 its loss, regularizer, optimizer or numerical profile. The pinned
-[upstream release](https://github.com/HyperGAN/ParticleGAN/releases/tag/v0.10.0)
+[upstream release](https://github.com/HyperGAN/ParticleGAN/releases/tag/v0.11.0)
 supplies that implementation; CPU integration checks are not a new
 pretrained-model qualification or learning-rate comparison.
 
@@ -34,7 +34,7 @@ rates, and observe a regularizer application on each consecutive update.
 | Training precision profile | `bf16_channels_last` (upstream support rules apply) |
 | Weight EMA / served averaging | Disabled / disabled |
 
-These are the stock ParticleGAN 0.10.0 EMPF hyperparameters. Task dimensions
+These are the stock ParticleGAN 0.11.0 EMPF hyperparameters. Task dimensions
 and budget are caller-owned; a model-specific tuned recipe must be supplied
 explicitly and retains its saved fields. No previous search or measured rate is
 replaced by these starting values.

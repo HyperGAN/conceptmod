@@ -18,7 +18,7 @@ from conceptmod import compile_phrase
 from conceptmod.training import TrainingConfig, TrainingSession
 
 assert conceptmod.__version__ == '3.1.1'
-assert version('particlegan') == '0.10.0'
+assert version('particlegan') == '0.11.0'
 assert compile_phrase('red=blue').rules[0].op == 'write'
 for module in ('research', 'testing', 'toys', 'game', 'convert',
                'backends.sana', 'backends.anima', 'backends.supra'):

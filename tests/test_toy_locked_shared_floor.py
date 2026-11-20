@@ -94,8 +94,8 @@ def test_public_recipe_defaults_are_independent_of_the_locked_toy():
     """The toy's explicit RpGAN/b_cap lock does not override the current library."""
     recipe = get_recipe("gan")
     assert recipe.num_particles == 20_000
-    assert recipe.name == "rhbi_optimized"
-    assert recipe.critic_formulation == "rhbi"
-    assert recipe.rhbi_weight == 1.0
-    assert recipe.prior_regularizer == "sbnp"
+    assert recipe.name == "unified_v11"
+    assert recipe.critic_formulation == "unified_v11"
+    assert recipe.ebi_beta == 12.0
+    assert recipe.prior_regularizer == "unified_v11"
     assert recipe.prior_reg == 0.02

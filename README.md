@@ -81,7 +81,7 @@ exact continuation. Weights are raw current weights; weight EMA is disabled.
 - [Formulation toys](docs/formulation-toys.md) under `conceptmod.research.toys`,
   available in the source checkout and excluded from the installed core.
 - [Particle LoRA tensor integration](docs/particle-lora.md), using the official
-  ParticleGAN 0.10.0 EMPF preset and optimizer formulas, with `lazy_k=1`
+  ParticleGAN 0.11.0 EMPF preset and optimizer formulas, with `lazy_k=1`
   (regularization every update) and explicit saved recipes for restoration.
 - [Model-format converters](https://github.com/HyperGAN/conceptmod-converters).
 - [Historical 2.x model proofs](https://github.com/HyperGAN/conceptmod/tree/70f0cb2632190388eb4028ef80066558259494fc/outputs),

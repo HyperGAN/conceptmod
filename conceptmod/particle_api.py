@@ -1,4 +1,4 @@
-"""Translate conceptmod's recorded formulation knobs to ParticleGAN 0.10.0.
+"""Translate conceptmod's recorded formulation knobs to ParticleGAN 0.11.0.
 
 The DSL and archived toy rows call paired logistic loss ``logistic/rp`` and
 record ``norm=l2, target_anneal=none``. ParticleGAN now names that loss

@@ -1,7 +1,7 @@
 # Core package and particle-sliders template
 
 Conceptmod follows the model-independent distribution boundary in
-[particle-sliders-core 0.14.1](https://github.com/HyperGAN/particle-sliders/blob/ec5566323d46a04145e9ecfa02bf9ad55843be5e/packages/particle-sliders-core/SHARED-CORE-BOUNDARY.md).
+[particle-sliders-core 0.15.1](https://github.com/HyperGAN/particle-sliders/blob/c13890f8e2a1ecf1dc8eb9f2a37f9187cb9fea78/packages/particle-sliders-core/SHARED-CORE-BOUNDARY.md).
 
 | Boundary | particle-sliders template | Conceptmod |
 | --- | --- | --- |
@@ -10,7 +10,7 @@ Conceptmod follows the model-independent distribution boundary in
 | Distribution | Reviewed module list; no native implementations or research runners | 19 reviewed modules; no native implementations, research or PEFT test fixture |
 | Editable installs | Strict PEP 660, same boundary as wheels | Same strict installation policy |
 | Checkpoints and weights | Explicit exact continuation; raw current weights | Same ownership guarantees; complete inference bundles are separate |
-| Numerical implementation | Conditional ParticleGAN response lifecycle, PG 0.9.5 | Concept-editing DSL/session API, PG 0.10.0; fresh particle-LoRA trainers use EMPF with `lazy_k=1` |
+| Numerical implementation | Conditional ParticleGAN response lifecycle, PG 0.11.0 | Concept-editing DSL/session API, PG 0.11.0; fresh particle-LoRA trainers use EMPF with `lazy_k=1` |
 
 These are corresponding ownership boundaries, not interchangeable numerical
 APIs. Packaging does not upgrade an optimizer, change a formulation or qualify
@@ -35,19 +35,10 @@ VCS install is also supported:
 python -m pip install 'git+https://github.com/HyperGAN/conceptmod.git@v3.1.1'
 ```
 
-ParticleGAN 0.10.0 comes from official release commit
-`952c3b62ba434f7da194067923351ff5748ef8dd`. Its
-[PyPI publishing workflow](https://github.com/HyperGAN/ParticleGAN/actions/runs/43957339851)
-failed after the release tests/build passed. This release therefore mirrors the
-**unchanged official tested wheel** (about 438 KB) from the retained 3.1.0 release
-as a dependency asset and pins
-its download URL with SHA-256
-`135f8507956d5ef70eabf212cf117e2cf94ffb6338d3520adcb813b5b1be2bed`.
-It was downloaded from upstream workflow run `43957339851`, artifact
-`14273827345`; every member body also matches a wheel built independently from
-the official release source. This avoids the large research-output archive.
-The numerical package and release identity remain upstream's 0.10.0; there is
-no fallback to an older installed ParticleGAN.
+Install the current source checkout with `python -m pip install .`. It uses
+[ParticleGAN 0.11.0](https://pypi.org/project/particlegan/0.11.0/) from PyPI
+and explicitly selects EMPF. The archived [3.1.1 release notes](releases/3.1.1.md)
+record the dependency used by the versioned package above.
 
 Install a [model product](providers.md) separately when execution needs one.
 

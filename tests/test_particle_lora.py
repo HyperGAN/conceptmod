@@ -75,7 +75,7 @@ def test_official_recipe_updates_lora_and_real_prior_keeps_base_frozen():
     assert not torch.equal(generator(codes)[0], generator(codes)[1])
 
 
-@pytest.mark.parametrize("preset", ["gan", "bispf_optimized", "empf"])
+@pytest.mark.parametrize("preset", ["rhbi_optimized", "bispf_optimized", "empf"])
 def test_checkpoint_replays_next_full_update(preset):
     recipe = get_recipe(preset, z_dim=4, num_particles=16, batch_size=8, total_steps=8,
                         ema_decay=0.0, serve_average=0.0)

@@ -24,7 +24,7 @@ directory difference does not expose additional installed modules.
 ## Install a versioned package
 
 ```sh
-python -m pip install https://github.com/HyperGAN/conceptmod/releases/download/v3.1.1/conceptmod-3.1.1-py3-none-any.whl
+python -m pip install https://github.com/HyperGAN/conceptmod/releases/download/v3.1.2/conceptmod-3.1.2-py3-none-any.whl
 conceptmod validate --phrase 'red=blue'
 ```
 
@@ -32,13 +32,13 @@ The release includes a wheel, source distribution and SHA-256 checksums. A pinne
 VCS install is also supported:
 
 ```sh
-python -m pip install 'git+https://github.com/HyperGAN/conceptmod.git@v3.1.1'
+python -m pip install 'git+https://github.com/HyperGAN/conceptmod.git@v3.1.2'
 ```
 
-Install the current source checkout with `python -m pip install .`. It uses
-[ParticleGAN 0.11.0](https://pypi.org/project/particlegan/0.11.0/) from PyPI
-and explicitly selects EMPF. The archived [3.1.1 release notes](releases/3.1.1.md)
-record the dependency used by the versioned package above.
+To install from a local checkout, run `python -m pip install .`. Conceptmod
+3.1.2 uses the official ParticleGAN 0.11.0 package from PyPI. Fresh particle-LoRA
+trainers select EMPF and apply its regularizer every update.
+[Release notes](releases/3.1.2.md).
 
 Install a [model product](providers.md) separately when execution needs one.
 
@@ -64,8 +64,8 @@ python scripts/check_distribution.py --installed
 python -m pytest -q
 python -m build
 python -m twine check dist/*
-python scripts/check_distribution.py --wheel dist/conceptmod-3.1.1-py3-none-any.whl
-python -m pip install --force-reinstall --no-deps dist/conceptmod-3.1.1-py3-none-any.whl
+python scripts/check_distribution.py --wheel dist/conceptmod-3.1.2-py3-none-any.whl
+python -m pip install --force-reinstall --no-deps dist/conceptmod-3.1.2-py3-none-any.whl
 python scripts/check_distribution.py --installed
 ```
 

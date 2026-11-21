@@ -23,7 +23,7 @@ stages and rendering operations are available.
 ## Install and choose a product
 
 ```bash
-pip install https://github.com/HyperGAN/conceptmod/releases/download/v3.1.1/conceptmod-3.1.1-py3-none-any.whl
+pip install https://github.com/HyperGAN/conceptmod/releases/download/v3.1.2/conceptmod-3.1.2-py3-none-any.whl
 pip install 'git+https://github.com/HyperGAN/anima-conceptmod.git'
 conceptmod backends
 conceptmod validate --backend anima --phrase 'human=robot'

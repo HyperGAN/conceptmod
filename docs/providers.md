@@ -2,9 +2,9 @@
 
 Conceptmod core contains no pretrained architectures, model identifiers or model
 loaders. Each product is an independent package/repository. Install the
-[versioned core package](https://github.com/HyperGAN/conceptmod/releases/tag/v3.1.1)
+[versioned core package](https://github.com/HyperGAN/conceptmod/releases/tag/v3.1.2)
 first, then install the product you want. A pinned source install from
-`git+https://github.com/HyperGAN/conceptmod.git@v3.1.1` is also supported.
+`git+https://github.com/HyperGAN/conceptmod.git@v3.1.2` is also supported.
 
 | Provider ID | Product repository / distribution |
 | --- | --- |

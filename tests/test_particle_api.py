@@ -1,4 +1,4 @@
-"""Keep historical DSL knobs honest against the actual 0.10.0 primitives."""
+"""Keep historical DSL knobs honest against the pinned ParticleGAN primitives."""
 import pytest
 import torch
 from particlegan import GANLoss

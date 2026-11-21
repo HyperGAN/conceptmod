@@ -3,6 +3,6 @@ from conceptmod.contracts import BackendCapabilities, ModelView, model_views
 from conceptmod.plan import EditPlan, compile_phrase
 from conceptmod.providers import BackendProvider, BackendRegistry
 
-__version__ = "3.1.1"
+__version__ = "3.1.2"
 __all__ = ["BackendCapabilities", "ModelView", "model_views", "EditPlan",
            "compile_phrase", "BackendProvider", "BackendRegistry"]
